@@ -2,32 +2,30 @@ import os
 import time
 import random
 import numpy as np
-from tools_GA import *
 ############
 # self made classes
 from cell_agent import *                    # it is allowed to call from this class because there's an __init__.py file in this directory
 from tools import *
-from plot import *
-import csv
+from tools_GA import *
+
 ############
 import multiprocessing as mp
 import ctypes
+import csv
 from numba import jit
 
-def sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice, mode):
+@jit
+def sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice):
     """
-    Parameters: sim(wMatrix, numberOfTimeSteps, NumberOfGeneration, nNodes, individual, nLattice, mode)
-    # mode = True: cell_system as fitness function
-    # mode = False: cell_system as display system
+    Parameters: sim(wMatrix, numberOfTimeSteps, NumberOfGeneration, nNodes, individual, nLattice)
+    # In ozzy the simulation works solely as a fitness function,
     """
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
     #       PARAMETERS                 #
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
     # TODO: organize in different categories...
-    #nLattice = 5                              # TODO change name
-    #timeSteps = 40                              # Number of simulation time steps
     cellGrid = np.zeros([nLattice,nLattice,3])  # Initialize empty grid
-    SGF_read = 0.                                # in the future values will be read from the grid
+    SGF_read = 0.                               # in the future values will be read from the grid
     LGF_read = 0.
     ix = int(nLattice/2)                        # Initial position for the mother cell
     iy = int(nLattice/2)                        # Initial position for the mother cell
@@ -36,11 +34,11 @@ def sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice, mode):
     cellList = []                               # List for cell agents
 
     # SGF/LGF dynamics parameters
-    deltaT = 1.                                  # time step for discretisation [T]
-    deltaR = 1.                                  # space step for discretisation [L]
+    deltaT = 1.                                 # time step for discretisation [T]
+    deltaR = 1.                                 # space step for discretisation [L]
     deltaS = 0.5                                # decay rate for SGF
-    deltaL = 0.1                                 # decay rate for LGF
-    diffConst = 1.#0.05                              # diffusion constant D [dimentionless]
+    deltaL = 0.1                                # decay rate for LGF
+    diffConst = 1.#0.05                         # diffusion constant D [dimentionless]
     t_matrix = GenerateTMatrix(nLattice)        # T matrix for LGF operations
     i_matrix = GenerateIMatrix(nLattice)        # I matrix for LGF operations
 
@@ -50,20 +48,7 @@ def sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice, mode):
     # create mother cell and update the grid with its initial location
     cellList.append(cell(ix,iy,wMatrix))
     cellGrid[ix][iy][0] = 1
-    #print('Initial grid:\n' + str(cellGrid[:,:,0]))
-    #cellGrid[ix][iy][2] = 400.
 
-    # Timing!
-    start_time_figurecall = time.time()
-    # Plot figure and subplots
-    #cellsFigure, cellsSubplot, sgfSubplot, lgfSubplot, cellPlot, sgfPlot, lgfPlot = Environment.CellsGridFigure(nLattice, mode)
-    end_time_figurecall = time.time()
-    secs = end_time_figurecall - start_time_figurecall
-
-    # TODO
-    # example of a more convenient way of printing
-    #print('{0} doubled to {1} by process id: {2}'.format(number, result, proc))
-    #print('time to call figures, subplots, plots:' + str(secs))
     # DEBUG
     #print('Time running...')
     # Timing!
@@ -76,20 +61,20 @@ def sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice, mode):
 
         # this matrixes must be updated everytime so that if there's no production in one spot that spot contains a zero
         # but must not lose contained information, i.e. must use it before setting it to zero
-        sigma_m = np.zeros([nLattice,nLattice])     # matrix representation of SGF production
-        lambda_m = np.zeros([nLattice,nLattice])    # matrix representation of LGF production
+        sigma_m = np.zeros([nLattice,nLattice])             # matrix representation of SGF production
+        lambda_m = np.zeros([nLattice,nLattice])            # matrix representation of LGF production
 
-        tmpCellList = list(cellList)                                  # a copy of the list of current cells is used to iterate over all the cells
+        tmpCellList = list(cellList)                        # a copy of the list of current cells is used to iterate over all the cells
 
         # Timing!
         start_time_tmpListLoop = time.time()
         tmpCellListLength = len(tmpCellList)
-        while len(tmpCellList) > 0:                                     # while  the tmp list of cells is longer than 1
+        while len(tmpCellList) > 0:                 # while  the tmp list of cells is longer than 1
             # 1st step => choose a random cell from the list of existing cells
             rndCell = np.random.randint(len(tmpCellList))
             # store lattice size
-            tmpCellList[rndCell].border = nLattice                      # TODO rethink this
-            #tmpCellList[rndCell].nNodes = nNodes                       # WARNING hardcoded
+            tmpCellList[rndCell].border = nLattice          # TODO rethink this
+            #tmpCellList[rndCell].nNodes = nNodes           # WARNING hardcoded
 
             # 2nd step => read chemicals
             SGF_reading, LGF_reading = tmpCellList[rndCell].Sense(cellGrid)
@@ -108,9 +93,9 @@ def sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice, mode):
             #        Cell Action            #
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
             # according to cell status perform action: split or stay quiet
-            if tmpCellList[rndCell].state == 'Quiet':                   # Check the state
-                tmpCellList[rndCell].Quiet(cellGrid)                    # call method that performs selected action
-                del tmpCellList[rndCell]                                # delete cell from temporal list
+            if tmpCellList[rndCell].state == 'Quiet':           # Check the state
+                tmpCellList[rndCell].Quiet(cellGrid)            # call method that performs selected action
+                del tmpCellList[rndCell]                        # delete cell from temporal list
 
             elif tmpCellList[rndCell].state == 'Split':
                 tmpCellList[rndCell].Split2(cellGrid,cellList)
@@ -121,7 +106,7 @@ def sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice, mode):
                 del tmpCellList[rndCell]
 
             else: # Die
-                tmpCellList[rndCell].Die(cellGrid)                  # Off the grid, method also changes the "amidead" switch to True
+                tmpCellList[rndCell].Die(cellGrid)              # Off the grid, method also changes the "amidead" switch to True
                 del tmpCellList[rndCell]
         # while
         # Timing!
@@ -131,15 +116,10 @@ def sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice, mode):
 
         # A list of cells that "died" is stored to later actually kill the cells...
         listLength = len(cellList) - 1
-        for jCell in range(listLength,-1,-1):                     # checks every cell and if it was set to die then do, in reverse order
+        for jCell in range(listLength,-1,-1):                   # checks every cell and if it was set to die then do, in reverse order
             #print('len(cellList): ' + str(len(cellList)) + '. Current element: ' + str(jCell))
             if cellList[jCell].amidead:
                 del cellList[jCell]
-
-        ### TEST! equivalent to: cellList[cell].'status'(param_x,param_y)
-        #    state = getattr(tmpCellList[rndCell], status)
-        #    action = getattr(tmpCellList[rndCell], state)
-        #    action(cellGrid, cellList)
 
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
         #    SGF/LGF diffusion and/or decay     #
@@ -153,72 +133,14 @@ def sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice, mode):
         secs = end_time_chemicalsUpdate - start_time_chemicalsUpdate
         #print('time taken to update chemicals:' + str(secs))
 
-        #chemsum = 0
-        #for iPos in range(nLattice):
-            #for jPos in range(nLattice):
-                #chemsum += cellGrid[iPos,jPos,2]
-                #if cellGrid[iPos,jPos,2] < 0.01:
-                    #cellGrid[iPos,jPos,2] = 0
         #print('grid after update...\n' + str(cellGrid[:,:,2]))
-    #    print('################################LGF total = ' + str(chemsum))
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-        #         Plot               #
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+        #print('################################LGF total = ' + str(chemsum))
         #print('updated grid:\n' + str(cellGrid[:,:,0]))
 
-        if mode == True:
-            if iTime == int(timeSteps/2) - 1:
-                halfwayStruct = np.array(cellGrid[:,:,0])
-        #         Environment.AntGridPlot(cellGrid,
-        #                                 nLattice,
-        #                                 cellsFigure,
-        #                                 cellsSubplot,
-        #                                 sgfSubplot,
-        #                                 lgfSubplot,
-        #                                 cellPlot,
-        #                                 sgfPlot,
-        #                                 lgfPlot,
-        #                                 iTime,
-        #                                 iGen,
-        #                                 individual,
-        #                                 mode)
-        #
-            elif iTime == timeSteps - 1:
-                finalStruct = np.array(cellGrid[:,:,0])
-        #         Environment.AntGridPlot(cellGrid,
-        #                                 nLattice,
-        #                                 cellsFigure,
-        #                                 cellsSubplot,
-        #                                 sgfSubplot,
-        #                                 lgfSubplot,
-        #                                 cellPlot,
-        #                                 sgfPlot,
-        #                                 lgfPlot,
-        #                                 iTime,
-        #                                 iGen,
-        #                                 individual,
-        #                                 mode)
-        # else:
-        #     # Timing!
-        #     start_time_plotUpdate = time.time()
-        #     Environment.AntGridPlot(    cellGrid,
-        #                                 nLattice,
-        #                                 cellsFigure,
-        #                                 cellsSubplot,
-        #                                 sgfSubplot,
-        #                                 lgfSubplot,
-        #                                 cellPlot,
-        #                                 sgfPlot,
-        #                                 lgfPlot,
-        #                                 iTime,
-        #                                 iGen,
-        #                                 individual,
-        #                                 mode)
-        #     # Timing!
-        #     end_time_plotUpdate = time.time()
-        #     secs = end_time_plotUpdate - start_time_plotUpdate
-        #     #print('time taken to update plots:' + str(secs))
-        #     time.sleep(0.1)
+        if iTime == int(timeSteps/2) - 1:
+            halfwayStruct = np.array(cellGrid[:,:,0])
+        elif iTime == timeSteps - 1:
+            finalStruct = np.array(cellGrid[:,:,0])
         iTime += 1
 
         if len(cellList) == 0:
@@ -259,17 +181,16 @@ def sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice, mode):
 
     return deltaMatrix
 
-#@jit
-def EvaluateIndividual(individual, timeSteps, iGen, nNodes, nLattice, mode):
+@jit
+def EvaluateIndividual(individual, timeSteps, iGen, nNodes, nLattice):
     totSum = 0.
     #print('generating wMatrix...')
     wMatrix = population[individual,:].reshape(nNodes,nNodes)
     #print('process: {} is running sim  with individual: {}!'.format(os.getpid(), individual))
-    deltaM = sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice, mode)
+    deltaM = sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice)
     #print('process: {} done with individual: {}!'.format(os.getpid(), individual))
     deltaMatrix = np.array(deltaM)
-    #m, n = deltaMatrix.shape()
-    #m = 50
+
     for ix in range(nLattice):
         for jx in range(nLattice):
             totSum += deltaMatrix[ix,jx]
@@ -287,12 +208,12 @@ if __name__ == '__main__':
     #       PARAMETERS                 #
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
     nProcs = 24                                                 # multiprocessing will use as many cores as it can see
-    DEFAULT_VALUE = -1                                          # WARNING
-    popSize = 502                                                # Population size
+    DEFAULT_VALUE = -1                                          # WARNING is this necessary?
+    popSize = 502                                               # Population size. Must have certain 
     nNodes = 25
     nGenes = nNodes**2                                          # Number of genes
-    crossoverProb = 0.7                                     # Crossover probability
-    mutationProb = 0.5                                      # Mutation probability
+    crossoverProb = 0.7                                         # Crossover probability
+    mutationProb = 0.5                                          # Mutation probability
     crossMutProb = 0.5                                          # probability of doing mutation or crossover
     #tournamentSelParam = 0.75                                  # Tournament selection parameter
     tournamentSize = 4                                          # Tournament size. EVEN
@@ -300,95 +221,58 @@ if __name__ == '__main__':
     nOfGenerations = 20
     timeSteps = 200
     nLattice = 50
-    mode = True
-    #fitness = np.zeros([popSize,2])                            # fitness array
-    eliteIndividuals = []
-    #dtype = [('fitnessValue',float),('position',int)]           # format for fitness array, for an easier sort. Fitness is an structured array
 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
     #       INITIALISATION             #
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-    #population = InitializePopulation(popSize, numberOfGenes)  # call initialization function, a random set of chromosomes is generated
-    #population = np.random.random(size = (popSize, nGenes))
     contestants = np.zeros([tournamentSize, nGenes])
 
-    # WARNING!
-    # multiprocessing implementation
-    population_base = mp.Array(ctypes.c_float, popSize*nGenes, lock = False) # create mp shared array
+    # Multiprocessing implementation
+    population_base = mp.Array(ctypes.c_float, popSize*nGenes, lock = False)# create mp shared 1D array
     #print('population_base length: {}'.format(len(population_base)))
-    population = np.frombuffer(population_base, dtype = ctypes.c_float)      # convert mp array to np.array
+    population = np.frombuffer(population_base, dtype = ctypes.c_float)     # convert mp array to np.array
     #print('population length: {}'.format(len(population)))
     for ix in range(popSize*nGenes):
-        population[ix] = -1. + 2.*np.random.random()                                     # Generate population
-    population = population.reshape(popSize, nGenes)
+        population[ix] = -1. + 2.*np.random.random()                        # Generate population
+    population = population.reshape(popSize, nGenes)                        # Reshape as popSize x nGenes matrix
     #print('population shared array created successfully!')
 
-
-    fitness_base = mp.Array(ctypes.c_float, popSize, lock = False) # create mp shared array
-    fitness = np.frombuffer(fitness_base, dtype = ctypes.c_float)      # convert mp array to np.array
+    fitness_base = mp.Array(ctypes.c_float, popSize, lock = False)          # create mp shared 1D array
+    fitness = np.frombuffer(fitness_base, dtype = ctypes.c_float)           # convert mp array to np.array
     #print('fitness shared array created successfully!')
 
     for iGen in range(nOfGenerations):
         # DEBUG
         print('\nGeneration #' + str(iGen + 1))
-        #maxFitness = 0. # Assumes non-negative fitness values!
-        #fitness = np.zeros(popSize, dtype = dtype)              # structured array which will contain a fitness value for each individual
-        #wBest = np.zeros(nGenes) # [0 0]
-        #bestIndividualIndex = 0
 
         # 1st step: Fitness function => Rank idividuals by their fitness
         # chromosomes get decoded and evaluated
-        #for ix in range(popSize):
-            #chromosome = np.array(population[ix,:])             # loop through all chromosomes
-            ## DEBUG
-            #print('=> running system... ' + str(ix) + ' time')
-            #wMatrix = -1 + 2*chromosome.reshape(nNodes,nNodes)  # decode chromosome, i.e., transform into matrix
-            ## Timing!
-            #start_time_fitness = time.time()
-            ##fitness[ix][0] = EvaluateIndividual(wMatrix, timeSteps, iGen, nNodes, individual, nLattice, mode)        # get chromosome fitness
-            #fitness = EvaluateIndividual(ix, timeSteps, iGen, nNodes, nLattice, mode)
-            ## Timing!
-            #end_time_fitness = time.time()
-            #secs = end_time_fitness - start_time_fitness
-            ##print('time taken to update chemicals:' + str(secs))
-
-            ## DEBUG
-            #print('fitness: ' + str(fitness[ix][0]))
-            ##fitness[ix][1] = ix                                 # store position in population matrix
-        ## loop over chromosomes
-
-        ####
-        # WARNING
-        # multiprocess implementation!
-
         fitness.fill(DEFAULT_VALUE)
+        
+        # arguments to pass to fitness simulation
         timeSteps_list = [timeSteps for x in range(popSize)]
         iGen_list = [iGen for x in range(popSize)]
         nNodes_list = [nNodes for x in range(popSize)]
         nLattice_list = [nLattice for x in range(popSize)]
-        mode_list = [mode for x in range(popSize)]
         index_list = [x for x in range(popSize)]
-        args = zip(index_list, timeSteps_list, iGen_list, nNodes_list, nLattice_list, mode_list)
-        #pool = multiprocessing.Pool(processes=NBR_OF_PROCESSES)
-        #print('creating pool...')
+        args = zip(index_list, timeSteps_list, iGen_list, nNodes_list, nLattice_list)
         
-        pool = mp.Pool(processes = nProcs)
+        #print('creating pool...')
+        pool = mp.Pool(processes = nProcs)                      # Pool of processes
         #print('evaluating pool...')
         # Timing!
         start_time_pool = time.time()
-        pool.starmap(EvaluateIndividual, args)
+        pool.starmap(EvaluateIndividual, args)                  # Evaluation of individuals, this runs in parallel!
         # Timing!
         end_time_pool = time.time()
         secs = end_time_pool - start_time_pool
         print('Time taken for generation {}: {.2f} s'.format(iGen, secs))
         #print(pool.map(EvaluateIndividual, indList, timeSteps, iGen, nNodes, ix, nLattice, mode))
-        ####
-
+        # loop over chromosomes
 
         # 1.1: sort fitness array
-        #fitness.sort(order = 'fitnessValue')                    # sort array according to fitness value. Less fit to most fit
-        sorted_fitness = np.argsort(fitness)
-        tempPopulation = np.zeros([popSize, nGenes])            #np.array(population)
+        sorted_fitness = np.argsort(fitness)                    # sort array according to fitness value. Less fit to most fit
+        tempPopulation = np.zeros([popSize, nGenes])            # np.array(population)
 
         # DEBUG
         #print('sorted fitness array, before deleting:\n' + str(fitness))
@@ -396,7 +280,7 @@ if __name__ == '__main__':
         # 2nd step: Elitism => Save the best individuals for next generation
         iElit = 1                                               # Elite counter: individuals with the best fitness are kept untouched
         while iElit <= eliteNum:
-            #index = fitness[popSize - iElit][1]                 # get the index of the last members of the list, i.e., most fit
+            #index = fitness[popSize - iElit][1]                # get the index of the last members of the list, i.e., most fit
             index = sorted_fitness[popSize - iElit]
             # DEBUG
             #print('=> best fitness: ' + str(fitness[popSize - iElit][0]))
@@ -408,7 +292,7 @@ if __name__ == '__main__':
 
         # 3rd step: Tousnament selection => Loop over the rest of the population to engage them into a tournament
         loopCounter = 0
-        while len(sorted_fitness) >= tournamentSize:                   # iterate through all individuals
+        while len(sorted_fitness) >= tournamentSize:            # iterate through all individuals
             #print('fitness array length: ' + str(len(fitness)))
             selectedInd = np.random.choice(range(len(sorted_fitness)), tournamentSize, replace = False)
             selectedInd.sort()                                  # select random contestants and sort them by index (i.e. by fitness))
@@ -458,9 +342,7 @@ if __name__ == '__main__':
     # Loop over generations
     print('end of generations loop')
 
-
     # write solution
-    #bestIndEver = np.array(population[0,:].reshape(nNodes,nNodes))
     with open('20171008_20Gen_25Nodes_1002ind', 'w') as csvfile:
         writer = csv.writer(csvfile)
         [writer.writerow(r) for r in population]
