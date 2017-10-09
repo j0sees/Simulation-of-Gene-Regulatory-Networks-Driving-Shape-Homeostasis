@@ -264,7 +264,7 @@ def EvaluateIndividual(individual, timeSteps, iGen, nNodes, nLattice, mode):
     totSum = 0.
     #print('generating wMatrix...')
     wMatrix = population[individual,:].reshape(nNodes,nNodes)
-    print('process: {} is running sim  with individual: {}!'.format(os.getpid(), individual))
+    #print('process: {} is running sim  with individual: {}!'.format(os.getpid(), individual))
     deltaM = sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice, mode)
     #print('process: {} done with individual: {}!'.format(os.getpid(), individual))
     deltaMatrix = np.array(deltaM)
@@ -286,19 +286,19 @@ if __name__ == '__main__':
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
     #       PARAMETERS                 #
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-    nProcs = 4                                                 # multiprocessing will use as many cores as it can see
+    nProcs = 24                                                 # multiprocessing will use as many cores as it can see
     DEFAULT_VALUE = -1                                          # WARNING
-    popSize = 50                                                # Population size
-    nNodes = 10
+    popSize = 502                                                # Population size
+    nNodes = 25
     nGenes = nNodes**2                                          # Number of genes
-    crossoverProb = 1. #0.8                                     # Crossover probability
-    mutationProb = 1. #0.5                                      # Mutation probability
+    crossoverProb = 0.7                                     # Crossover probability
+    mutationProb = 0.5                                      # Mutation probability
     crossMutProb = 0.5                                          # probability of doing mutation or crossover
     #tournamentSelParam = 0.75                                  # Tournament selection parameter
     tournamentSize = 4                                          # Tournament size. EVEN
     eliteNum = 2                                                # number of elite solutions to carry to next generation
-    nOfGenerations = 10
-    timeSteps = 100
+    nOfGenerations = 20
+    timeSteps = 200
     nLattice = 50
     mode = True
     #fitness = np.zeros([popSize,2])                            # fitness array
@@ -371,9 +371,16 @@ if __name__ == '__main__':
         args = zip(index_list, timeSteps_list, iGen_list, nNodes_list, nLattice_list, mode_list)
         #pool = multiprocessing.Pool(processes=NBR_OF_PROCESSES)
         #print('creating pool...')
+        
         pool = mp.Pool(processes = nProcs)
         #print('evaluating pool...')
+        # Timing!
+        start_time_pool = time.time()
         pool.starmap(EvaluateIndividual, args)
+        # Timing!
+        end_time_pool = time.time()
+        secs = end_time_pool - start_time_pool
+        print('Time taken for generation {}: {.2f} s'.format(iGen, secs))
         #print(pool.map(EvaluateIndividual, indList, timeSteps, iGen, nNodes, ix, nLattice, mode))
         ####
 
@@ -449,10 +456,12 @@ if __name__ == '__main__':
         population = np.array(tempPopulation)
 
     # Loop over generations
+    print('end of generations loop')
 
 
     # write solution
     #bestIndEver = np.array(population[0,:].reshape(nNodes,nNodes))
-    with open('test_file.csv', 'w') as csvfile:
+    with open('20171008_20Gen_25Nodes_1002ind', 'w') as csvfile:
         writer = csv.writer(csvfile)
         [writer.writerow(r) for r in population]
+    print('solution written!')

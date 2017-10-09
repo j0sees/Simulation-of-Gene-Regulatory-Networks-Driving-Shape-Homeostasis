@@ -25,7 +25,7 @@ class cell:
         #self.WMatrix = W
         #self.phi = phi
         #self.theta = theta
-        self.nNodes = 10                            # WARNING hardcoded!
+        self.nNodes = 25                            # WARNING hardcoded!
 #        self.nInputs = 2
         self.V = np.zeros([self.nNodes])
     # self

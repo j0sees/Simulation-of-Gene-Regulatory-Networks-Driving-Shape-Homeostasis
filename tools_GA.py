@@ -29,10 +29,10 @@ from numba import jit
 #     #return fitness
 # # EvaluateIndividual
 
-@jit
-def EvaluateIndividual2(individual, timeSteps, iGen, nNodes, nLattice, mode):
-    print('process: {} here!! individual: {}'.format(os.getpid(), individual))
-    fitness[individual] =
+#@jit
+#def EvaluateIndividual2(individual, timeSteps, iGen, nNodes, nLattice, mode):
+#    print('process: {} here!! individual: {}'.format(os.getpid(), individual))
+#    fitness[individual] =
     #print('process: {} here!! array:\n {}'.format(os.getpid(), population[individual,:]))
     #fitness[individual] = 0.
 # EvaluateIndividual
