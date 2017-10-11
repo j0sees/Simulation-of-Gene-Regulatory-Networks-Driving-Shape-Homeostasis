@@ -7,14 +7,13 @@ import numpy as np
 from cell_agent import *                    # it is allowed to call from this class because there's an __init__.py file in this directory
 from tools import *
 from tools_GA import *
-
 ############
 import multiprocessing as mp
 import ctypes
 import csv
-from numba import jit
+#from numba import jit
 
-@jit
+#@jit
 def sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice):
     """
     Parameters: sim(wMatrix, numberOfTimeSteps, NumberOfGeneration, nNodes, individual, nLattice)
@@ -41,6 +40,10 @@ def sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice):
     diffConst = 1.#0.05                         # diffusion constant D [dimentionless]
     t_matrix = GenerateTMatrix(nLattice)        # T matrix for LGF operations
     i_matrix = GenerateIMatrix(nLattice)        # I matrix for LGF operations
+
+    # timing variables!
+    tmpListLoopAvg = 0
+    chemicalsUpdateAvg = 0
 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
     #       INITIALIZATION             #
@@ -126,8 +129,8 @@ def sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice):
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
         # Timing!
         start_time_chemicalsUpdate = time.time()
-        cellGrid[:,:,1] = sgfDiffEq2(cellGrid[:,:,1], sigma_m, deltaS, deltaT)
-        cellGrid[:,:,2] = lgfDiffEq(i_matrix, t_matrix, cellGrid[:,:,2], lambda_m, deltaL, deltaT, deltaR, diffConst)
+        cellGrid[:,:,1] = SGFDiffEq(cellGrid[:,:,1], sigma_m, deltaS, deltaT)
+        cellGrid[:,:,2] = LGFDiffEq(i_matrix, t_matrix, cellGrid[:,:,2], lambda_m, deltaL, deltaT, deltaR, diffConst)
         # Timing!
         end_time_chemicalsUpdate = time.time()
         secs = end_time_chemicalsUpdate - start_time_chemicalsUpdate
@@ -181,7 +184,7 @@ def sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice):
 
     return deltaMatrix
 
-@jit
+#@jit
 def EvaluateIndividual(individual, timeSteps, iGen, nNodes, nLattice):
     totSum = 0.
     #print('generating wMatrix...')
@@ -203,24 +206,32 @@ def EvaluateIndividual(individual, timeSteps, iGen, nNodes, nLattice):
     #return fitness
 # EvaluateIndividual
 
+#============================================================#
+#                                                            #
+#                   GENETIC ALGORITHM                        #
+#                                                            #
+#============================================================#
 if __name__ == '__main__':
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
     #       PARAMETERS                 #
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-    nProcs = 24                                                 # multiprocessing will use as many cores as it can see
+    nProcs = 17                                                 # multiprocessing will use as many cores as it can see
     DEFAULT_VALUE = -1                                          # WARNING is this necessary?
-    popSize = 502                                               # Population size. Must have certain 
+    popSize = 170                                               # Population size. Must have certain 
     nNodes = 25
     nGenes = nNodes**2                                          # Number of genes
-    crossoverProb = 0.7                                         # Crossover probability
-    mutationProb = 0.5                                          # Mutation probability
+    crossoverProb = 0.5                                         # Crossover probability
+    mutationProb = 0.7                                          # Mutation probability
     crossMutProb = 0.5                                          # probability of doing mutation or crossover
     #tournamentSelParam = 0.75                                  # Tournament selection parameter
     tournamentSize = 4                                          # Tournament size. EVEN
     eliteNum = 2                                                # number of elite solutions to carry to next generation
-    nOfGenerations = 20
+    nOfGenerations = 15
     timeSteps = 200
     nLattice = 50
+    
+    # timing variables!
+    generationAvg = 0
 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
     #       INITIALISATION             #
@@ -242,6 +253,7 @@ if __name__ == '__main__':
     #print('fitness shared array created successfully!')
 
     for iGen in range(nOfGenerations):
+        start_time_generation = time.time()
         # DEBUG
         print('\nGeneration #' + str(iGen + 1))
 
@@ -266,7 +278,7 @@ if __name__ == '__main__':
         # Timing!
         end_time_pool = time.time()
         secs = end_time_pool - start_time_pool
-        print('Time taken for generation {}: {.2f} s'.format(iGen, secs))
+        #print('Time taken for generation {}: {.2f} s'.format(iGen, secs))
         #print(pool.map(EvaluateIndividual, indList, timeSteps, iGen, nNodes, ix, nLattice, mode))
         # loop over chromosomes
 
@@ -339,11 +351,17 @@ if __name__ == '__main__':
 
         population = np.array(tempPopulation)
 
+        # Timing!
+        end_time_generation = time.time()
+        secs = end_time_generation - start_time_generation
+        generationAvg += secs
+        print('time to complete generation: {:.3f} s'.format(secs))
     # Loop over generations
-    print('end of generations loop')
+
+    print('avg time for generation: {} s'.format(generationAvg/nOfGenerations))
 
     # write solution
-    with open('20171008_20Gen_25Nodes_1002ind', 'w') as csvfile:
+    with open('benchmark_test_ozzy_20171010c.csv', 'w') as csvfile:
         writer = csv.writer(csvfile)
         [writer.writerow(r) for r in population]
-    print('solution written!')
+    #print('solution written!')

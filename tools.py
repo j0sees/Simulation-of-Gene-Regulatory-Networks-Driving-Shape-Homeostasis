@@ -4,7 +4,7 @@ import csv
 from numba import jit
 
 # Tools
-@jit
+#@jit
 def CheckInBorders(xCoord, yCoord, border):
     if xCoord < 0 or xCoord > border:     # Check if the neighbour is inbounds on x axis
         return False
@@ -14,7 +14,7 @@ def CheckInBorders(xCoord, yCoord, border):
         return True
 # CheckInBorders
 
-@jit
+#@jit
 def CheckifOccupied(xCoord, yCoord, grid):
     if grid[xCoord, yCoord][0] > 0:         # if value on grid is 1 (quiet), 2 (moved) or 3 (splitted) then spot is occupied
         return True
@@ -22,7 +22,7 @@ def CheckifOccupied(xCoord, yCoord, grid):
         return False
 # CheckifOccupied
 
-@jit
+#@jit
 def CheckifPreferred(xOri, yOri, xCoord, yCoord):
     if xCoord == xOri and yCoord == yOri:
         return True
@@ -31,23 +31,23 @@ def CheckifPreferred(xOri, yOri, xCoord, yCoord):
 # CheckifPreferred
 
 # SGF dynamics, single value update approach
-@jit
-def sgfDiffEq(s, sigma, deltaS, deltaT):
-    updatedVal = s + deltaT*(sigma - deltaS*s)
-    return updatedVal
+#@jit
+#def SGFDiffEq(s, sigma, deltaS, deltaT):
+    #updatedVal = s + deltaT*(sigma - deltaS*s)
+    #return updatedVal
 # sgfDiffEq
 
 # SGF dynamics with matrix approach
-@jit
-def sgfDiffEq2(s_matrix, sigma_matrix, deltaS, deltaT):
+#@jit
+def SGFDiffEq(s_matrix, sigma_matrix, deltaS, deltaT):
     updated_matrix = s_matrix + deltaT*(sigma_matrix - deltaS*s_matrix)
     return updated_matrix
 # sgfDiffEq
 
 # TODO use linalg solve to make it faster and numerically more stable
 # LGF dynamics with matrix approach
-@jit
-def lgfDiffEq(i_matrix, t_matrix, l_matrix, lambda_matrix, deltaL, deltaT, deltaR, D):
+#@jit
+def LGFDiffEq(i_matrix, t_matrix, l_matrix, lambda_matrix, deltaL, deltaT, deltaR, D):
     alpha = D*deltaT/(deltaR**2)                            # constant
     f = (deltaT/2.)*(lambda_matrix - deltaL*l_matrix)       # term that takes into account LFG production for half time step
     g = linalg.inv(i_matrix - (alpha/2.)*t_matrix)          # inverse of some intermediate matrix
@@ -59,19 +59,19 @@ def lgfDiffEq(i_matrix, t_matrix, l_matrix, lambda_matrix, deltaL, deltaT, delta
     return l_tStep
 # sgfDiffEq
 
-def lgfDiffEq2(i_matrix, t_matrix, l_matrix, lambda_matrix, deltaL, deltaT, deltaR, D):
-    alpha = D*deltaT/(deltaR**2)                            # constant
-    f = (deltaT/2.)*(lambda_matrix - deltaL*l_matrix)       # term that takes into account LFG production for half time step
-    g = linalg.inv(i_matrix - (alpha/2.)*t_matrix)          # inverse of some intermediate matrix
-    h = i_matrix + (alpha/2.)*t_matrix                      # some intermediate matrix
-    l_halftStep = (l_matrix@h + f)@g                        # half time step calculation for LGF values
-    f = (deltaT/2.)*(lambda_matrix - deltaL*l_halftStep)    # updated term...
-    l_tStep = g@(h@l_halftStep + f)                         # final computation
-    return l_tStep
+#def LGFDiffEq2(i_matrix, t_matrix, l_matrix, lambda_matrix, deltaL, deltaT, deltaR, D):
+    #alpha = D*deltaT/(deltaR**2)                            # constant
+    #f = (deltaT/2.)*(lambda_matrix - deltaL*l_matrix)       # term that takes into account LFG production for half time step
+    #g = linalg.inv(i_matrix - (alpha/2.)*t_matrix)          # inverse of some intermediate matrix
+    #h = i_matrix + (alpha/2.)*t_matrix                      # some intermediate matrix
+    #l_halftStep = (l_matrix@h + f)@g                        # half time step calculation for LGF values
+    #f = (deltaT/2.)*(lambda_matrix - deltaL*l_halftStep)    # updated term...
+    #l_tStep = g@(h@l_halftStep + f)                         # final computation
+    #return l_tStep
 # sgfDiffEq
 
 # T matrix, used in LGF dynamics
-@jit
+#@jit
 def GenerateTMatrix(size):
     t_matrix = np.zeros([size,size])
     for ix in range(size - 1):
@@ -84,7 +84,7 @@ def GenerateTMatrix(size):
 # GenerateTMatrix
 
 # Identity matrix
-@jit
+#@jit
 def GenerateIMatrix(size):
     I_matrix = np.zeros([size,size])
     for ix in range(size):
@@ -106,21 +106,22 @@ def NeuralNetwork(inputs, WMatrix, wMatrix, phi, theta):
     return O
 # NeuralNetwork
 
-@jit
-def TransferFunction(x,beta):
-    return 1./(1 + np.exp(-beta*x))
-# TransferFunction
+#@jit
+#def TransferFunction(x,beta):
+    #return 1./(1 + np.exp(-beta*x))
+## TransferFunction
 
 @jit
-def RecurrentNeuralNetwork(inputs, wMatrix, V):
-    #nNodes = 10  # number of nodes
+def RecurrentNeuralNetwork(inputs, wMatrix, V):             # Recurrent Neural Network dynamics
+    #beta = 2
     bj = wMatrix@V - inputs
+    # might be improved ussing list comprehension...
     for ix in range(len(bj)):
-        V[ix] = TransferFunction(bj[ix],2)
+        V[ix] = 1./(1 + np.exp(-2*bj[ix]))   #TransferFunction(bj[ix],2)
     return V
 # NeuralNetwork
 
-@jit
+#@jit
 def GetStructure(cell_array, nLattice):
     structure = np.zeros([nLattice,nLattice])
     for ik in range(nLattice):
@@ -130,9 +131,9 @@ def GetStructure(cell_array, nLattice):
     return structure
 # GetStructure
 
-def GetrNN(ind,nNodes):
+def GetrNN(csvFile, ind, nNodes):
     #with open('successful_test.csv', 'r') as csvfile:
-    with open('test_file.csv', 'r') as csvfile:
+    with open(csvFile, 'r') as csvfile:
         #reader = csv.reader(csvfile)
         population = np.loadtxt(csvfile,delimiter=',')
     wMatrix = np.array(population[ind,:].reshape(nNodes,nNodes))

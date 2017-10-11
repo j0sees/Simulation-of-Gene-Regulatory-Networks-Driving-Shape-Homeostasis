@@ -2,31 +2,31 @@ import os
 import time
 import random
 import numpy as np
-from main import *
-from numba import jit
+#from main import *
+#from numba import jit
 
 # Evaluate variable using the fitness function
 
 # @jit
-# def EvaluateIndividual(individual, timeSteps, iGen, nNodes, nLattice, mode):
-#     totSum = 0.
-#     print('generating wMatrix...')
-#     wMatrix = population[individual,:].reshape(nNodes,nNodes)
-#     print('process: {} has recovered xMatrix!'.format(os.getpid()))
-#     deltaM = sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice, mode)
-#     deltaMatrix = np.array(deltaM)
-#     #m, n = deltaMatrix.shape()
-#     #m = 50
-#     for ix in range(nLattice):
-#         for jx in range(nLattice):
-#             totSum += deltaMatrix[ix,jx]
-#     # DEBUG
-#     print('total sum on delta matrix: ' + str(totSum))
-#     if totSum <= int((nLattice**2)*0.1) or totSum == int(nLattice**2):
-#         fitness[individual] = 0.
-#     else:
-#         fitness[individual] = 1. - (1./(nLattice**2))*totSum
-#     #return fitness
+def EvaluateIndividual(individual, timeSteps, iGen, nNodes, nLattice, mode):
+    totSum = 0.
+    #print('generating wMatrix...')
+    wMatrix = population[individual,:].reshape(nNodes,nNodes)
+    #print('process: {} has recovered xMatrix!'.format(os.getpid()))
+    deltaM = sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice, mode)
+    deltaMatrix = np.array(deltaM)
+    #m, n = deltaMatrix.shape()
+    #m = 50
+    for ix in range(nLattice):
+        for jx in range(nLattice):
+            totSum += deltaMatrix[ix,jx]
+    # DEBUG
+    #print('total sum on delta matrix: ' + str(totSum))
+    if totSum <= int((nLattice**2)*0.1) or totSum == int(nLattice**2):
+        fitness[individual] = 0.
+    else:
+        fitness[individual] = 1. - (1./(nLattice**2))*totSum
+    #return fitness
 # # EvaluateIndividual
 
 #@jit
@@ -47,7 +47,7 @@ def DiracDelta(a, b):
 
 # Crossover: length preserving
 #TODO implement length change
-@jit
+#@jit
 def Crossover(parent1, parent2, crossoverProb):
     r = np.random.random()
     if  r < crossoverProb:
@@ -71,7 +71,7 @@ def Crossover(parent1, parent2, crossoverProb):
 # Crossover
 
 # Mutation
-@jit
+#@jit
 def Mutate(parent1, parent2, mutationProb):
     r = np.random.random()
     if  r < mutationProb:
