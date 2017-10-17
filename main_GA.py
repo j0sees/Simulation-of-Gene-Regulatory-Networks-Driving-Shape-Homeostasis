@@ -140,16 +140,25 @@ def sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice):
         #print('################################LGF total = ' + str(chemsum))
         #print('updated grid:\n' + str(cellGrid[:,:,0]))
 
-        if iTime == int(timeSteps/2) - 1:
-            halfwayStruct = np.array(cellGrid[:,:,0])
+        if iTime == int(timeSteps/2) - 1:                           # special cases get tested halfway through the simulation
+            if len(cellList) <= int((nLattice**2)*0.01):            # If there are no cells 
+                halfwayStruct = np.zeros([nLattice,nLattice])       # return two completely different structure matrices to get 0 fitness
+                finalStruct = np.ones([nLattice,nLattice])
+                break
+            elif len(cellList) == nLattice**2:                      # If cells fill space 
+                halfwayStruct = np.zeros([nLattice,nLattice])       # return two completely different structure matrices to get 0 fitness
+                finalStruct = np.ones([nLattice,nLattice])
+                break
+            else:
+                halfwayStruct = np.array(cellGrid[:,:,0])
         elif iTime == timeSteps - 1:
             finalStruct = np.array(cellGrid[:,:,0])
-        iTime += 1
 
         if len(cellList) == 0:
             halfwayStruct = np.zeros([nLattice,nLattice])
             finalStruct = np.zeros([nLattice,nLattice])
             break
+        iTime += 1
 
     # while
     # Timing!
@@ -215,9 +224,11 @@ if __name__ == '__main__':
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
     #       PARAMETERS                 #
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-    nProcs = 17                                                 # multiprocessing will use as many cores as it can see
+    # nProcs*cycles = 4*int + 2
+    # popSize = nProcs*cycles
+    nProcs = int(sys.argv[1])                                                 # multiprocessing will use as many cores as it can see
     DEFAULT_VALUE = -1                                          # WARNING is this necessary?
-    popSize = 170                                               # Population size. Must have certain 
+    popSize = int(sys.argv[2])                                               # Population size. Must have certain 
     nNodes = 25
     nGenes = nNodes**2                                          # Number of genes
     crossoverProb = 0.5                                         # Crossover probability
@@ -229,6 +240,8 @@ if __name__ == '__main__':
     nOfGenerations = 15
     timeSteps = 200
     nLattice = 50
+    fileName = sys.argv[3]
+    chunkSize = 10
     
     # timing variables!
     generationAvg = 0
@@ -237,6 +250,9 @@ if __name__ == '__main__':
     #       INITIALISATION             #
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
     contestants = np.zeros([tournamentSize, nGenes])
+
+    print('Paramameters: \nnProcs = {}, Population size = {}, nNodes = {}, nLattice = {}, nGen = {}, Crossover Prob = {}, Mutation prob = {}\
+            \nFile name: {}'.format(nProcs, popSize, nNodes, nLattice, nOfGenerations, crossoverProb, mutationProb, fileName))
 
     # Multiprocessing implementation
     population_base = mp.Array(ctypes.c_float, popSize*nGenes, lock = False)# create mp shared 1D array
@@ -268,18 +284,14 @@ if __name__ == '__main__':
         nLattice_list = [nLattice for x in range(popSize)]
         index_list = [x for x in range(popSize)]
         args = zip(index_list, timeSteps_list, iGen_list, nNodes_list, nLattice_list)
-        
-        #print('creating pool...')
         pool = mp.Pool(processes = nProcs)                      # Pool of processes
         #print('evaluating pool...')
         # Timing!
-        start_time_pool = time.time()
-        pool.starmap(EvaluateIndividual, args)                  # Evaluation of individuals, this runs in parallel!
+        start_time_fitness = time.time()
+        pool.starmap(EvaluateIndividual, args, chunkSize)              # Evaluation of individuals, this runs in parallel!
         # Timing!
-        end_time_pool = time.time()
-        secs = end_time_pool - start_time_pool
-        #print('Time taken for generation {}: {.2f} s'.format(iGen, secs))
-        #print(pool.map(EvaluateIndividual, indList, timeSteps, iGen, nNodes, ix, nLattice, mode))
+        end_time_fitness = time.time()
+        secs = end_time_fitness - start_time_fitness
         # loop over chromosomes
 
         # 1.1: sort fitness array
@@ -355,13 +367,13 @@ if __name__ == '__main__':
         end_time_generation = time.time()
         secs = end_time_generation - start_time_generation
         generationAvg += secs
-        print('time to complete generation: {:.3f} s'.format(secs))
+        print('time to complete generation: {} m {:.3f} s'.format(int(secs/60), 60*((secs/60)-int(secs/60))))
     # Loop over generations
 
-    print('avg time for generation: {} s'.format(generationAvg/nOfGenerations))
+    print('avg time for generation: {} m {:.3f} s'.format(int(generationAvg/nOfGenerations/60), 60*((generationAvg/nOfGenerations/60)-int(generationAvg/nOfGenerations/60))))
+
 
     # write solution
-    with open('benchmark_test_ozzy_20171010c.csv', 'w') as csvfile:
+    with open('populations/' + fileName + '.csv', 'w') as csvfile:
         writer = csv.writer(csvfile)
         [writer.writerow(r) for r in population]
-    #print('solution written!')
