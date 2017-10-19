@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+import sys
 import os
 import time
 import random
@@ -42,8 +44,8 @@ def sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice):
     i_matrix = GenerateIMatrix(nLattice)        # I matrix for LGF operations
 
     # timing variables!
-    tmpListLoopAvg = 0
-    chemicalsUpdateAvg = 0
+    #tmpListLoopAvg = 0
+    #chemicalsUpdateAvg = 0
 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
     #       INITIALIZATION             #
@@ -55,7 +57,7 @@ def sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice):
     # DEBUG
     #print('Time running...')
     # Timing!
-    start_time_mainLoop = time.time()
+    #start_time_mainLoop = time.time()
     while iTime < timeSteps:
         # DEBUG
         #print('\n######### time step #' + str(iTime))
@@ -70,8 +72,8 @@ def sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice):
         tmpCellList = list(cellList)                        # a copy of the list of current cells is used to iterate over all the cells
 
         # Timing!
-        start_time_tmpListLoop = time.time()
-        tmpCellListLength = len(tmpCellList)
+        #start_time_tmpListLoop = time.time()
+        #tmpCellListLength = len(tmpCellList)
         while len(tmpCellList) > 0:                 # while  the tmp list of cells is longer than 1
             # 1st step => choose a random cell from the list of existing cells
             rndCell = np.random.randint(len(tmpCellList))
@@ -113,8 +115,8 @@ def sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice):
                 del tmpCellList[rndCell]
         # while
         # Timing!
-        end_time_tmpListLoop = time.time()
-        secs = end_time_tmpListLoop - start_time_tmpListLoop
+        #end_time_tmpListLoop = time.time()
+        #secs = end_time_tmpListLoop - start_time_tmpListLoop
         #print('time taken to loop through all living cells:' + str(secs) + ' number of cells: ' + str(tmpCellListLength))
 
         # A list of cells that "died" is stored to later actually kill the cells...
@@ -128,12 +130,12 @@ def sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice):
         #    SGF/LGF diffusion and/or decay     #
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
         # Timing!
-        start_time_chemicalsUpdate = time.time()
+        #start_time_chemicalsUpdate = time.time()
         cellGrid[:,:,1] = SGFDiffEq(cellGrid[:,:,1], sigma_m, deltaS, deltaT)
         cellGrid[:,:,2] = LGFDiffEq(i_matrix, t_matrix, cellGrid[:,:,2], lambda_m, deltaL, deltaT, deltaR, diffConst)
         # Timing!
-        end_time_chemicalsUpdate = time.time()
-        secs = end_time_chemicalsUpdate - start_time_chemicalsUpdate
+        #end_time_chemicalsUpdate = time.time()
+        #secs = end_time_chemicalsUpdate - start_time_chemicalsUpdate
         #print('time taken to update chemicals:' + str(secs))
 
         #print('grid after update...\n' + str(cellGrid[:,:,2]))
@@ -162,15 +164,15 @@ def sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice):
 
     # while
     # Timing!
-    end_time_mainLoop = time.time()
-    secs = end_time_mainLoop - start_time_mainLoop
+    #end_time_mainLoop = time.time()
+    #secs = end_time_mainLoop - start_time_mainLoop
     #print('\ntime taken in main loop:' + str(secs))
 
     # DEBUG
     # print(str(timeSteps)+' time steps complete')
 
     # Timing!
-    start_time_finalFunctions = time.time()
+    #start_time_finalFunctions = time.time()
 
     halfwayStruct = GetStructure(halfwayStruct, nLattice)
     finalStruct = GetStructure(finalStruct, nLattice)
@@ -181,8 +183,8 @@ def sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice):
             if halfwayStruct[ik,jk] != finalStruct[ik,jk]:
                 deltaMatrix[ik,jk] = 1
     # Timing!
-    end_time_finalFunctions = time.time()
-    secs = end_time_finalFunctions - start_time_finalFunctions
+    #end_time_finalFunctions = time.time()
+    #secs = end_time_finalFunctions - start_time_finalFunctions
     #print('\ntime taken to get delta matrix:' + str(secs))
 
 
@@ -241,7 +243,7 @@ if __name__ == '__main__':
     timeSteps = 200
     nLattice = 50
     fileName = sys.argv[3]
-    chunkSize = 10
+    #chunkSize = 10
     
     # timing variables!
     generationAvg = 0
@@ -251,7 +253,7 @@ if __name__ == '__main__':
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
     contestants = np.zeros([tournamentSize, nGenes])
 
-    print('Paramameters: \nnProcs = {}, Population size = {}, nNodes = {}, nLattice = {}, nGen = {}, Crossover Prob = {}, Mutation prob = {}\
+    print('Parameters: \nnProcs = {}, Population size = {}, nNodes = {}, nLattice = {}, nGen = {}, Crossover Prob = {}, Mutation prob = {}\
             \nFile name: {}'.format(nProcs, popSize, nNodes, nLattice, nOfGenerations, crossoverProb, mutationProb, fileName))
 
     # Multiprocessing implementation
@@ -271,7 +273,7 @@ if __name__ == '__main__':
     for iGen in range(nOfGenerations):
         start_time_generation = time.time()
         # DEBUG
-        print('\nGeneration #' + str(iGen + 1))
+        #print('\nGeneration #' + str(iGen + 1))
 
         # 1st step: Fitness function => Rank idividuals by their fitness
         # chromosomes get decoded and evaluated
@@ -287,11 +289,12 @@ if __name__ == '__main__':
         pool = mp.Pool(processes = nProcs)                      # Pool of processes
         #print('evaluating pool...')
         # Timing!
-        start_time_fitness = time.time()
-        pool.starmap(EvaluateIndividual, args, chunkSize)              # Evaluation of individuals, this runs in parallel!
+        #start_time_fitness = time.time()
+        pool.starmap(EvaluateIndividual, args)#, chunkSize)              # Evaluation of individuals, this runs in parallel!
+        pool.close()
         # Timing!
-        end_time_fitness = time.time()
-        secs = end_time_fitness - start_time_fitness
+        #end_time_fitness = time.time()
+        #secs = end_time_fitness - start_time_fitness
         # loop over chromosomes
 
         # 1.1: sort fitness array
@@ -367,13 +370,14 @@ if __name__ == '__main__':
         end_time_generation = time.time()
         secs = end_time_generation - start_time_generation
         generationAvg += secs
-        print('time to complete generation: {} m {:.3f} s'.format(int(secs/60), 60*((secs/60)-int(secs/60))))
+        #print('time to complete generation: {} m {:.3f} s'.format(int(secs/60), 60*((secs/60)-int(secs/60))))
     # Loop over generations
 
     print('avg time for generation: {} m {:.3f} s'.format(int(generationAvg/nOfGenerations/60), 60*((generationAvg/nOfGenerations/60)-int(generationAvg/nOfGenerations/60))))
-
 
     # write solution
     with open('populations/' + fileName + '.csv', 'w') as csvfile:
         writer = csv.writer(csvfile)
         [writer.writerow(r) for r in population]
+    with open('stats.csv', 'a') as csvfile:
+        csvfile.write('{:.3f}\t{:.3f}'.format(generationAvg, generationAvg/nOfGenerations))
