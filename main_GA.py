@@ -253,8 +253,7 @@ if __name__ == '__main__':
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
     contestants = np.zeros([tournamentSize, nGenes])
 
-    print('Parameters: \nnProcs = {}, Population size = {}, nNodes = {}, nLattice = {}, nGen = {}, Crossover Prob = {}, Mutation prob = {}\
-            \nFile name: {}'.format(nProcs, popSize, nNodes, nLattice, nOfGenerations, crossoverProb, mutationProb, fileName))
+    #print('Parameters: \nnProcs = {}, Population size = {}, nNodes = {}, nLattice = {}, nGen = {}, Crossover Prob = {}, Mutation prob = {}\nFile name: {}'.format(nProcs, popSize, nNodes, nLattice, nOfGenerations, crossoverProb, mutationProb, fileName))
 
     # Multiprocessing implementation
     population_base = mp.Array(ctypes.c_float, popSize*nGenes, lock = False)# create mp shared 1D array
@@ -373,11 +372,11 @@ if __name__ == '__main__':
         #print('time to complete generation: {} m {:.3f} s'.format(int(secs/60), 60*((secs/60)-int(secs/60))))
     # Loop over generations
 
-    print('avg time for generation: {} m {:.3f} s'.format(int(generationAvg/nOfGenerations/60), 60*((generationAvg/nOfGenerations/60)-int(generationAvg/nOfGenerations/60))))
+    #print('avg time for generation: {} m {:.3f} s'.format(int(generationAvg/nOfGenerations/60), 60*((generationAvg/nOfGenerations/60)-int(generationAvg/nOfGenerations/60))))
 
     # write solution
     with open('populations/' + fileName + '.csv', 'w') as csvfile:
         writer = csv.writer(csvfile)
         [writer.writerow(r) for r in population]
-    with open('stats.csv', 'a') as csvfile:
-        csvfile.write('{:.3f}\t{:.3f}'.format(generationAvg, generationAvg/nOfGenerations))
+    with open('{}.stats'.format(fileName), 'a') as csvfile:
+        csvfile.write('{0}\t{1}\t{2:.3f}\t{3:.3f}\n'.format(nProcs, popSize, generationAvg, generationAvg/nOfGenerations))
