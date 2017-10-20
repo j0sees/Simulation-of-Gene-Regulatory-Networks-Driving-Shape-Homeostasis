@@ -5,6 +5,7 @@ __pycache*
 *.png
 *.avi
 *.csv
+*.stats
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
