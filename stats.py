@@ -72,6 +72,19 @@ def GetfitnessStats():
         subproc.wait()
         iRep += 1
 
+def NNodesvsFitness():
+    nNodesList = list(range(8,26))
+    reps = 10
+    for iNode in nNodesList:
+        iRep = 0
+        while iRep < reps:
+            string = './main_GA.py {1} test_20171023_{0}_cycle_{1}_nodes_50_inds_20_gen_1_cs'.format(iRep, iNode)
+            print('Evaluating: {}'.format(string))
+            subproc = sp.Popen(string, shell = True)
+            print('waiting...')
+            subproc.wait()
+            iRep += 1
+
 #def FitnessGen(nGen):
     #"""
     #Get fitness of best individual after and average fitness after n generations
@@ -80,5 +93,6 @@ def GetfitnessStats():
 if __name__ == '__main__':
     # ProcInds()
     # ProcChunks()
-    #ProcDefaultChunks()
-    GetfitnessStats()
+    # ProcDefaultChunks()
+    # GetfitnessStats()
+    NNodesvsFitness()

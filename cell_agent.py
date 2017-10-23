@@ -5,7 +5,7 @@ from tools import *
 
 class cell:
     # defines whats needed when a new agent (Cell) of this class is created
-    def __init__(self, xPos, yPos, w):
+    def __init__(self, xPos, yPos, w, nodes):
         self.state = 'Quiet'                        # State of the cell. DEFAULT: quiet
         self.xPos = xPos                            # Initial position on x axis
         self.yPos = yPos                            # Initial position on y axis
@@ -25,7 +25,7 @@ class cell:
         #self.WMatrix = W
         #self.phi = phi
         #self.theta = theta
-        self.nNodes = 25                            # WARNING hardcoded!
+        self.nNodes = nodes                            # WARNING hardcoded!
 #        self.nInputs = 2
         self.V = np.zeros([self.nNodes])
     # self
@@ -343,7 +343,7 @@ class cell:
                 #finalList.append(tmpList[r])
             if len(movePos) > 0:
                 grid[self.xPos][self.yPos][0] = 3
-                cellList.append(cell(movePos[0], movePos[1],self.wMatrix))
+                cellList.append(cell(movePos[0], movePos[1],self.wMatrix,self.nNodes))
                 grid[movePos[0]][movePos[1]][0] = 1
                 # DEBUG
                 #print('new cell created!')

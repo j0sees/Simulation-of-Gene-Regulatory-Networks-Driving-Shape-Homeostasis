@@ -51,7 +51,7 @@ def sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice):
     #       INITIALIZATION             #
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
     # create mother cell and update the grid with its initial location
-    cellList.append(cell(ix,iy,wMatrix))
+    cellList.append(cell(ix,iy,wMatrix,nNodes))
     cellGrid[ix][iy][0] = 1
 
     # DEBUG
@@ -229,10 +229,10 @@ if __name__ == '__main__':
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
     # nProcs*cycles = 4*int + 2
     # popSize = nProcs*cycles
-    nProcs = 15 # int(sys.argv[1])                                                 # multiprocessing will use as many cores as it can see
+    nProcs = 15 # int(sys.argv[1])                              # multiprocessing will use as many cores as it can see
     DEFAULT_VALUE = -1                                          # WARNING is this necessary?
-    popSize = 50 #int(sys.argv[2])                                               # Population size. Must have certain 
-    nNodes = 25
+    popSize = 50 # int(sys.argv[2])                              # Population size. Must have certain 
+    nNodes = int(sys.argv[1])
     nGenes = nNodes**2                                          # Number of genes
     crossoverProb = 0.5                                         # Crossover probability
     mutationProb = 0.7                                          # Mutation probability
@@ -240,10 +240,10 @@ if __name__ == '__main__':
     #tournamentSelParam = 0.75                                  # Tournament selection parameter
     tournamentSize = 4                                          # Tournament size. EVEN
     eliteNum = 2                                                # number of elite solutions to carry to next generation
-    nOfGenerations = 50
+    nOfGenerations = 20
     timeSteps = 200
     nLattice = 50
-    fileName = sys.argv[1]
+    fileName = sys.argv[2]
     chunkSize = 1 # int(sys.argv[2])
     
     # timing variables!
@@ -287,12 +287,17 @@ if __name__ == '__main__':
         nLattice_list = [nLattice for x in range(popSize)]
         index_list = [x for x in range(popSize)]
         args = zip(index_list, timeSteps_list, iGen_list, nNodes_list, nLattice_list)
-        pool = mp.Pool(processes = nProcs)                      # Pool of processes
+        
+        with mp.Pool(processes = nProcs) as pool:
+            pool.starmap(EvaluateIndividual, args, chunkSize)              # Evaluation of individuals, this runs in parallel!
+        
+        #pool = mp.Pool(processes = nProcs)                      # Pool of processes
         #print('evaluating pool...')
         # Timing!
         #start_time_fitness = time.time()
-        pool.starmap(EvaluateIndividual, args)#, chunkSize)              # Evaluation of individuals, this runs in parallel!
-        pool.close()
+        #pool.starmap(EvaluateIndividual, args, chunkSize)              # Evaluation of individuals, this runs in parallel!
+        #pool.close()
+        #pool.join()
         # Timing!
         #end_time_fitness = time.time()
         #secs = end_time_fitness - start_time_fitness
@@ -382,12 +387,14 @@ if __name__ == '__main__':
 
     #print('avg time for generation: {} m {:.3f} s'.format(int(generationAvg/nOfGenerations/60), 60*((generationAvg/nOfGenerations/60)-int(generationAvg/nOfGenerations/60))))
 
-    # write solution
+    # Save generated network, unique for each runs
     with open('populations/' + fileName + '.csv', 'w') as csvfile:
         writer = csv.writer(csvfile)
         [writer.writerow(r) for r in population]
-    with open('test_results_50_inds_50_gen_1_cs.stats', 'a') as csvfile:
-        csvfile.write('{0}\t{1}\t{2:.3f}\t{3:.3f}\n'.format(nProcs, popSize, generationAvg, generationAvg/nOfGenerations))
-    with open('fitness_10_runs_50_inds_50_gen_1_cs.stats', 'a') as csvfile:
-        [csvfile.write('{0:.3f}\t{1:.3f}\n'.format(r[0], r[1])) for r in fitnessInfo]
+    # Save time measures, totals per run. One file 
+    with open('benchmark_fitness_vs_nNodes_20_gen_1_cs.csv'.format(nNodes), 'a') as csvfile:
+        csvfile.write('{0}\t{1:.3f}\t{2:.3f}\n'.format(nNodes, generationAvg, generationAvg/nOfGenerations))
+    # Save finess measures, information per generation 
+    with open('fitness_vs_nNodes_50_inds_20_gen_1_cs.csv', 'a') as csvfile:
+        [csvfile.write('{0}\t{1:.3f}\t{2:.3f}\n'.format(nNodes, r[0], r[1])) for r in fitnessInfo]
         csvfile.write('\n\n')
