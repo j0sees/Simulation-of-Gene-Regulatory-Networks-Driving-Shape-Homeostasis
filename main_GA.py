@@ -147,14 +147,15 @@ def sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice):
                 halfwayStruct = np.zeros([nLattice,nLattice])       # return two completely different structure matrices to get 0 fitness
                 finalStruct = np.ones([nLattice,nLattice])
                 break
-            elif len(cellList) == nLattice**2:                      # If cells fill space 
-                halfwayStruct = np.zeros([nLattice,nLattice])       # return two completely different structure matrices to get 0 fitness
-                finalStruct = np.ones([nLattice,nLattice])
-                break
             else:
                 halfwayStruct = np.array(cellGrid[:,:,0])
         elif iTime == timeSteps - 1:
-            finalStruct = np.array(cellGrid[:,:,0])
+            if len(cellList) == nLattice**2:                      # If cells fill space 
+                halfwayStruct = np.zeros([nLattice,nLattice])       # return two completely different structure matrices to get 0 fitness
+                finalStruct = np.ones([nLattice,nLattice])
+                # break
+            else:
+                finalStruct = np.array(cellGrid[:,:,0])
 
         if len(cellList) == 0:
             halfwayStruct = np.zeros([nLattice,nLattice])
@@ -228,9 +229,9 @@ if __name__ == '__main__':
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
     # nProcs*cycles = 4*int + 2
     # popSize = nProcs*cycles
-    nProcs = int(sys.argv[1])                                                 # multiprocessing will use as many cores as it can see
+    nProcs = 15 # int(sys.argv[1])                                                 # multiprocessing will use as many cores as it can see
     DEFAULT_VALUE = -1                                          # WARNING is this necessary?
-    popSize = int(sys.argv[2])                                               # Population size. Must have certain 
+    popSize = 50 #int(sys.argv[2])                                               # Population size. Must have certain 
     nNodes = 25
     nGenes = nNodes**2                                          # Number of genes
     crossoverProb = 0.5                                         # Crossover probability
@@ -239,11 +240,11 @@ if __name__ == '__main__':
     #tournamentSelParam = 0.75                                  # Tournament selection parameter
     tournamentSize = 4                                          # Tournament size. EVEN
     eliteNum = 2                                                # number of elite solutions to carry to next generation
-    nOfGenerations = 15
+    nOfGenerations = 50
     timeSteps = 200
     nLattice = 50
-    fileName = sys.argv[3]
-    #chunkSize = 10
+    fileName = sys.argv[1]
+    chunkSize = 1 # int(sys.argv[2])
     
     # timing variables!
     generationAvg = 0
@@ -252,6 +253,7 @@ if __name__ == '__main__':
     #       INITIALISATION             #
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
     contestants = np.zeros([tournamentSize, nGenes])
+    fitnessInfo = np.zeros([nOfGenerations, 2])
 
     #print('Parameters: \nnProcs = {}, Population size = {}, nNodes = {}, nLattice = {}, nGen = {}, Crossover Prob = {}, Mutation prob = {}\nFile name: {}'.format(nProcs, popSize, nNodes, nLattice, nOfGenerations, crossoverProb, mutationProb, fileName))
 
@@ -299,6 +301,11 @@ if __name__ == '__main__':
         # 1.1: sort fitness array
         sorted_fitness = np.argsort(fitness)                    # sort array according to fitness value. Less fit to most fit
         tempPopulation = np.zeros([popSize, nGenes])            # np.array(population)
+        
+        # 1.2: get fittest infividual and mean fitness
+        fitnessInfo[iGen, 0] = np.amax(fitness) #sorted_fitness[popSize - 1]                   # np.amax(fitness)
+        fitnessInfo[iGen, 1] = np.average(fitness)
+        print('Gen: {2}, max fit: {0:.3f} ({3:.3f}), avg fit: {1:.3f}'.format(fitnessInfo[iGen, 0], fitnessInfo[iGen, 1], iGen + 1, fitness[sorted_fitness[popSize - 1]]))
 
         # DEBUG
         #print('sorted fitness array, before deleting:\n' + str(fitness))
@@ -342,7 +349,7 @@ if __name__ == '__main__':
             if r >= crossMutProb:
                 contestants[2,:],contestants[3,:] = Crossover(contestants[0,:], contestants[1,:], crossoverProb)
             else:
-                contestants[2,:],contestants[3,:] = Mutate(np.array(contestants[0,:]), np.array(contestants[1,:]), mutationProb)
+                contestants[2,:],contestants[3,:] = Mutate(contestants[0,:], contestants[1,:], mutationProb)
 
             # 3.2 => Delete contestants from fitness array
             iCounter = 0
@@ -370,6 +377,7 @@ if __name__ == '__main__':
         secs = end_time_generation - start_time_generation
         generationAvg += secs
         #print('time to complete generation: {} m {:.3f} s'.format(int(secs/60), 60*((secs/60)-int(secs/60))))
+        
     # Loop over generations
 
     #print('avg time for generation: {} m {:.3f} s'.format(int(generationAvg/nOfGenerations/60), 60*((generationAvg/nOfGenerations/60)-int(generationAvg/nOfGenerations/60))))
@@ -378,5 +386,8 @@ if __name__ == '__main__':
     with open('populations/' + fileName + '.csv', 'w') as csvfile:
         writer = csv.writer(csvfile)
         [writer.writerow(r) for r in population]
-    with open('{}.stats'.format(fileName), 'a') as csvfile:
+    with open('test_results_50_inds_50_gen_1_cs.stats', 'a') as csvfile:
         csvfile.write('{0}\t{1}\t{2:.3f}\t{3:.3f}\n'.format(nProcs, popSize, generationAvg, generationAvg/nOfGenerations))
+    with open('fitness_10_runs_50_inds_50_gen_1_cs.stats', 'a') as csvfile:
+        [csvfile.write('{0:.3f}\t{1:.3f}\n'.format(r[0], r[1])) for r in fitnessInfo]
+        csvfile.write('\n\n')
