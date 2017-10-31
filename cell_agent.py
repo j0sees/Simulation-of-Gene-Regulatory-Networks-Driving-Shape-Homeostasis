@@ -97,7 +97,7 @@ class cell:
             sBoundary = 0.5
             eBoundary = 0.75
             #wBoundary = 1
-            arrow = self.V[5]  #np.random.random()
+            arrow = self.V[7]  #np.random.random()
             if arrow < nBoundary:
                 xCoord = self.xPos - 1
                 yCoord = self.yPos
