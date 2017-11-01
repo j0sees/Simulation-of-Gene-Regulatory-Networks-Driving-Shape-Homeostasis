@@ -148,14 +148,14 @@ def sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice, mode):
         #    SGF/LGF diffusion and/or decay     #
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
         #### Timing!
-        start_time_chemicalsUpdate = time.time()
-        cellGrid[:,:,1] = SGFDiffEq(cellGrid[:,:,1], sigma_m, deltaS, deltaT)
-        cellGrid[:,:,2] = LGFDiffEq(i_matrix, t_matrix, cellGrid[:,:,2], lambda_m, deltaL, deltaT, deltaR, diffConst)
+        #start_time_chemicalsUpdate = time.time()
+        #cellGrid[:,:,1] = SGFDiffEq(cellGrid[:,:,1], sigma_m, deltaS, deltaT)
+        #cellGrid[:,:,2] = LGFDiffEq(i_matrix, t_matrix, cellGrid[:,:,2], lambda_m, deltaL, deltaT, deltaR, diffConst)
         #### Timing!
-        end_time_chemicalsUpdate = time.time()
-        secs = end_time_chemicalsUpdate - start_time_chemicalsUpdate
+        #end_time_chemicalsUpdate = time.time()
+        #secs = end_time_chemicalsUpdate - start_time_chemicalsUpdate
         #print('time taken to update chemicals: {:.5f}'.format(secs))
-        chemicalsUpdateAvg += secs
+        #chemicalsUpdateAvg += secs
 
         #chemsum = 0
         #for iPos in range(nLattice):
@@ -228,17 +228,17 @@ def sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice, mode):
             ##time.sleep(0.1)
         iTime += 1
 
-        if len(cellList) == 0:
+        #if len(cellList) == 0:
             #halfwayStruct = np.zeros([nLattice,nLattice])
-            #finalStruct = np.zeros([nLattice,nLattice])
-            break
+            #finalStruct = np.ones([nLattice,nLattice])
+        #    break
     # while
     # Timing!
     end_time_mainLoop = time.time()
     secs = end_time_mainLoop - start_time_mainLoop
-    print('\nTime taken in main loop: {:.5f} s'.format(secs))
+    #print('\nTime taken in main loop: {:.5f} s'.format(secs))
     #print('Avg time updating chemicals: {:.5f} s'.format(chemicalsUpdateAvg/timeSteps))
-    print('Avg time taken looping through all living cells: {:.5f} s'.format(tmpListLoopAvg/timeSteps))
+    #print('Avg time taken looping through all living cells: {:.5f} s'.format(tmpListLoopAvg/timeSteps))
     #print('Avg time taken to update plots: {:.5f} s'.format(plotUpdateAvg/timeSteps))
     # DEBUG
     # print(str(timeSteps)+' time steps complete')
@@ -269,21 +269,21 @@ def sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice, mode):
 
 if __name__ == '__main__':
     # if executed as main module!
-    print('Test run...')
+    #print('Test run...')
     individual = int(sys.argv[1])
-    nNodes = 25
+    nNodes = sys.argv[2]
     timeSteps = 200
     iGen = 0
     nLattice = 50
     mode = False
-    fileName = sys.argv[2] #'benchmark_test_ozzy_20171012_crossP0.5a'
+    fileName = sys.argv[3] #'benchmark_test_ozzy_20171012_crossP0.5a'
     print('Input file: {}\nTime steps: {}, Lattice Size: {}, Individual #{}'.format(fileName, timeSteps, nLattice, individual + 1))
     
     # use: os.path.join()
     wMatrix = GetrNN('populations/' + fileName + '.csv', individual, nNodes)
     #wMatrix = wMatrix.reshape(nNodes,nNodes)
-    cProfile.run('sim(wMatrix,    timeSteps,  iGen, nNodes, individual, nLattice, mode)')
+    #cProfile.run('sim(wMatrix,    timeSteps,  iGen, nNodes, individual, nLattice, mode)')
     # parameters
-    #sim(wMatrix,    timeSteps,  iGen, nNodes, individual, nLattice, mode)
+    sim(wMatrix,    timeSteps,  iGen, nNodes, individual, nLattice, mode)
 #else:
     # if called from another script

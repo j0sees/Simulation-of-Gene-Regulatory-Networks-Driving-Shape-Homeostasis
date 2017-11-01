@@ -15,6 +15,11 @@ import ctypes
 import csv
 #from numba import jit
 
+#============================================================#
+#                                                            #
+#                   CELLULAR AUTOMATA                        #
+#                                                            #
+#============================================================#
 #@jit
 def sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice):
     """
@@ -157,9 +162,9 @@ def sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice):
             else:
                 finalStruct = np.array(cellGrid[:,:,0])
 
-        if len(cellList) == 0:
+        if len(cellList) == 0:                                      # if cells die during the simulation resturn two different structs
             halfwayStruct = np.zeros([nLattice,nLattice])
-            finalStruct = np.zeros([nLattice,nLattice])
+            finalStruct = np.ones([nLattice,nLattice])
             break
         iTime += 1
 
@@ -229,7 +234,7 @@ if __name__ == '__main__':
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
     # nProcs*cycles = 4*int + 2
     # popSize = nProcs*cycles
-    nProcs = 15 # int(sys.argv[1])                              # multiprocessing will use as many cores as it can see
+    nProcs = 20 # int(sys.argv[1])                              # multiprocessing will use as many cores as it can see
     DEFAULT_VALUE = -1                                          # WARNING is this necessary?
     popSize = 50 # int(sys.argv[2])                              # Population size. Must have certain 
     nNodes = int(sys.argv[1])
@@ -392,7 +397,7 @@ if __name__ == '__main__':
         writer = csv.writer(csvfile)
         [writer.writerow(r) for r in population]
     # Save time measures, totals per run. One file 
-    with open('benchmark_fitness_vs_nNodes_20_gen_1_cs.csv'.format(nNodes), 'a') as csvfile:
+    with open('benchmarks/20171101_fitness_vs_nNodes_20_gen_1_cs.csv'.format(nNodes), 'a') as csvfile:
         csvfile.write('{0}\t{1:.3f}\t{2:.3f}\n'.format(nNodes, generationAvg, generationAvg/nOfGenerations))
     # Save finess measures, information per generation 
     with open('fitness_vs_nNodes_50_inds_20_gen_1_cs.csv', 'a') as csvfile:
