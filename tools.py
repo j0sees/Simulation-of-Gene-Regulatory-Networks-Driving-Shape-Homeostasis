@@ -1,17 +1,17 @@
 import numpy as np
 from scipy import linalg
 import csv
-from numba import jit
+#from numba import jit
 
 # Tools
 #@jit
-def CheckInBorders(xCoord, yCoord, border):
-    if xCoord < 0 or xCoord > border:     # Check if the neighbour is inbounds on x axis
-        return False
-    elif yCoord < 0 or yCoord > border:    # Check if the neighbour is inbounds on y axis
-        return False
-    else:
-        return True
+#def CheckInBorders(xCoord, yCoord, border):
+    #if xCoord < 0 or xCoord > border:     # Check if the neighbour is inbounds on x axis
+        #return False
+    #elif yCoord < 0 or yCoord > border:    # Check if the neighbour is inbounds on y axis
+        #return False
+    #else:
+        #return True
 # CheckInBorders
 
 #@jit
@@ -111,7 +111,7 @@ def NeuralNetwork(inputs, WMatrix, wMatrix, phi, theta):
     #return 1./(1 + np.exp(-beta*x))
 ## TransferFunction
 
-@jit
+#@jit
 def RecurrentNeuralNetwork(inputs, wMatrix, V):             # Recurrent Neural Network dynamics
     #beta = 2
     bj = wMatrix@V - inputs
