@@ -74,14 +74,14 @@ def GetfitnessStats(timedateStr):
         subproc.wait()
         iRep += 1
 
-def NNodesvsFitness():
+def NNodesvsFitness(timedateStr):
     """
     Number of nodes vs fitness
     """
-    nNodesList = [25,15]
-    nRuns = 2
+    nNodesList = [25]
+    nRuns = 3
     for iNode in nNodesList:
-        string = './main_GA.py {0} {1}'.format(nRuns, iNode)
+        string = './main_GA.py {0} {1} {2}'.format(nRuns, iNode, timedateStr)
         print('Evaluating: {}'.format(string))
         subproc = sp.Popen(string, shell = True)
         print('waiting...')
@@ -152,10 +152,11 @@ def RnnDynamics(timedateStr):
     #"""
 
 if __name__ == '__main__':
-    #timedateStr = '{:%Y%m%d}'.format(dt.now())
+    timedateStr = '{0:%Y%m%d_%H%M%S}'.format(dt.now())
+    #'{:%Y%m%d}'.format(dt.now())
     # ProcInds(timedateStr)
     # ProcChunks(timedateStr)
     # ProcDefaultChunks(timedateStr)
     # GetfitnessStats(timedateStr)
-    NNodesvsFitness()
+    NNodesvsFitness(timedateStr)
     # RnnDynamics(timedateStr)

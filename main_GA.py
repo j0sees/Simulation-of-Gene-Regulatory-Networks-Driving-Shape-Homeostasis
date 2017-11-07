@@ -249,6 +249,7 @@ if __name__ == '__main__':
     # popSize = nProcs*cycles
     nRuns = int(sys.argv[1]) #10
     nProcs = 10 # int(sys.argv[1])                              # multiprocessing will use as many cores as it can see
+    maxproc = 1
     DEFAULT_VALUE = -1                                          # WARNING is this necessary?
     popSize = 22 # int(sys.argv[2])                              # Population size. Must have certain 
     nNodes = int(sys.argv[2])
@@ -259,26 +260,29 @@ if __name__ == '__main__':
     #tournamentSelParam = 0.75                                  # Tournament selection parameter
     tournamentSize = 4                                          # Tournament size. EVEN
     eliteNum = 2                                                # number of elite solutions to carry to next generation
-    nOfGenerations = 5
+    nOfGenerations = 10
     timeSteps = 200
     nLattice = 50
     chunkSize = 1 # int(sys.argv[2])
     #fileHeader = sys.argv[2]
     gaInfo = 'p{0:02d}g{1:04d}x{2:0.1f}c{3:0.1f}m{4:0.1f}t{5}e{6}G{7:02d}'.format(popSize,nGenes,crossMutProb,crossoverProb,mutationProb,tournamentSize,eliteNum, nOfGenerations)
     mpInfo = 'P{0:02d}C{1:02d}'.format(nProcs, chunkSize)
-    simInfo = 'n{0:}T{1}L{2}'.format(nNodes, timeSteps, nLattice)
+    simInfo = 'n{0:02d}T{1:03d}L{2:02d}'.format(nNodes, timeSteps, nLattice)
     
     iRun = 0
     benchmakingData = np.zeros([nRuns,2])
     statsData = np.zeros([nRuns,nOfGenerations,2])
     populationFiles = []
-    runsMainFile = 'runs.log'
-    infofFileID = '{0:%Y%m%d_%H%M%S}'.format(dt.now())
+    infofFileID = sys.argv[3] #'{0:%Y%m%d_%H%M%S}'.format(dt.now())
+    runsMainFile = 'run_{}.log'.format(infofFileID)
+    benchmarkFile = 'benchmarks/{0}.csv'.format(infofFileID)
+    statsFile = 'stats/{0}.csv'.format(infofFileID)
+
     #benchmarkingFiles = []
     #statsFiles
     
     with open(runsMainFile,'a') as csvfile:
-        csvfile.write('\n\n####################################\n')
+        csvfile.write('####################################\n')
         csvfile.write('# GA Info: {}\n# mp Info: {}\n# Sim Info: {}\n'.format(gaInfo, mpInfo, simInfo))
 
     while iRun < nRuns:
@@ -300,6 +304,7 @@ if __name__ == '__main__':
         population = population.reshape(popSize, nGenes)                        # Reshape as popSize x nGenes matrix
         #print('population length: {}'.format(len(population)))
         
+        np.random.seed()
         randPop = -1. + 2.*np.random.rand(popSize, nGenes)
         np.copyto(population, randPop)
         #for ix in range(popSize*nGenes):
@@ -328,16 +333,17 @@ if __name__ == '__main__':
             index_list = [x for x in range(popSize)]
             args = zip(index_list, timeSteps_list, iGen_list, nNodes_list, nLattice_list)
             
-            with mp.Pool(processes = nProcs) as pool:
-                pool.starmap(EvaluateIndividual, args, chunkSize)              # Evaluation of individuals, this runs in parallel!
+            # , maxtasksperchild = maxproc
+            #with mp.Pool(processes = nProcs) as pool:
+            #    pool.starmap(EvaluateIndividual, args, chunkSize)              # Evaluation of individuals, this runs in parallel!
             
-            #pool = mp.Pool(processes = nProcs)                      # Pool of processes
+            pool = mp.Pool(processes = nProcs)                      # Pool of processes
             #print('evaluating pool...')
             # Timing!
             #start_time_fitness = time.time()
-            #pool.starmap(EvaluateIndividual, args, chunkSize)              # Evaluation of individuals, this runs in parallel!
-            #pool.close()
-            #pool.join()
+            pool.starmap(EvaluateIndividual, args, chunkSize)              # Evaluation of individuals, this runs in parallel!
+            pool.close()
+            pool.join()
             # Timing!
             #end_time_fitness = time.time()
             #secs = end_time_fitness - start_time_fitness
@@ -350,7 +356,7 @@ if __name__ == '__main__':
             # 1.2: get fittest infividual and mean fitness
             fitnessInfo[iGen, 0] = np.amax(fitness) #sorted_fitness[popSize - 1]                   # np.amax(fitness)
             fitnessInfo[iGen, 1] = np.average(fitness)
-            print('Gen: {2}, max fit: {0:.3f} ({3:.3f}), avg fit: {1:.3f}'.format(fitnessInfo[iGen, 0], fitnessInfo[iGen, 1], iGen + 1, fitness[sorted_fitness[popSize - 1]]))
+            print('Gen: {2} => max fit: {0:.3f}, avg fit: {1:.3f}'.format(fitnessInfo[iGen, 0], fitnessInfo[iGen, 1], iGen + 1))
 
             # DEBUG
             #print('sorted fitness array, before deleting:\n' + str(fitness))
@@ -445,9 +451,6 @@ if __name__ == '__main__':
         iRun += 1 
     # loop over runs
     
-    benchmarkFile = 'benchmarks/{0}.csv'.format(infofFileID)
-    statsFile = 'stats/{0}.csv'.format(infofFileID)
-    
     runsBenchAvg = np.mean(benchmakingData, axis = 0, dtype = np.float64)
     runsStatsAvg = np.mean(statsData, axis = 0, dtype = np.float64)
     
@@ -456,15 +459,16 @@ if __name__ == '__main__':
         #writer = csv.writer(csvfile)
         csvfile.write('{}\n'.format(runsBenchAvg))
         #[writer.writerow(r) for r in runsBenchAvg]
-    
+        
     # Save fitness measures, information per generation 
     with open(statsFile, 'a') as csvfile:
         #writer = csv.writer(csvfile)
+        #np.savetxt('test.out', x, delimiter=',')
         csvfile.write('{}\n'.format(runsStatsAvg))
         #[writer.writerow(r) for r in runsStatsAvg]
         
     # write file containing information about runs
     with open(runsMainFile,'a') as csvfile:
-        csvfile.write('# population files:\n')
+        csvfile.write('# Population files:\n')
         [csvfile.write('{}\n'.format(r)) for r in populationFiles]
-        
+        csvfile.write('\n')
