@@ -3,11 +3,12 @@
 #import time                                 # to get system time
 #import numpy as np  
 #import matplotlib as plt
+from datetime import datetime as dt
 import main_GA
 from tools import *
 import subprocess as sp
 
-def ProcInds():
+def ProcInds(timedateStr):
     """
     Test processes vs number of individuals
     """
@@ -23,7 +24,7 @@ def ProcInds():
             print('waiting...')
             subproc.wait()
 
-def ProcChunks():
+def ProcChunks(timedateStr):
     """
     Test processes vs chunk size
     """
@@ -41,7 +42,7 @@ def ProcChunks():
         with open('test_results_nProcs_vs_ChunkSize.stats', 'a') as csvfile:
             csvfile.write('\n\n')
 
-def ProcDefaultChunks():
+def ProcDefaultChunks(timedateStr):
     """
     Test processes vs chunk size
     """
@@ -57,7 +58,7 @@ def ProcDefaultChunks():
         print('waiting...')
         subproc.wait()
 
-def GetfitnessStats():
+def GetfitnessStats(timedateStr):
     """
     Test processes vs default chunksize
     """
@@ -77,19 +78,16 @@ def NNodesvsFitness():
     """
     Number of nodes vs fitness
     """
-    nNodesList = list(range(8,26))
-    reps = 10
+    nNodesList = [25,15]
+    nRuns = 2
     for iNode in nNodesList:
-        iRep = 0
-        while iRep < reps:
-            string = './main_GA.py {1} test_20171101_{0}_cycle_{1}_nodes_50_inds_20_gen_1_cs'.format(iRep, iNode)
-            print('Evaluating: {}'.format(string))
-            subproc = sp.Popen(string, shell = True)
-            print('waiting...')
-            subproc.wait()
-            iRep += 1
+        string = './main_GA.py {0} {1}'.format(nRuns, iNode)
+        print('Evaluating: {}'.format(string))
+        subproc = sp.Popen(string, shell = True)
+        print('waiting...')
+        subproc.wait()
 
-def RnnDynamics():
+def RnnDynamics(timedateStr):
     step = 0.01
     nNodes = 16
     sgfInit = 0
@@ -154,9 +152,10 @@ def RnnDynamics():
     #"""
 
 if __name__ == '__main__':
-    # ProcInds()
-    # ProcChunks()
-    # ProcDefaultChunks()
-    # GetfitnessStats()
+    #timedateStr = '{:%Y%m%d}'.format(dt.now())
+    # ProcInds(timedateStr)
+    # ProcChunks(timedateStr)
+    # ProcDefaultChunks(timedateStr)
+    # GetfitnessStats(timedateStr)
     NNodesvsFitness()
-    # RnnDynamics()
+    # RnnDynamics(timedateStr)

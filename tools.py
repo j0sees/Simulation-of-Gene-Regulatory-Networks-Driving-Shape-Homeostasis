@@ -1,7 +1,7 @@
 import numpy as np
 from scipy import linalg
 import csv
-#from numba import jit
+from numba import jit
 
 # Tools
 #@jit
@@ -38,7 +38,7 @@ def CheckifPreferred(xOri, yOri, xCoord, yCoord):
 # sgfDiffEq
 
 # SGF dynamics with matrix approach
-#@jit
+@jit
 def SGFDiffEq(s_matrix, sigma_matrix, deltaS, deltaT):
     updated_matrix = s_matrix + deltaT*(sigma_matrix - deltaS*s_matrix)
     return updated_matrix
@@ -46,7 +46,7 @@ def SGFDiffEq(s_matrix, sigma_matrix, deltaS, deltaT):
 
 # TODO use linalg solve to make it faster and numerically more stable
 # LGF dynamics with matrix approach
-#@jit
+@jit
 def LGFDiffEq(i_matrix, t_matrix, l_matrix, lambda_matrix, deltaL, deltaT, deltaR, D):
     alpha = D*deltaT/(deltaR**2)                            # constant
     f = (deltaT/2.)*(lambda_matrix - deltaL*l_matrix)       # term that takes into account LFG production for half time step
@@ -111,7 +111,7 @@ def NeuralNetwork(inputs, WMatrix, wMatrix, phi, theta):
     #return 1./(1 + np.exp(-beta*x))
 ## TransferFunction
 
-#@jit
+@jit
 def RecurrentNeuralNetwork(inputs, wMatrix, V):             # Recurrent Neural Network dynamics
     #beta = 2
     bj = wMatrix@V - inputs
