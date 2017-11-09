@@ -254,7 +254,7 @@ if __name__ == '__main__':
     popSize = 22 # int(sys.argv[2])                              # Population size. Must have certain 
     nNodes = int(sys.argv[2])
     nGenes = nNodes**2                                          # Number of genes
-    crossoverProb = 1.                                         # Crossover probability
+    crossoverProb = 0.5 #float(sys.argv[2])                                         # Crossover probability
     mutationProb = 1.                                          # Mutation probability
     crossMutProb = 0.5                                          # probability of doing mutation or crossover
     #tournamentSelParam = 0.75                                  # Tournament selection parameter
@@ -333,17 +333,17 @@ if __name__ == '__main__':
             index_list = [x for x in range(popSize)]
             args = zip(index_list, timeSteps_list, iGen_list, nNodes_list, nLattice_list)
             
-            # , maxtasksperchild = maxproc
-            #with mp.Pool(processes = nProcs) as pool:
-            #    pool.starmap(EvaluateIndividual, args, chunkSize)              # Evaluation of individuals, this runs in parallel!
+            # every pool is a different set of processes        , maxtasksperchild = maxproc
+            with mp.Pool(processes = nProcs) as pool:
+                pool.starmap(EvaluateIndividual, args, chunkSize)              # Evaluation of individuals, this runs in parallel!
             
-            pool = mp.Pool(processes = nProcs)                      # Pool of processes
+            #pool = mp.Pool(processes = nProcs)                      # Pool of processes
             #print('evaluating pool...')
             # Timing!
             #start_time_fitness = time.time()
-            pool.starmap(EvaluateIndividual, args, chunkSize)              # Evaluation of individuals, this runs in parallel!
-            pool.close()
-            pool.join()
+            #pool.starmap(EvaluateIndividual, args, chunkSize)              # Evaluation of individuals, this runs in parallel!
+            #pool.close()
+            #pool.join()
             # Timing!
             #end_time_fitness = time.time()
             #secs = end_time_fitness - start_time_fitness
@@ -356,7 +356,7 @@ if __name__ == '__main__':
             # 1.2: get fittest infividual and mean fitness
             fitnessInfo[iGen, 0] = np.amax(fitness) #sorted_fitness[popSize - 1]                   # np.amax(fitness)
             fitnessInfo[iGen, 1] = np.average(fitness)
-            print('Gen: {2} => max fit: {0:.3f}, avg fit: {1:.3f}'.format(fitnessInfo[iGen, 0], fitnessInfo[iGen, 1], iGen + 1))
+            print('Gen: {2}\t=>\tmax fit: {0:.3f},\tavg fit: {1:.3f}'.format(fitnessInfo[iGen, 0], fitnessInfo[iGen, 1], iGen + 1))
 
             # DEBUG
             #print('sorted fitness array, before deleting:\n' + str(fitness))
@@ -448,24 +448,26 @@ if __name__ == '__main__':
         benchmakingData[iRun,:] = np.array([generationAvg, generationAvg/nOfGenerations])
         statsData[iRun,:,:] = np.array(fitnessInfo)    
         
+        print('#')
         iRun += 1 
     # loop over runs
     
     runsBenchAvg = np.mean(benchmakingData, axis = 0, dtype = np.float64)
-    runsStatsAvg = np.mean(statsData, axis = 0, dtype = np.float64)
+    runsStatsAvg = np.mean(statsData, axis = 0, dtype = np.float64).reshape(nOfGenerations*2)
     
     # Save time measures, totals per run. One file 
-    with open(benchmarkFile, 'a') as csvfile:
-        #writer = csv.writer(csvfile)
-        csvfile.write('{}\n'.format(runsBenchAvg))
-        #[writer.writerow(r) for r in runsBenchAvg]
+    with open(benchmarkFile, 'a') as bchfile:
+        writer = csv.writer(bchfile)
+        # np.savetxt(bchfile, runsBenchAvg, delimiter=',')
+        # csvfile.write('{}\n'.format(runsBenchAvg))
+        writer.writerow(runsBenchAvg)
         
     # Save fitness measures, information per generation 
-    with open(statsFile, 'a') as csvfile:
-        #writer = csv.writer(csvfile)
-        #np.savetxt('test.out', x, delimiter=',')
-        csvfile.write('{}\n'.format(runsStatsAvg))
-        #[writer.writerow(r) for r in runsStatsAvg]
+    with open(statsFile, 'a') as statsfile:
+        writer = csv.writer(statsfile)
+        # np.savetxt(statsfile, runsStatsAvg.transpose, delimiter=',')
+        # statsfile.write('{}\n'.format(runsStatsAvg))
+        writer.writerow(runsStatsAvg)
         
     # write file containing information about runs
     with open(runsMainFile,'a') as csvfile:

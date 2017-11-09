@@ -1,7 +1,7 @@
 #import sys                                  # to get command line args
 #import os                                   # to handle paths
 #import time                                 # to get system time
-#import numpy as np  
+import numpy as np  
 #import matplotlib as plt
 from datetime import datetime as dt
 import main_GA
@@ -78,24 +78,38 @@ def NNodesvsFitness(timedateStr):
     """
     Number of nodes vs fitness
     """
-    nNodesList = [25]
-    nRuns = 3
+    nNodesList = [25, 8]
+    nRuns = 2
     for iNode in nNodesList:
         string = './main_GA.py {0} {1} {2}'.format(nRuns, iNode, timedateStr)
         print('Evaluating: {}'.format(string))
         subproc = sp.Popen(string, shell = True)
         print('waiting...')
         subproc.wait()
+        
+def CrossProbvsFitness(timedateStr):
+    """
+    Number of nodes vs fitness
+    """
+    crossList = np.linspace(0, 1, num = 21)
+    nRuns = 5
+    for iCross in crossList:
+        string = './main_GA.py {0} {1} {2}'.format(nRuns, iCross, timedateStr)
+        print('Evaluating: {}'.format(string))
+        subproc = sp.Popen(string, shell = True)
+        print('waiting...')
+        subproc.wait()
+# CrossProbvsFitness()
 
 def RnnDynamics(timedateStr):
-    step = 0.01
-    nNodes = 16
+    delta = 0.01
     sgfInit = 0
     lgfInit = 0
-    maxChem = 10
-    reps = 100
-    network = 'test_20171023_9_cycle_16_nodes_50_inds_20_gen_1_cs'
-    fileName = '20171031_testmap_step_0.01'
+    nNodes = 25
+    maxChem = 5
+    reps = 1000
+    network = '20171108_002253_284367'
+    fileName = '{}'.format(timedateStr)
     individual = 0
     maxVal = 0.5
     xThreshold = 0.5
@@ -104,9 +118,12 @@ def RnnDynamics(timedateStr):
     inputs[0] = sgfInit
     inputs[1] = lgfInit
     data = np.zeros([reps, 4])
-    wMatrix = GetrNN('populations/' + network + '.csv', individual, nNodes)
-    with open('chem_maps/' + fileName + '.csv', 'a') as csvfile:
-        csvfile.write('# {}\n# sgf_amount\t lgf_amount\tquiet\tsplit\tmove\tdie\n'.format(network))
+    wMatrix = GetrNN('populations/{}.csv'.format(network), individual, nNodes)
+    chemMap = np.zeros([int(maxChem/delta), int(maxChem/delta), 4])
+    
+    with open('chem_maps/{}.csv'.format(fileName), 'a') as csvfile:
+        csvfile.write('# {}\n# sgf_amount\tlgf_amount\tquietCount\tsplitCount\tmoveCount\tdieCount\n'.format(network))
+    sgfInit = 0
     while sgfInit <= maxChem:
         lgfInit = 0
         while lgfInit <= maxChem:
@@ -134,16 +151,18 @@ def RnnDynamics(timedateStr):
                     else:
                         dCount += 1 #'Die'
                 tStep += 1
+                chemMap[lgfInit*100,] = np.array([])
+            
             #print('testing: LGF = {:.2f}, SGF = {:.2f}'.format(lgfInit, sgfInit))
-            with open('chem_maps/' + fileName + '.csv', 'a') as csvfile:
+            #with open('chem_maps/{}.csv'.format(fileName), 'a') as csvfile:
                 #writer = csv.writer(csvfile)
                 #[writer.writerow(row) for row in data]
                 #csvfile.write('\n\n')
-                csvfile.write('{:.2f}\t{:.2f}\t{}\t{}\t{}\t{}\n'.format(sgfInit, lgfInit, qCount, sCount, mCount, dCount))
-            lgfInit += step
-        with open('chem_maps/' + fileName + '.csv', 'a') as csvfile:
+            #    csvfile.write('{:.2f}\t{:.2f}\t{}\t{}\t{}\t{}\n'.format(sgfInit, lgfInit, qCount, sCount, mCount, dCount))
+            lgfInit += delta
+        with open('chem_maps/{}.csv'.format(fileName), 'a') as csvfile:
             csvfile.write('\n\n')
-        sgfInit += step
+        sgfInit += delta
 # RnnDynamics
 
 #def FitnessGen(nGen):
@@ -160,3 +179,4 @@ if __name__ == '__main__':
     # GetfitnessStats(timedateStr)
     NNodesvsFitness(timedateStr)
     # RnnDynamics(timedateStr)
+    # CrossProbvsFitness(timedateStr)
