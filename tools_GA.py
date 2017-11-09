@@ -38,11 +38,11 @@ import numpy as np
 # EvaluateIndividual
 
 # Dirac's delta function
-def DiracDelta(a, b):
-    if a == b:
-        return 0
-    else:
-        return 1
+#def DiracDelta(a, b):
+    #if a == b:
+        #return 0
+    #else:
+        #return 1
 # DiracDelta
 
 # Crossover: length preserving

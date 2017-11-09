@@ -118,6 +118,7 @@ def RecurrentNeuralNetwork(inputs, wMatrix, V):             # Recurrent Neural N
     # might be improved ussing list comprehension...
     for ix in range(len(bj)):
         V[ix] = 1./(1 + np.exp(-2*bj[ix]))   #TransferFunction(bj[ix],2)
+    # V = [1./(1 + np.exp(-2*bj[ix])) for ix in range(len(bj))]
     return V
 # NeuralNetwork
 
