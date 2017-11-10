@@ -291,6 +291,7 @@ if __name__ == '__main__':
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
         contestants = np.zeros([tournamentSize, nGenes])
         fitnessInfo = np.zeros([nOfGenerations, 2])
+        bestIndividuals = np.zeros([nOfGenerations, nGenes])
 
         # timing variables!
         generationAvg = 0
@@ -350,7 +351,7 @@ if __name__ == '__main__':
             # loop over chromosomes
 
             # 1.1: sort fitness array
-            sorted_fitness = np.argsort(fitness)                    # sort array according to fitness value. Less fit to most fit
+            sorted_fitness = np.argsort(fitness)                    # array containing the indexes from less fit to most fit ind
             tempPopulation = np.zeros([popSize, nGenes])            # np.array(population)
             
             # 1.2: get fittest infividual and mean fitness
@@ -373,6 +374,8 @@ if __name__ == '__main__':
                 np.delete(sorted_fitness,popSize - iElit)
                 iElit += 1
             # while
+            # 2.1: => Save best individual por the ages
+            bestIndividuals[iGen,:] = np.array(population[sorted_fitness[popSize - 1]])
 
             # 3rd step: Tousnament selection => Loop over the rest of the population to engage them into a tournament
             loopCounter = 0
@@ -443,7 +446,7 @@ if __name__ == '__main__':
         # Save generated network, unique for each run
         with open(networkFileName, 'w') as csvfile:
             writer = csv.writer(csvfile)
-            [writer.writerow(r) for r in population]
+            [writer.writerow(r) for r in bestIndividuals]
             
         benchmakingData[iRun,:] = np.array([generationAvg, generationAvg/nOfGenerations])
         statsData[iRun,:,:] = np.array(fitnessInfo)    
