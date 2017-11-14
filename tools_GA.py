@@ -1,6 +1,6 @@
-import os
-import time
-import random
+#import os
+#import time
+#import random
 import numpy as np
 #from main import *
 #from numba import jit
@@ -94,8 +94,8 @@ def Mutate(parent1, parent2, mutationProb):
         return parent1, parent2
 # Mutation
 
-def DifferentIndex(x1, y1):
-    if x1 == y1:
-        return False
-    else:
-        return True
+#def DifferentIndex(x1, y1):
+    #if x1 == y1:
+        #return False
+    #else:
+        #return True

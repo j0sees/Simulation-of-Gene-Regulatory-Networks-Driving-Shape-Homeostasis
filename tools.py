@@ -1,7 +1,7 @@
 import numpy as np
 from scipy import linalg
 import csv
-from numba import jit
+#from numba import jit
 
 # Tools
 #@jit
@@ -14,9 +14,17 @@ from numba import jit
         #return True
 # CheckInBorders
 
+# List without joint ends
+# https://stackoverflow.com/questions/29710249/python-force-list-index-out-of-range-exception
+class flatList(list):
+    def __getitem__(self, index):
+        if index < 0:
+            raise IndexError("list index out of range")
+        return super(flatList, self).__getitem__(index)
+
 #@jit
 def CheckifOccupied(xCoord, yCoord, grid):
-    if grid[xCoord, yCoord][0] > 0:         # if value on grid is 1 (quiet), 2 (moved) or 3 (splitted) then spot is occupied
+    if grid[yCoord][xCoord] > 0:         # if value on grid is 1 (quiet), 2 (moved) or 3 (splitted) then spot is occupied
         return True
     else:                                   # else, value is 0 (empty) or -1 (cell was there before but died) then spot is available
         return False
@@ -38,7 +46,7 @@ def CheckifPreferred(xOri, yOri, xCoord, yCoord):
 # sgfDiffEq
 
 # SGF dynamics with matrix approach
-@jit
+#@jit WARNING
 def SGFDiffEq(s_matrix, sigma_matrix, deltaS, deltaT):
     updated_matrix = s_matrix + deltaT*(sigma_matrix - deltaS*s_matrix)
     return updated_matrix
@@ -46,16 +54,17 @@ def SGFDiffEq(s_matrix, sigma_matrix, deltaS, deltaT):
 
 # TODO use linalg solve to make it faster and numerically more stable
 # LGF dynamics with matrix approach
-@jit
+#@jit WARNING
 def LGFDiffEq(i_matrix, t_matrix, l_matrix, lambda_matrix, deltaL, deltaT, deltaR, D):
     alpha = D*deltaT/(deltaR**2)                            # constant
     f = (deltaT/2.)*(lambda_matrix - deltaL*l_matrix)       # term that takes into account LFG production for half time step
     g = linalg.inv(i_matrix - (alpha/2.)*t_matrix)          # inverse of some intermediate matrix
     h = i_matrix + (alpha/2.)*t_matrix                      # some intermediate matrix
-    l_halftStep = g@(l_matrix@h + f)                        # half time step calculation for LGF values
+    #l_halftStep = g@(l_matrix@h + f)                        # half time step calculation for LGF values
+    l_halftStep = np.matmul(g,(np.matmul(l_matrix,h) + f))                        # half time step calculation for LGF values
     #print('grid after half time step...\n' + str(l_halftStep))
     f = (deltaT/2.)*(lambda_matrix - deltaL*l_halftStep)    # updated term...
-    l_tStep = (h@l_halftStep + f)@g                         # final computation
+    l_tStep = np.matmul((np.matmul(h,l_halftStep) + f),g)                         # final computation
     return l_tStep
 # sgfDiffEq
 
@@ -92,18 +101,18 @@ def GenerateIMatrix(size):
     return I_matrix
 # GenerateIMatrix
 
-def NeuralNetwork(inputs, WMatrix, wMatrix, phi, theta):
-    #nNodes = 10  # number of nodes
-    V = np.zeros([6])
-    O = np.zeros([6])
-    bj = wMatrix@inputs - theta
-    for ix in range(len(bj)):
-        V[ix] = TransferFunction(bj[ix],2)
+#def NeuralNetwork(inputs, WMatrix, wMatrix, phi, theta):
+    ##nNodes = 10  # number of nodes
+    #V = np.zeros([6])
+    #O = np.zeros([6])
+    #bj = wMatrix@inputs - theta
+    #for ix in range(len(bj)):
+        #V[ix] = TransferFunction(bj[ix],2)
 
-    bi = WMatrix@V - phi
-    for ix in range(len(bi)):
-        O[ix] = TransferFunction(bi[ix],2)
-    return O
+    #bi = WMatrix@V - phi
+    #for ix in range(len(bi)):
+        #O[ix] = TransferFunction(bi[ix],2)
+    #return O
 # NeuralNetwork
 
 #@jit
@@ -111,10 +120,11 @@ def NeuralNetwork(inputs, WMatrix, wMatrix, phi, theta):
     #return 1./(1 + np.exp(-beta*x))
 ## TransferFunction
 
-@jit
+#@jit WARNING
 def RecurrentNeuralNetwork(inputs, wMatrix, V):             # Recurrent Neural Network dynamics
     #beta = 2
-    bj = wMatrix@V - inputs
+    # bj = wMatrix@V - inputs
+    bj = np.matmul(wMatrix,V) - inputs
     # might be improved ussing list comprehension...
     for ix in range(len(bj)):
         V[ix] = 1./(1 + np.exp(-2*bj[ix]))   #TransferFunction(bj[ix],2)
