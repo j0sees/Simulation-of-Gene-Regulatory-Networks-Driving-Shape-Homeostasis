@@ -3,7 +3,7 @@ import sys
 import os
 import time
 from datetime import datetime as dt
-from datetime import time
+#from datetime import time
 import random
 import numpy as np
 ############
@@ -15,6 +15,10 @@ from tools_GA import *
 import multiprocessing as mp
 import ctypes
 import csv
+#import contextlib
+#import itertools
+from contextlib import contextmanager
+from functools import partial
 #from numba import jit
 
 #============================================================#
@@ -58,8 +62,10 @@ def sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice):
     #       INITIALIZATION             #
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
     # create mother cell and update the grid with its initial location
-    cellList.append(cell(ix,iy,wMatrix,nNodes))
-    cellGrid[ix][iy][0] = 1
+    cellList.append(cell(0,1,wMatrix,nNodes))
+    #cellGrid[ix,iy,0] = 1
+    cellGrid[0,1,0] = 1
+    print('Initial Grid:\n{}'.format(cellGrid[:,:,0]))
 
     # DEBUG
     #print('Time running...')
@@ -67,7 +73,7 @@ def sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice):
     start_time_mainLoop = time.time()
     while iTime < timeSteps:
         # DEBUG
-        #print('\n######### time step #' + str(iTime))
+        print('\n######### time step #' + str(iTime))
 
         ## decay chemicals in spots where there is some but no cell
 
@@ -75,6 +81,8 @@ def sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice):
         # but must not lose contained information, i.e. must use it before setting it to zero
         sigma_m = np.zeros([nLattice,nLattice])             # matrix representation of SGF production
         lambda_m = np.zeros([nLattice,nLattice])            # matrix representation of LGF production
+
+        
 
         tmpCellList = list(cellList)                        # a copy of the list of current cells is used to iterate over all the cells
 
@@ -85,7 +93,7 @@ def sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice):
             # 1st step => choose a random cell from the list of existing cells
             rndCell = np.random.randint(len(tmpCellList))
             # store lattice size
-            tmpCellList[rndCell].border = nLattice          # TODO rethink this
+            #tmpCellList[rndCell].border = nLattice          # TODO rethink this
             #tmpCellList[rndCell].nNodes = nNodes           # WARNING hardcoded
 
             # 2nd step => read chemicals
@@ -96,11 +104,11 @@ def sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice):
 
             # 4th step => update SGF and LGF amounts on the 'production' matrices sigma & lambda
             # production matrices get updated values
-            sigma_m[tmpCellList[rndCell].xPos,tmpCellList[rndCell].yPos] = tmpCellList[rndCell].sgfAmount
-            lambda_m[tmpCellList[rndCell].xPos,tmpCellList[rndCell].yPos] = tmpCellList[rndCell].lgfAmount
+            sigma_m[tmpCellList[rndCell].yPos,tmpCellList[rndCell].xPos] = tmpCellList[rndCell].sgfAmount
+            lambda_m[tmpCellList[rndCell].yPos,tmpCellList[rndCell].xPos] = tmpCellList[rndCell].lgfAmount
 
             # DEBUG
-            #print('\ncell number: ' + str(len(cellList)) + '\nCell status: ' + str(tmpCellList[rndCell].state))# + '\n')
+            print('\ncell number: ' + str(len(cellList)) + '\nCell status: ' + str(tmpCellList[rndCell].state))# + '\n')
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
             #        Cell Action            #
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -172,9 +180,10 @@ def sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice):
             else:
                 #print('proc {} done!'.format(os.getpid()))
                 finalStruct = np.array(cellGrid[:,:,0])
+        # print('Grid:\n{}'.format(cellGrid[:,:,0]))
         iTime += 1
-
     # while
+    
     # Timing!
     end_time_mainLoop = time.time()
     secs = end_time_mainLoop - start_time_mainLoop
@@ -207,6 +216,14 @@ def sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice):
     #print('Final count of cells: {}'.format(len(cellList)))
 
     return deltaMatrix
+
+# workaround used due to the lack of starmap() in python 2.7...
+# https://stackoverflow.com/questions/5442910/python-multiprocessing-pool-map-for-multiple-arguments#5443941
+@contextmanager
+def poolcontext(*args, **kwargs):
+    pool = mp.Pool(*args, **kwargs)
+    yield pool
+    pool.terminate()
 
 #@jit
 def EvaluateIndividual(individual, timeSteps, iGen, nNodes, nLattice):
@@ -252,7 +269,7 @@ if __name__ == '__main__':
     maxproc = 1
     DEFAULT_VALUE = -1                                          # WARNING is this necessary?
     popSize = 22 # int(sys.argv[2])                              # Population size. Must have certain 
-    nNodes = int(sys.argv[2])
+    nNodes = 25 # int(sys.argv[2])
     nGenes = nNodes**2                                          # Number of genes
     crossoverProb = 0.5 #float(sys.argv[2])                                         # Crossover probability
     mutationProb = 1.                                          # Mutation probability
@@ -260,7 +277,7 @@ if __name__ == '__main__':
     #tournamentSelParam = 0.75                                  # Tournament selection parameter
     tournamentSize = 4                                          # Tournament size. EVEN
     eliteNum = 2                                                # number of elite solutions to carry to next generation
-    nOfGenerations = 10
+    nOfGenerations = int(sys.argv[2])
     timeSteps = 200
     nLattice = 50
     chunkSize = 1 # int(sys.argv[2])
@@ -305,8 +322,10 @@ if __name__ == '__main__':
         population = population.reshape(popSize, nGenes)                        # Reshape as popSize x nGenes matrix
         #print('population length: {}'.format(len(population)))
         
-        np.random.seed()
+        # = np.zeros([])
+        #np.random.seed()
         randPop = -1. + 2.*np.random.rand(popSize, nGenes)
+        #population = -1. + 2.*np.random.rand(popSize, nGenes)
         np.copyto(population, randPop)
         #for ix in range(popSize*nGenes):
         #    population[ix] = -1. + 2.*np.random.random()                        # Generate population
@@ -315,6 +334,7 @@ if __name__ == '__main__':
 
         fitness_base = mp.Array(ctypes.c_float, popSize, lock = False)          # create mp shared 1D array
         fitness = np.frombuffer(fitness_base, dtype = ctypes.c_float)           # convert mp array to np.array
+        # fitness = np.zeros([popSize])
         #print('fitness shared array created successfully!')
 
         for iGen in range(nOfGenerations):
@@ -335,9 +355,15 @@ if __name__ == '__main__':
             args = zip(index_list, timeSteps_list, iGen_list, nNodes_list, nLattice_list)
             
             # every pool is a different set of processes        , maxtasksperchild = maxproc
-            with mp.Pool(processes = nProcs) as pool:
-                pool.starmap(EvaluateIndividual, args, chunkSize)              # Evaluation of individuals, this runs in parallel!
+            #with mp.Pool(popSize) as pool:
+                #pool.starmap(EvaluateIndividual, args, chunkSize)              # Evaluation of individuals, this runs in parallel!
             
+            #with contextlib.closing(mp.Pool(processes = nProcs)) as pool:
+            #    pool.map(EvaluateIndividual, itertools.izip(index_list, itertools.repeat(timeSteps), itertools.repeat(iGen), itertools.repeat(nNodes), itertools.repeat(nLattice)))
+                
+            with poolcontext(processes = nProcs) as pool:
+                results = pool.map(partial(EvaluateIndividual, timeSteps = timeSteps, iGen = iGen, nNodes = nNodes, nLattice = nLattice), index_list)
+                
             #pool = mp.Pool(processes = nProcs)                      # Pool of processes
             #print('evaluating pool...')
             # Timing!
@@ -349,6 +375,9 @@ if __name__ == '__main__':
             #end_time_fitness = time.time()
             #secs = end_time_fitness - start_time_fitness
             # loop over chromosomes
+            
+            #for ik in range(popSize):
+            #    EvaluateIndividual(ik, timeSteps, iGen, nNodes, nLattice)
 
             # 1.1: sort fitness array
             sorted_fitness = np.argsort(fitness)                    # array containing the indexes from less fit to most fit ind
@@ -357,8 +386,8 @@ if __name__ == '__main__':
             # 1.2: get fittest infividual and mean fitness
             fitnessInfo[iGen, 0] = np.amax(fitness) #sorted_fitness[popSize - 1]                   # np.amax(fitness)
             fitnessInfo[iGen, 1] = np.average(fitness)
-            print('Gen: {2}\t=>\tmax fit: {0:.3f},\tavg fit: {1:.3f}'.format(fitnessInfo[iGen, 0], fitnessInfo[iGen, 1], iGen + 1))
-
+            #print('Gen: {2}\t=>\tmax fit: {0:.3f},\tavg fit: {1:.3f}'.format(fitnessInfo[iGen, 0], fitnessInfo[iGen, 1], iGen + 1))
+            print('Gen: {2}\t=>\tavg fit: {1:.3f}\nfit array: \n{0}'.format(fitness, fitnessInfo[iGen, 1], iGen + 1))
             # DEBUG
             #print('sorted fitness array, before deleting:\n' + str(fitness))
 

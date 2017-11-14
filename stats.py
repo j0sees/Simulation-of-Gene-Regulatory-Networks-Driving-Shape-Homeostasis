@@ -74,12 +74,26 @@ def GetfitnessStats(timedateStr):
         subproc.wait()
         iRep += 1
 
+def NGenvsFitness(timedateStr):
+    """
+    Number of nodes vs fitness
+    """
+    nGenList = [5, 10, 15, 20]
+    nRuns = 20
+    for iGen in nGenList:
+        string = './main_GA.py {0} {1} {2}'.format(nRuns, iGen, timedateStr)
+        print('Evaluating: {}'.format(string))
+        subproc = sp.Popen(string, shell = True)
+        print('waiting...')
+        subproc.wait()
+
+
 def NNodesvsFitness(timedateStr):
     """
     Number of nodes vs fitness
     """
     nNodesList = [25, 8]
-    nRuns = 2
+    nRuns = 20
     for iNode in nNodesList:
         string = './main_GA.py {0} {1} {2}'.format(nRuns, iNode, timedateStr)
         print('Evaluating: {}'.format(string))
@@ -110,7 +124,7 @@ def RnnDynamics(timedateStr):
     reps = 1000
     network = '20171108_002253_284367'
     fileName = '{}'.format(timedateStr)
-    individual = 0
+    iGen = 0
     maxVal = 0.5
     xThreshold = 0.5
     yThreshold = 0.01    
@@ -118,11 +132,12 @@ def RnnDynamics(timedateStr):
     inputs[0] = sgfInit
     inputs[1] = lgfInit
     data = np.zeros([reps, 4])
-    wMatrix = GetrNN('populations/{}.csv'.format(network), individual, nNodes)
+    wMatrix = GetrNN('populations/{}.csv'.format(network), iGen, nNodes)
     chemMap = np.zeros([int(maxChem/delta), int(maxChem/delta), 4])
     
     with open('chem_maps/{}.csv'.format(fileName), 'a') as csvfile:
         csvfile.write('# {}\n# sgf_amount\tlgf_amount\tquietCount\tsplitCount\tmoveCount\tdieCount\n'.format(network))
+        # replace while for a for loop and use np.linspace(0,5,501)
     sgfInit = 0
     while sgfInit <= maxChem:
         lgfInit = 0
@@ -177,6 +192,7 @@ if __name__ == '__main__':
     # ProcChunks(timedateStr)
     # ProcDefaultChunks(timedateStr)
     # GetfitnessStats(timedateStr)
-    NNodesvsFitness(timedateStr)
+    # NNodesvsFitness(timedateStr)
     # RnnDynamics(timedateStr)
     # CrossProbvsFitness(timedateStr)
+    NGenvsFitness(timedateStr)
