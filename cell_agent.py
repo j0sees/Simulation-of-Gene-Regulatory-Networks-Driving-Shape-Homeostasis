@@ -1,6 +1,7 @@
 import numpy as np
+#from tools import flatList, CheckifOccupied, CheckifPreferred, SGFDiffEq, LGFDiffEq, 
 from tools import *
-#from tools import flatList
+#from tools import flatList as fl
 #from numba import jit
 
 class cell:
@@ -61,8 +62,8 @@ class cell:
     #@jit
     def Sense(self, grid):
         # sense chemicals from the grid
-        SGF_reading = grid[self.yPos, self.xPos][1] # grid contains three values on each coordinate:
-        LGF_reading = grid[self.yPos, self.xPos][2] # occupation (boolean), SGF level, LGF level
+        SGF_reading = grid[self.yPos, self.xPos][0] # grid contains two values on each coordinate:
+        LGF_reading = grid[self.yPos, self.xPos][1] # occupation (boolean), SGF level, LGF level
         #reads = [SGF_read, LGF_read]
         return SGF_reading, LGF_reading
     # Sense
@@ -129,7 +130,7 @@ class cell:
             self.orientation = [self.yPos, self.xPos]
         # if
         #print('neighbourList type: {}'.format(type(self.neighbourList)))
-        print('Current pos: [{}, {}], arrow: {:.3f}, preferred direction: {}'.format(self.yPos, self.xPos, arrow, self.orientation))
+        #print('Current pos: [{}, {}], arrow: {:.3f}, preferred direction: {}'.format(self.yPos, self.xPos, arrow, self.orientation))
 
         # Generate state
         maxVal = 0.5
@@ -158,7 +159,7 @@ class cell:
 
     #@jit
     def Quiet(self,grid):
-        grid[self.yPos, self.xPos,0] = 1
+        grid[self.yPos][self.xPos] = 1
         self.quietCounter += 1
     # Quiet
 
@@ -169,11 +170,11 @@ class cell:
             self.amidead = True
             # DEBUG
             #print('cell died!')
-            grid[self.yPos, self.xPos, 0] = 0
+            grid[self.yPos][self.xPos] = 0
         else:                                               # otherwise stay quiet
             # DEBUG
             #print('Death counter = ' + str(self.deathCounter))
-            grid[self.yPos, self.xPos, 0] = 1
+            grid[self.yPos][self.xPos] = 1
     # Die
 
     def Move(self, grid):
@@ -181,49 +182,49 @@ class cell:
         #finalList = []
         availableSpots = []
         needOtherNeighbours = True
-        gridDim = grid.shape
-        semiFlatGrid = [flatList(grid[r,:,0]) for r in range(gridDim[0])]
-        flatGrid = flatList(semiFlatGrid)
-        print('moving... preferred position: {}'.format(self.orientation))
+#        gridDim = grid.shape
+#        semiFlatGrid = [flatList(grid[r,:,0]) for r in range(gridDim[0])]
+#        flatGrid = flatList(semiFlatGrid)
+        #print('moving... preferred position: {}'.format(self.orientation))
         for neighbr in self.neighbourList:                               # for each possible neighbour:
             try: # the exception IndexError will determine if the neighbour is inbounds
-                if CheckifOccupied(neighbr[1], neighbr[0], flatGrid):   # if its occupied
+                if CheckifOccupied(neighbr[1], neighbr[0], grid):   # if its occupied
                     # DEBUG
-                    print('{}: occupied...'.format(neighbr))                                       
+                    #print('{}: occupied...'.format(neighbr))                                       
                     continue
                 else:   # if neighbour is not occupied
                     xOri = self.orientation[1]
                     yOri = self.orientation[0]
                     if CheckifPreferred(xOri, yOri, neighbr[1], neighbr[0]):    # Check if is preferred
-                        grid[yOri, xOri, 0] = 2      # new position gets a 2 value to mark as moving cell
-                        grid[self.yPos, self.xPos, 0] = 0        # old position gets a -1 value to indicate that there was a cell there before
+                        grid[yOri][xOri] = 2      # new position gets a 2 value to mark as moving cell
+                        grid[self.yPos][self.xPos] = 0        # old position gets a -1 value to indicate that there was a cell there before
                         self.xPos = xOri                                  # update position
                         self.yPos = yOri
                         needOtherNeighbours = False
                         # DEBUG
-                        print('{}: moved to preferred position!'.format(neighbr))                                       
+                        #print('{}: moved to preferred position!'.format(neighbr))                                       
                         break
                     else:
                         # DEBUG
-                        print('{}: available!'.format(neighbr))                                       
+                        #print('{}: available!'.format(neighbr))                                       
                         availableSpots.append(neighbr)                     # list with other available neighbours
             except IndexError:
-                print('{}: out of bounds!!'.format(neighbr))                                       
+                #print('{}: out of bounds!!'.format(neighbr))                                       
                 continue
         if needOtherNeighbours:
             if len(availableSpots) > 0:
                 r = np.random.randint(len(availableSpots))
-                print('prefered position not available. Moving to {}'.format(availableSpots[r]))
-                grid[availableSpots[r][0], availableSpots[r][1], 0] = 2        # new position gets a 2 value to mark as moving cell
-                grid[self.yPos, self.xPos][0] = 0          # old position gets a -1 value to indicate that there was a cell there before
+                #print('prefered position not available. Moving to {}'.format(availableSpots[r]))
+                grid[availableSpots[r][0]][availableSpots[r][1]] = 2        # new position gets a 2 value to mark as moving cell
+                grid[self.yPos][self.xPos] = 0          # old position gets a -1 value to indicate that there was a cell there before
                 self.yPos = availableSpots[r][0]                                  # update position
                 self.xPos = availableSpots[r][1]
                 # DEBUG
                 #print('cell moved!')
             else:
-                print('moving failed... stay quiet')
-                grid[self.yPos, self.xPos, 0] = 1                       # if moving fails then cell is marked as quiet
-        print('Grid:\n{}'.format(grid[:,:,0]))
+                #print('moving failed... stay quiet')
+                grid[self.yPos][self.xPos] = 1                       # if moving fails then cell is marked as quiet
+        #print('Grid:\n{}'.format(grid[:,:,0]))
     ## Move
 
     # OrientedMove, works with orientation ON and OFF
@@ -282,54 +283,54 @@ class cell:
     def Split(self, grid, cellList):
         self.splitCounter += 1
         if self.splitCounter == self.splitTime:
-            print('split counter = {}'.format(self.splitCounter))
+            #print('split counter = {}'.format(self.splitCounter))
             self.splitCounter = 0
             availableSpots = []
             needOtherNeighbours = True
-            gridDim = grid.shape
-            semiFlatGrid = [flatList(grid[r,:,0]) for r in range(gridDim[0])]
-            flatGrid = flatList(semiFlatGrid)
-            print('splitting... preferred position: {}'.format(self.orientation))
+#            gridDim = grid.shape
+#            semiFlatGrid = [flatList(grid[r,:,0]) for r in range(gridDim[0])]
+#            flatGrid = flatList(semiFlatGrid)
+            #print('splitting... preferred position: {}'.format(self.orientation))
             for neighbr in self.neighbourList:                               # for each possible neighbour:
                 try: # the exception IndexError will determine if the neighbour is inbounds
-                    if CheckifOccupied(neighbr[1], neighbr[0], flatGrid):   # if its occupied
+                    if CheckifOccupied(neighbr[1], neighbr[0], grid):   # if its occupied
                         # DEBUG
                         #print(str(neighbr) + ': neighbour occupied')
-                        print('{}: occupied...'.format(neighbr))                                       
+                        #print('{}: occupied...'.format(neighbr))                                       
                         continue
                     else:   # if neighbour is not occupied
                         yOri = self.orientation[0]
                         xOri = self.orientation[1]
                         if CheckifPreferred(xOri, yOri, neighbr[1], neighbr[0]):    # Check if is preferred
-                            grid[yOri, xOri, 0] = 1         # new position gets a 1 value to mark as new quiet cell
-                            grid[self.yPos, self.xPos, 0] = 3                               # mark as splitting cell
+                            grid[yOri][xOri] = 1         # new position gets a 1 value to mark as new quiet cell
+                            grid[self.yPos][self.xPos] = 3                               # mark as splitting cell
                             cellList.append(cell(yOri, xOri, self.wMatrix, self.nNodes))
                             needOtherNeighbours = False
-                            print('{}: new cell at preferred position!'.format(neighbr))                                       
+                            #print('{}: new cell at preferred position!'.format(neighbr))                                       
                             break
                             # DEBUG
                             #print(str(neighbr) + ': preferred position available')                                       
                         else:
                             # DEBUG
                             #print(str(neighbr) + ': available neighbour')
-                            print('{}: available!'.format(neighbr))                                       
+                            #print('{}: available!'.format(neighbr))                                       
                             availableSpots.append(neighbr)                     # list with other available neighbours
                 except IndexError:
-                    print('{}: out of bounds!!'.format(neighbr))                                       
+                    #print('{}: out of bounds!!'.format(neighbr))                                       
                     continue
             if needOtherNeighbours:
                 if len(availableSpots) > 0:
                     r = np.random.randint(len(availableSpots))
-                    print('preferred position not available. New cell at {}'.format(availableSpots[r]))
-                    grid[availableSpots[r][0], availableSpots[r][1], 0] = 1         # new position gets a 1 value to mark as new quiet cell
-                    grid[self.yPos, self.xPos, 0] = 3                               # mark as splitting cell
+                    #print('preferred position not available. New cell at {}'.format(availableSpots[r]))
+                    grid[availableSpots[r][0]][availableSpots[r][1]] = 1         # new position gets a 1 value to mark as new quiet cell
+                    grid[self.yPos][self.xPos] = 3                               # mark as splitting cell
                     cellList.append(cell(availableSpots[r][0], availableSpots[r][1], self.wMatrix, self.nNodes))
                     # DEBUG
                     #print('cell moved!')
                 else:
-                    print('moving failed... stay quiet')
-                    grid[self.yPos, self.xPos, 0] = 1                       # if splitting fails then cell is marked as quiet
-            print('Grid:\n{}'.format(grid[:,:,0]))
+                    #print('moving failed... stay quiet')
+                    grid[self.yPos][self.xPos] = 1                       # if splitting fails then cell is marked as quiet
+            #print('Grid:\n{}'.format(grid[:,:,0]))
     ## Split
 
     # works with polarisation ON and OFF

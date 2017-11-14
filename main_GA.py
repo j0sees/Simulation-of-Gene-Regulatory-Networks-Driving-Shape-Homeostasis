@@ -27,7 +27,7 @@ from functools import partial
 #                                                            #
 #============================================================#
 #@jit
-def sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice):
+def sim(wMatrix, timeSteps, nNodes, nLattice):
     """
     Parameters: sim(wMatrix, numberOfTimeSteps, NumberOfGeneration, nNodes, individual, nLattice)
     # In ozzy the simulation works solely as a fitness function,
@@ -36,7 +36,11 @@ def sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice):
     #       PARAMETERS                 #
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
     # TODO: organize in different categories...
-    cellGrid = np.zeros([nLattice,nLattice,3])  # Initialize empty grid
+    npCellGrid = np.zeros([nLattice,nLattice])    # Initialize empty grid
+    semiFlatGrid = [flatList(npCellGrid[r,:]) for r in range(nLattice)]
+    cellGrid = flatList(semiFlatGrid)
+
+    chemGrid = np.zeros([nLattice,nLattice,2])empty grid
     SGF_read = 0.                               # in the future values will be read from the grid
     LGF_read = 0.
     ix = int(nLattice/2)                        # Initial position for the mother cell
@@ -62,10 +66,10 @@ def sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice):
     #       INITIALIZATION             #
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
     # create mother cell and update the grid with its initial location
-    cellList.append(cell(0,1,wMatrix,nNodes))
-    #cellGrid[ix,iy,0] = 1
-    cellGrid[0,1,0] = 1
-    print('Initial Grid:\n{}'.format(cellGrid[:,:,0]))
+    cellList.append(cell(ix,iy,wMatrix,nNodes))
+    cellGrid[ix][iy] = 1
+    #cellGrid[0,1,0] = 1
+    #print('Initial Grid:\n{}'.format(cellGrid[:,:,0]))
 
     # DEBUG
     #print('Time running...')
@@ -73,7 +77,7 @@ def sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice):
     start_time_mainLoop = time.time()
     while iTime < timeSteps:
         # DEBUG
-        print('\n######### time step #' + str(iTime))
+        #print('\n######### time step #' + str(iTime))
 
         ## decay chemicals in spots where there is some but no cell
 
@@ -81,8 +85,6 @@ def sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice):
         # but must not lose contained information, i.e. must use it before setting it to zero
         sigma_m = np.zeros([nLattice,nLattice])             # matrix representation of SGF production
         lambda_m = np.zeros([nLattice,nLattice])            # matrix representation of LGF production
-
-        
 
         tmpCellList = list(cellList)                        # a copy of the list of current cells is used to iterate over all the cells
 
@@ -108,7 +110,7 @@ def sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice):
             lambda_m[tmpCellList[rndCell].yPos,tmpCellList[rndCell].xPos] = tmpCellList[rndCell].lgfAmount
 
             # DEBUG
-            print('\ncell number: ' + str(len(cellList)) + '\nCell status: ' + str(tmpCellList[rndCell].state))# + '\n')
+            #print('\ncell number: ' + str(len(cellList)) + '\nCell status: ' + str(tmpCellList[rndCell].state))# + '\n')
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
             #        Cell Action            #
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -146,8 +148,8 @@ def sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice):
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
         # Timing!
         #start_time_chemicalsUpdate = time.time()
-        cellGrid[:,:,1] = SGFDiffEq(cellGrid[:,:,1], sigma_m, deltaS, deltaT)
-        cellGrid[:,:,2] = LGFDiffEq(i_matrix, t_matrix, cellGrid[:,:,2], lambda_m, deltaL, deltaT, deltaR, diffConst)
+        chemGrid[:,:,0] = SGFDiffEq(chemGrid[:,:,0], sigma_m, deltaS, deltaT)
+        chemGrid[:,:,1] = LGFDiffEq(i_matrix, t_matrix, chemGrid[:,:,1], lambda_m, deltaL, deltaT, deltaR, diffConst)
         # Timing!
         #end_time_chemicalsUpdate = time.time()
         #secs = end_time_chemicalsUpdate - start_time_chemicalsUpdate
@@ -170,7 +172,7 @@ def sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice):
                 break
             else:
                 #print('proc {} halfway'.format(os.getpid()))
-                halfwayStruct = np.array(cellGrid[:,:,0])
+                halfwayStruct = np.array(cellGrid)
         elif iTime == timeSteps - 1:
             if len(cellList) >= int((nLattice**2)*0.9):                      # If cells fill space 
                 halfwayStruct = np.zeros([nLattice,nLattice])       # return two completely different structure matrices to get 0 fitness
@@ -179,7 +181,7 @@ def sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice):
                 # break
             else:
                 #print('proc {} done!'.format(os.getpid()))
-                finalStruct = np.array(cellGrid[:,:,0])
+                finalStruct = np.array(cellGrid)
         # print('Grid:\n{}'.format(cellGrid[:,:,0]))
         iTime += 1
     # while
@@ -226,14 +228,14 @@ def poolcontext(*args, **kwargs):
     pool.terminate()
 
 #@jit
-def EvaluateIndividual(individual, timeSteps, iGen, nNodes, nLattice):
+def EvaluateIndividual(individual, timeSteps, nNodes, nLattice):
     totSum = 0.
     #print('generating wMatrix...')
     wMatrix = population[individual,:].reshape(nNodes,nNodes)
     #print('process: {} is running sim with individual: {}!'.format(os.getpid(), individual))
     # Timing!
     start_time_chemicalsUpdate = time.time()
-    deltaM = sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice)
+    deltaM = sim(wMatrix, timeSteps, nNodes, nLattice)
     # Timing!
     end_time_chemicalsUpdate = time.time()
     secs = end_time_chemicalsUpdate - start_time_chemicalsUpdate
@@ -266,7 +268,7 @@ if __name__ == '__main__':
     # popSize = nProcs*cycles
     nRuns = int(sys.argv[1]) #10
     nProcs = 10 # int(sys.argv[1])                              # multiprocessing will use as many cores as it can see
-    maxproc = 1
+    #maxproc = 1
     DEFAULT_VALUE = -1                                          # WARNING is this necessary?
     popSize = 22 # int(sys.argv[2])                              # Population size. Must have certain 
     nNodes = 25 # int(sys.argv[2])
@@ -303,6 +305,7 @@ if __name__ == '__main__':
         csvfile.write('# GA Info: {}\n# mp Info: {}\n# Sim Info: {}\n'.format(gaInfo, mpInfo, simInfo))
 
     while iRun < nRuns:
+        print('# Run number {} of {}'.format(iRun+1, nRuns))
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
         #       INITIALISATION             #
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -323,7 +326,7 @@ if __name__ == '__main__':
         #print('population length: {}'.format(len(population)))
         
         # = np.zeros([])
-        #np.random.seed()
+        np.random.seed()
         randPop = -1. + 2.*np.random.rand(popSize, nGenes)
         #population = -1. + 2.*np.random.rand(popSize, nGenes)
         np.copyto(population, randPop)
@@ -347,12 +350,12 @@ if __name__ == '__main__':
             fitness.fill(DEFAULT_VALUE)
             
             # arguments to pass to fitness simulation
-            timeSteps_list = [timeSteps for x in range(popSize)]
-            iGen_list = [iGen for x in range(popSize)]
-            nNodes_list = [nNodes for x in range(popSize)]
-            nLattice_list = [nLattice for x in range(popSize)]
-            index_list = [x for x in range(popSize)]
-            args = zip(index_list, timeSteps_list, iGen_list, nNodes_list, nLattice_list)
+            #timeSteps_list = [timeSteps for x in range(popSize)]
+            #iGen_list = [iGen for x in range(popSize)]
+            #nNodes_list = [nNodes for x in range(popSize)]
+            #nLattice_list = [nLattice for x in range(popSize)]
+            #index_list = [x for x in range(popSize)]
+            #args = zip(index_list, timeSteps_list, iGen_list, nNodes_list, nLattice_list)
             
             # every pool is a different set of processes        , maxtasksperchild = maxproc
             #with mp.Pool(popSize) as pool:
@@ -362,7 +365,7 @@ if __name__ == '__main__':
             #    pool.map(EvaluateIndividual, itertools.izip(index_list, itertools.repeat(timeSteps), itertools.repeat(iGen), itertools.repeat(nNodes), itertools.repeat(nLattice)))
                 
             with poolcontext(processes = nProcs) as pool:
-                results = pool.map(partial(EvaluateIndividual, timeSteps = timeSteps, iGen = iGen, nNodes = nNodes, nLattice = nLattice), index_list)
+                results = pool.map(partial(EvaluateIndividual, timeSteps = timeSteps, nNodes = nNodes, nLattice = nLattice), index_list)
                 
             #pool = mp.Pool(processes = nProcs)                      # Pool of processes
             #print('evaluating pool...')
