@@ -29,7 +29,7 @@ from functools import partial
 #@jit
 def sim(wMatrix, timeSteps, nNodes, nLattice):
     """
-    Parameters: sim(wMatrix, numberOfTimeSteps, NumberOfGeneration, nNodes, individual, nLattice)
+    Parameters: sim(wMatrix, numberOfTimeSteps, nNodes, nLattice)
     # In ozzy the simulation works solely as a fitness function,
     """
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -39,8 +39,7 @@ def sim(wMatrix, timeSteps, nNodes, nLattice):
     npCellGrid = np.zeros([nLattice,nLattice])    # Initialize empty grid
     semiFlatGrid = [flatList(npCellGrid[r,:]) for r in range(nLattice)]
     cellGrid = flatList(semiFlatGrid)
-
-    chemGrid = np.zeros([nLattice,nLattice,2])empty grid
+    chemGrid = np.zeros([nLattice,nLattice,2])  # empty grid
     SGF_read = 0.                               # in the future values will be read from the grid
     LGF_read = 0.
     ix = int(nLattice/2)                        # Initial position for the mother cell
@@ -75,6 +74,7 @@ def sim(wMatrix, timeSteps, nNodes, nLattice):
     #print('Time running...')
     # Timing!
     start_time_mainLoop = time.time()
+    #print('process: {} is running sim!!'.format(os.getpid()))
     while iTime < timeSteps:
         # DEBUG
         #print('\n######### time step #' + str(iTime))
@@ -99,7 +99,7 @@ def sim(wMatrix, timeSteps, nNodes, nLattice):
             #tmpCellList[rndCell].nNodes = nNodes           # WARNING hardcoded
 
             # 2nd step => read chemicals
-            SGF_reading, LGF_reading = tmpCellList[rndCell].Sense(cellGrid)
+            SGF_reading, LGF_reading = tmpCellList[rndCell].Sense(chemGrid)
 
             # 3rd step => random cell should decide and action
             tmpCellList[rndCell].GenerateStatus(SGF_reading, LGF_reading)     # get status of this cell
@@ -218,6 +218,7 @@ def sim(wMatrix, timeSteps, nNodes, nLattice):
     #print('Final count of cells: {}'.format(len(cellList)))
 
     return deltaMatrix
+### sim
 
 # workaround used due to the lack of starmap() in python 2.7...
 # https://stackoverflow.com/questions/5442910/python-multiprocessing-pool-map-for-multiple-arguments#5443941
@@ -228,9 +229,9 @@ def poolcontext(*args, **kwargs):
     pool.terminate()
 
 #@jit
-def EvaluateIndividual(individual, timeSteps, nNodes, nLattice):
+def EvaluateIndividual(timeSteps, nNodes, nLattice, individual):
     totSum = 0.
-    #print('generating wMatrix...')
+    #print('inside EvaluateIndividual...')
     wMatrix = population[individual,:].reshape(nNodes,nNodes)
     #print('process: {} is running sim with individual: {}!'.format(os.getpid(), individual))
     # Timing!
@@ -251,9 +252,51 @@ def EvaluateIndividual(individual, timeSteps, nNodes, nLattice):
     #if totSum <= int((nLattice**2)*0.1) or totSum == int(nLattice**2):
     #    fitness[individual] = 0.
     #else:
-    fitness[individual] = 1. - (1./(nLattice**2))*totSum
-    #return fitness
+    
+    #fitness[individual] = 1. - (1./(nLattice**2))*totSum
+    fit = 1. - (1./(nLattice**2))*totSum
+    #print('Proc {} computed fitness: {}'.format(os.getpid(), fit))
+    return fit
 # EvaluateIndividual
+
+#class MultiProcFunc(object):
+    #"""Pass a function with fixed parameters and 1 variable to subprocesses."""
+    #def __init__(self, func, *params):
+        #self.func = func
+        #self.params = params
+        #self.name = func.__name__
+        ## TODO: set nProcsMax as inputvariable/attribute!
+        #nProcsMax = 10
+        #if nProcsMax is None:
+            #self.nProcsMax = mp.cpu_count()
+        #else:
+            #self.nProcsMax = nProcsMax
+            
+    #def Evaluate(self, x, **kwargs):
+        #partFunc = partial(self.func, *self.params)
+        #print('list: {}\n{}, x[0] = {}'.format(x, type(x), type(x[0])))
+        #try:
+            #for e in x:
+                #break
+        #except TypeError:
+            #return partFunc(x)
+        #else:
+            #p = mp.Pool(**kwargs)
+            #output = p.map(partFunc, x)
+            #p.close()
+            #p.join()
+            #return output
+
+def partialEval(ind):
+    # call the target function
+    #print('ts {}, nN {}, nL {}, ind {}'.format(timeSteps, nNodes, nLattice, ind))
+    return EvaluateIndividual(timeSteps, nNodes, nLattice, int(ind))
+
+#def YourFitnessFunction(someParam1, param2, x)
+    ##do something
+    #fitness = x
+    
+    #return fitness
 
 #============================================================#
 #                                                            #
@@ -293,7 +336,7 @@ if __name__ == '__main__':
     statsData = np.zeros([nRuns,nOfGenerations,2])
     populationFiles = []
     infofFileID = sys.argv[3] #'{0:%Y%m%d_%H%M%S}'.format(dt.now())
-    runsMainFile = 'run_{}.log'.format(infofFileID)
+    runsMainFile = 'runs/run_{}.log'.format(infofFileID)
     benchmarkFile = 'benchmarks/{0}.csv'.format(infofFileID)
     statsFile = 'stats/{0}.csv'.format(infofFileID)
 
@@ -335,9 +378,9 @@ if __name__ == '__main__':
         
         #print('population shared array created successfully!')
 
-        fitness_base = mp.Array(ctypes.c_float, popSize, lock = False)          # create mp shared 1D array
-        fitness = np.frombuffer(fitness_base, dtype = ctypes.c_float)           # convert mp array to np.array
-        # fitness = np.zeros([popSize])
+        #fitness_base = mp.Array(ctypes.c_float, popSize, lock = False)          # create mp shared 1D array
+        #fitness = np.frombuffer(fitness_base, dtype = ctypes.c_float)           # convert mp array to np.array
+        fitness = np.zeros([popSize])
         #print('fitness shared array created successfully!')
 
         for iGen in range(nOfGenerations):
@@ -347,14 +390,17 @@ if __name__ == '__main__':
 
             # 1st step: Fitness function => Rank idividuals by their fitness
             # chromosomes get decoded and evaluated
-            fitness.fill(DEFAULT_VALUE)
+            #fitness.fill(DEFAULT_VALUE)
             
             # arguments to pass to fitness simulation
             #timeSteps_list = [timeSteps for x in range(popSize)]
             #iGen_list = [iGen for x in range(popSize)]
             #nNodes_list = [nNodes for x in range(popSize)]
             #nLattice_list = [nLattice for x in range(popSize)]
-            #index_list = [x for x in range(popSize)]
+            #index_list = list(range(popSize))
+            index_list = [int(x) for x in range(popSize)]
+            #print('{}'.format(index_list))
+            #index_list = np.arange(popSize)
             #args = zip(index_list, timeSteps_list, iGen_list, nNodes_list, nLattice_list)
             
             # every pool is a different set of processes        , maxtasksperchild = maxproc
@@ -364,8 +410,12 @@ if __name__ == '__main__':
             #with contextlib.closing(mp.Pool(processes = nProcs)) as pool:
             #    pool.map(EvaluateIndividual, itertools.izip(index_list, itertools.repeat(timeSteps), itertools.repeat(iGen), itertools.repeat(nNodes), itertools.repeat(nLattice)))
                 
+            #partEvInd = partial(EvaluateIndividual, tStp = timeSteps, nNds = nNodes, nL = nLattice)    
             with poolcontext(processes = nProcs) as pool:
-                results = pool.map(partial(EvaluateIndividual, timeSteps = timeSteps, nNodes = nNodes, nLattice = nLattice), index_list)
+                fitness = pool.map(partialEval, index_list)
+                
+            #MPFitnessFunc = MultiProcFunc(EvaluateIndividual, timeSteps, nNodes, nLattice)
+            #fitness = MPFitnessFunc.Evaluate(index_list)
                 
             #pool = mp.Pool(processes = nProcs)                      # Pool of processes
             #print('evaluating pool...')

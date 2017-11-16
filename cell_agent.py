@@ -61,6 +61,7 @@ class cell:
         #return neighbourList
     #@jit
     def Sense(self, grid):
+        #print('type of grid: {}'.format(type(grid)))
         # sense chemicals from the grid
         SGF_reading = grid[self.yPos, self.xPos][0] # grid contains two values on each coordinate:
         LGF_reading = grid[self.yPos, self.xPos][1] # occupation (boolean), SGF level, LGF level

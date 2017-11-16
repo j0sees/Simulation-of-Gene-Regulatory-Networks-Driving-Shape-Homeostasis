@@ -78,8 +78,8 @@ def NGenvsFitness(timedateStr):
     """
     Number of nodes vs fitness
     """
-    nGenList = [5, 10, 15, 20]
-    nRuns = 20
+    nGenList = [5, 10]
+    nRuns = 2
     for iGen in nGenList:
         string = './main_GA.py {0} {1} {2}'.format(nRuns, iGen, timedateStr)
         print('Evaluating: {}'.format(string))
