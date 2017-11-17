@@ -108,7 +108,7 @@ class cell:
                 if arrow < nBoundary:
                     #xCoord = self.xPos 
                     #yCoord = self.yPos - 1
-                    self.orientation = self.neighbourList[2]
+                    self.orientation = self.neighbourList[0]
                 # orientation North
                 else:
                     # orientation South
