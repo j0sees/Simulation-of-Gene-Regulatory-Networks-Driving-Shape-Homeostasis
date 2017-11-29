@@ -1,7 +1,4 @@
 # -*- coding: latin_1 -*-
-import matplotlib
-# Valid strings are ['GTK', 'GTKAgg', 'GTKCairo', 'MacOSX', 'Qt4Agg', 'Qt5Agg', 'TkAgg', 'WX', 'WXAgg', 'GTK3Cairo', 'GTK3Agg', 'WebAgg', 'nbAgg', 'agg', 'cairo', 'gdk', 'pdf', 'pgf', 'ps', 'svg', 'template']
-matplotlib.use('Qt5Agg')
 #import matplotlib.pyplot as plt
 import numpy as np
 import networkx as nx
@@ -16,15 +13,13 @@ if __name__ == '__main__':
     nodeProb = np.linspace(0.1,1,10)
     #nNeighb = [5, 10, 15, 20]
     #nEdges = [5,10,15]
-    nRuns = 20
+    nRuns = int(sys.argv[2])
     nLattice = 50
     tSteps = 100
     arrayContainer = np.zeros([len(nodeProb)*nRuns,nNodes**2])
     infofFileID = '{0:%Y%m%d_%H%M%S_%f}'.format(dt.now())
     runsMainFile = 'runs/run_ graphs_{0}.log'.format(infofFileID)
     commentString = sys.argv[1]
-    nProcs = 20
-    chunkSize = 10
     timeSteps = 200
     nLattice = 50
 
@@ -70,7 +65,7 @@ if __name__ == '__main__':
             # save network information and location for future use
             indInfo = 'n{0:02d}P{1:.2f}r{2:02d}'.format(nNodes, nP, rep)
             with open(runsMainFile,'a') as csvfile:
-                csvfile.write('{}: Info {}\n'.format(graphCounter, indInfo))
+                csvfile.write('{0:03d}: Info {}\n'.format(graphCounter, indInfo))
                 #print('container shape: {}, flattened matrix shape: {}'.format(arrayContainer.shape, wMatrix.ravel().shape))
                 arrayContainer[graphCounter,:] = wMatrix.ravel()
                 
