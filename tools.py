@@ -46,7 +46,7 @@ def CheckifPreferred(xOri, yOri, xCoord, yCoord):
 # sgfDiffEq
 
 # SGF dynamics with matrix approach
-#@jit WARNING
+#@jit #WARNING ON is good!!
 def SGFDiffEq(s_matrix, sigma_matrix, deltaS, deltaT):
     updated_matrix = s_matrix + deltaT*(sigma_matrix - deltaS*s_matrix)
     return updated_matrix
@@ -54,7 +54,7 @@ def SGFDiffEq(s_matrix, sigma_matrix, deltaS, deltaT):
 
 # TODO use linalg solve to make it faster and numerically more stable
 # LGF dynamics with matrix approach
-#@jit WARNING
+#@jit # WARNING ON is good!!
 def LGFDiffEq(i_matrix, t_matrix, l_matrix, lambda_matrix, deltaL, deltaT, deltaR, D):
     alpha = D*deltaT/(deltaR**2)                            # constant
     f = (deltaT/2.)*(lambda_matrix - deltaL*l_matrix)       # term that takes into account LFG production for half time step
@@ -120,7 +120,7 @@ def GenerateIMatrix(size):
     #return 1./(1 + np.exp(-beta*x))
 ## TransferFunction
 
-#@jit WARNING
+#@jit #WARNING ON is good!
 def RecurrentNeuralNetwork(inputs, wMatrix, V):             # Recurrent Neural Network dynamics
     #beta = 2
     # bj = wMatrix@V - inputs
@@ -142,10 +142,18 @@ def GetStructure(cell_array, nLattice):
     return structure
 # GetStructure
 
-def GetrNN(csvFile, iGen, nNodes):
+def GetrNN(csvFile, ind):
     #with open('successful_test.csv', 'r') as csvfile:
     with open(csvFile, 'r') as csvfile:
         #reader = csv.reader(csvfile)
-        bestIndividuals = np.loadtxt(csvfile,delimiter=',')
-    wMatrix = np.array(bestIndividuals[iGen,:].reshape(nNodes,nNodes))
+        bestIndividuals = np.loadtxt(csvfile, delimiter = ',')
+    # get nNodes from nGenes
+    nNodes = int(np.sqrt(len(bestIndividuals[ind,:])))
+    wMatrix = np.array(bestIndividuals[ind,:].reshape(nNodes,nNodes))
     return wMatrix
+
+def GetPop(csvFile):
+    with open(csvFile, 'r') as csvfile:
+        #reader = csv.reader(csvfile)
+        networkContainer = np.loadtxt(csvfile, delimiter = ',')
+    return networkContainer
