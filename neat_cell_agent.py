@@ -260,7 +260,7 @@ class cell:
                     #print('preferred position not available. New cell at {}'.format(availableSpots[r]))
                     grid[availableSpots[r][0]][availableSpots[r][1]] = 1         # new position gets a 1 value to mark as new quiet cell
                     grid[self.yPos][self.xPos] = 3                               # mark as splitting cell
-                    cellList.append(cell(availableSpots[r][0], availableSpots[r][1], self.wMatrix, self.nNodes))
+                    cellList.append(cell(availableSpots[r][0], availableSpots[r][1],  self.genome, self.config))
                     # DEBUG
                     #print('cell moved!')
                 else:

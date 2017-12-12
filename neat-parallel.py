@@ -19,7 +19,7 @@ from __future__ import print_function
 import math
 import os
 import time
-import main
+import main_GA
 import neat
 
 #import visualize
@@ -60,14 +60,14 @@ def EvaluateIndividual(genome, config):
 
     # Timing!
     start_time_chemicalsUpdate = time.time()
-    deltaM = sim(genome, config, timeSteps, nLattice)
+    deltaM = main_GA.sim(genome, config, timeSteps, nLattice)
     # Timing!
     end_time_chemicalsUpdate = time.time()
     secs = end_time_chemicalsUpdate - start_time_chemicalsUpdate
 
     #print('Proc: {}, time taken run sim: {:.3f}'.format(os.getpid(), secs))
     #print('process: {} done with individual: {}!'.format(os.getpid(), individual))
-    deltaMatrix = np.array(deltaM)
+    deltaMatrix = deltaM
 
     for ix in range(nLattice):
         for jx in range(nLattice):

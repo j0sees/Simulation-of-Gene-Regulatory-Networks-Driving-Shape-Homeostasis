@@ -8,7 +8,7 @@ import random
 import numpy as np
 ############
 # self made classes
-from cell_agent import *                    # it is allowed to call from this class because there's an __init__.py file in this directory
+from neat_cell_agent import *                    # it is allowed to call from this class because there's an __init__.py file in this directory
 from tools import *
 from tools_GA import *
 ############
