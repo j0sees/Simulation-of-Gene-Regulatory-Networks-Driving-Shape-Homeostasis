@@ -27,7 +27,7 @@ from functools import partial
 #                                                            #
 #============================================================#
 #@jit
-def sim(wMatrix, timeSteps, nNodes, nLattice):
+def sim(genome, config, timeSteps, nLattice):
     """
     Parameters: sim(wMatrix, numberOfTimeSteps, nNodes, nLattice)
     # In ozzy the simulation works solely as a fitness function,
@@ -65,7 +65,7 @@ def sim(wMatrix, timeSteps, nNodes, nLattice):
     #       INITIALIZATION             #
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
     # create mother cell and update the grid with its initial location
-    cellList.append(cell(ix,iy,wMatrix,nNodes))
+    cellList.append(cell(iy,ix,genome,config))
     cellGrid[ix][iy] = 1
     #cellGrid[0,1,0] = 1
     #print('Initial Grid:\n{}'.format(cellGrid[:,:,0]))
