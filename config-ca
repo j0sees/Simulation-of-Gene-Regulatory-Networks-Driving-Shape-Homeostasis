@@ -4,7 +4,7 @@
 [NEAT]
 fitness_criterion     = mean
 # algorithm finishes when avg fitness reaches threshold value
-fitness_threshold     = 8.0
+fitness_threshold     = 0.5
 pop_size              = 20
 reset_on_extinction   = False
 # If this evaluates to True, when all species simultaneously become 

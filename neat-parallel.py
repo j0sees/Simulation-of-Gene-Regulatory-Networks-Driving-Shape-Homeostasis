@@ -21,13 +21,9 @@ import os
 import time
 import main_GA
 import neat
+import pickle
 
 #import visualize
-
-# 2-input XOR inputs and expected outputs.
-xor_inputs = [(0.0, 0.0), (0.0, 1.0), (1.0, 0.0), (1.0, 1.0)]
-xor_outputs = [   (0.0,),     (1.0,),     (1.0,),     (0.0,)]
-
 
 def eval_genome(genome, config):
     """
@@ -102,20 +98,25 @@ def run(config_file):
     pe = neat.ParallelEvaluator(3, EvaluateIndividual)
     winner = p.run(pe.evaluate)
 
+    # Save the winner.
+    filename = 'test_pickled_genome'#.format()
+    with open(filename, 'wb') as f:
+        pickle.dump(winner, f)
+
     # Display the winning genome.
     print('\nBest genome:\n{!s}'.format(winner))
 
     # Show output of the most fit genome against training data.
     print('\nOutput:')
     winner_net = neat.nn.FeedForwardNetwork.create(winner, config)
-    for xi, xo in zip(xor_inputs, xor_outputs):
-        output = winner_net.activate(xi)
-        print("input {!r}, expected output {!r}, got {!r}".format(xi, xo, output))
+    #for xi, xo in zip(xor_inputs, xor_outputs):
+    #    output = winner_net.activate(xi)
+    #    print("input {!r}, expected output {!r}, got {!r}".format(xi, xo, output))
 
     #node_names = {-1:'A', -2: 'B', 0:'A XOR B'}
-    #visualize.draw_net(config, winner, True, node_names = node_names)
-    #visualize.plot_stats(stats, ylog=False, view=True)
-    #visualize.plot_species(stats, view=True)
+    visualize.draw_net(config, winner, True)#, node_names = node_names)
+    visualize.plot_stats(stats, ylog=False, view=True)
+    visualize.plot_species(stats, view=True)
 
 
 if __name__ == '__main__':
