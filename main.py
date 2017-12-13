@@ -1,5 +1,7 @@
 import sys
+import os
 import time
+import pickle
 #import random
 import numpy as np
 #import matplotlib.pyplot as plt
@@ -8,11 +10,11 @@ from neat_cell_agent import *                    # it is allowed to call from th
 from tools import *
 from plot import *
 #import csv
-import cProfile
+#import cProfile
 # from numba import jit
 
 #@jit
-def sim(genome, config_path, timeSteps, nLattice, mode):
+def sim(network, timeSteps, nLattice, mode):
     """
     Parameters: sim(wMatrix, numberOfTimeSteps, NumberOfGeneration, nNodes, individual, nLattice, mode)
     # mode = True: cell_system as fitness function
@@ -54,8 +56,8 @@ def sim(genome, config_path, timeSteps, nLattice, mode):
     #       INITIALIZATION             #
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
     # create mother cell and update the grid with its initial location
-    cellList.append(cell(ix,iy,genome,config))
-    cellGrid[ix][iy] = 1
+    cellList.append(cell(iy,ix,network))
+    cellGrid[iy][ix] = 1
     #print('Initial grid:\n' + str(cellGrid[:,:,0]))
     #cellGrid[ix][iy][2] = 400.
 
@@ -274,17 +276,18 @@ if __name__ == '__main__':
     # mode = False: cell_system as display system
     #fileName = sys.argv[1]
     local_dir = os.path.dirname(__file__)
-    config_path = os.path.join(local_dir, 'config-ca')
+    config_path = os.path.join(local_dir, 'test0_save_config')
     
     #wMatrix = GetrNN(fileName,individual)
     #wMatrix = wMatrix.reshape(nNodes,nNodes)
     #cProfile.run('sim(wMatrix,    timeSteps,  iGen, nNodes, individual, nLattice, mode)')
     # parameters
     # load the winner
-    with open('test_pickled_genome', 'rb') as f:
+    with open('test0_pickled_genome', 'rb') as f:
         genome = pickle.load(f)
-
-    sim(genome, config_path, timeSteps, nLattice, mode)
+        
+    network = neat.nn.recurrent.RecurrentNetwork.create(genome, config_path)
+    sim(network, timeSteps, nLattice, mode)
     plt.close()
 #else:
     # if called from another script

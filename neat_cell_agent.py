@@ -7,7 +7,7 @@ import neat
 
 class cell:
     # defines whats needed when a new agent (Cell) of this class is created
-    def __init__(self, yPos, xPos, genome, config):
+    def __init__(self, yPos, xPos, network):
         self.state = 'Quiet'                        # State of the cell. DEFAULT: quiet
         self.xPos = xPos                            # Initial position on x axis
         self.yPos = yPos                            # Initial position on y axis
@@ -27,10 +27,11 @@ class cell:
         # Neural network stuff
         #self.wMatrix = np.array(w)
         #self.WMatrix = W
-        self.genome = genome
-        self.config = config
-        self.network = neat.nn.recurrent.RecurrentNetwork.create(genome, config)
- #self.phi = phi
+        #self.genome = genome
+        #self.config = config
+        #self.network = neat.nn.recurrent.RecurrentNetwork.create(self.genome,self.config)
+        self.network = network
+        #self.phi = phi
         #self.theta = theta
 #        self.nNodes = nodes                            # WARNING hardcoded!
 #        self.nInputs = 2
@@ -64,6 +65,7 @@ class cell:
         #inputs[0] = SGF_lecture
         #inputs[1] = LGF_lecture
         #self.V = RecurrentNeuralNetwork(inputs, self.wMatrix, self.V)
+        self.network.reset()
         outputs = self.network.activate(inputs)
         self.neighbourList = [[self.yPos - 1, self.xPos], [self.yPos + 1, self.xPos], [self.yPos, self.xPos - 1], [self.yPos, self.xPos + 1]]
         #border = self.border
@@ -240,7 +242,7 @@ class cell:
                         if CheckifPreferred(xOri, yOri, neighbr[1], neighbr[0]):    # Check if is preferred
                             grid[yOri][xOri] = 1         # new position gets a 1 value to mark as new quiet cell
                             grid[self.yPos][self.xPos] = 3                               # mark as splitting cell
-                            cellList.append(cell(yOri, xOri, self.genome, self.config))
+                            cellList.append(cell(yOri, xOri, self.network))
                             needOtherNeighbours = False
                             #print('{}: new cell at preferred position!'.format(neighbr))                                       
                             break
@@ -260,7 +262,7 @@ class cell:
                     #print('preferred position not available. New cell at {}'.format(availableSpots[r]))
                     grid[availableSpots[r][0]][availableSpots[r][1]] = 1         # new position gets a 1 value to mark as new quiet cell
                     grid[self.yPos][self.xPos] = 3                               # mark as splitting cell
-                    cellList.append(cell(availableSpots[r][0], availableSpots[r][1],  self.genome, self.config))
+                    cellList.append(cell(availableSpots[r][0], availableSpots[r][1],  self.network))
                     # DEBUG
                     #print('cell moved!')
                 else:

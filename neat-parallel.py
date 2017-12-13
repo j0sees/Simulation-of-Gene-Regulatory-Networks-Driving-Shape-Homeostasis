@@ -19,7 +19,7 @@ from __future__ import print_function
 import math
 import os
 import time
-import main_GA
+from main_GA import sim
 import neat
 import pickle
 
@@ -56,7 +56,8 @@ def EvaluateIndividual(genome, config):
 
     # Timing!
     start_time_chemicalsUpdate = time.time()
-    deltaM = main_GA.sim(genome, config, timeSteps, nLattice)
+    network = neat.nn.recurrent.RecurrentNetwork.create(genome, config)
+    deltaM = sim(network, timeSteps, nLattice)
     # Timing!
     end_time_chemicalsUpdate = time.time()
     secs = end_time_chemicalsUpdate - start_time_chemicalsUpdate
@@ -100,8 +101,12 @@ def run(config_file):
 
     # Save the winner.
     filename = 'test_pickled_genome'#.format()
+    config.save('test_save_config')
     with open(filename, 'wb') as f:
         pickle.dump(winner, f)
+
+    # Log statistics.
+    stats.save()
 
     # Display the winning genome.
     print('\nBest genome:\n{!s}'.format(winner))
