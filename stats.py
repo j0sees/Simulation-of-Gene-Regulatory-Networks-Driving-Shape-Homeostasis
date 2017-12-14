@@ -1,4 +1,4 @@
-#import sys                                  # to get command line args
+import sys                                  # to get command line args
 #import os                                   # to handle paths
 #import time                                 # to get system time
 import numpy as np  
@@ -7,6 +7,7 @@ from datetime import datetime as dt
 import main_GA
 from tools import *
 import subprocess as sp
+import csv
 
 def ProcInds(timedateStr):
     """
@@ -78,10 +79,10 @@ def NGenvsFitness(timedateStr):
     """
     Number of nodes vs fitness
     """
-    nGenList = [5, 10]
-    nRuns = 2
+    nGenList = [5,10,15,20]
+    nRuns = 20
     for iGen in nGenList:
-        string = './main_GA.py {0} {1} {2}'.format(nRuns, iGen, timedateStr)
+        string = './main_GA.py {0} {1} {2}'.format(timedateStr, nRuns, iGen)
         print('Evaluating: {}'.format(string))
         subproc = sp.Popen(string, shell = True)
         print('waiting...')
@@ -92,10 +93,10 @@ def NNodesvsFitness(timedateStr):
     """
     Number of nodes vs fitness
     """
-    nNodesList = [25, 8]
+    nNodesList = [25, 20, 15, 10, 8]
     nRuns = 20
     for iNode in nNodesList:
-        string = './main_GA.py {0} {1} {2}'.format(nRuns, iNode, timedateStr)
+        string = './main_GA.py {0} {1} {2}'.format(timedateStr, nRuns, iNode)
         print('Evaluating: {}'.format(string))
         subproc = sp.Popen(string, shell = True)
         print('waiting...')
@@ -116,68 +117,106 @@ def CrossProbvsFitness(timedateStr):
 # CrossProbvsFitness()
 
 def RnnDynamics(timedateStr):
-    delta = 0.01
-    sgfInit = 0
-    lgfInit = 0
-    nNodes = 25
-    maxChem = 5
-    reps = 1000
-    network = '20171108_002253_284367'
-    fileName = '{}'.format(timedateStr)
-    iGen = 0
-    maxVal = 0.5
-    xThreshold = 0.5
-    yThreshold = 0.01    
+    scale = 100
+    delta = 1./scale                                        # increment for input values
+    sgfInit = 0.                                         # initial value
+    lgfInit = 0.                                         # initial value    
+    nNodes = 25                                        # 
+    maxChemVal = 1                                          # max value of the pheromones to evaluate
+    counters = 4#8                                        # 4 states + 4 directions
+    reps = 100                                           # number of repetitions to get to the fixed points
+    network = '20171129_113233_571431_sorted'      # network to run
+    fileName = '{}'.format(timedateStr)                 # filename
+    ind = 386# sys.argv[2]                                  # individual to run
+    maxVal = 0.5                                        # min value fo states
+    xThreshold = 0.5                                    # threshold value fo states
+    yThreshold = 0.01                                   # get state value    
     inputs = np.zeros([nNodes])
     inputs[0] = sgfInit
     inputs[1] = lgfInit
-    data = np.zeros([reps, 4])
-    wMatrix = GetrNN('populations/{}.csv'.format(network), iGen, nNodes)
-    chemMap = np.zeros([int(maxChem/delta), int(maxChem/delta), 4])
+    nBoundary = 0.25
+    sBoundary = 0.5
+    eBoundary = 0.75
+
+    #data = np.zeros([reps, 4])
+    wMatrix = GetrNN('populations/{}.csv'.format(network), ind)
+    chemMap = np.zeros([int(maxChemVal/delta), int(maxChemVal/delta)])
     
-    with open('chem_maps/{}.csv'.format(fileName), 'a') as csvfile:
-        csvfile.write('# {}\n# sgf_amount\tlgf_amount\tquietCount\tsplitCount\tmoveCount\tdieCount\n'.format(network))
+    #with open('chem_maps/{}.csv'.format(fileName), 'a') as csvfile:
+    #    csvfile.write('# {}\n# sgf_amount\tlgf_amount\tquietCount\tsplitCount\tmoveCount\tdieCount\n'.format(network))
         # replace while for a for loop and use np.linspace(0,5,501)
     sgfInit = 0
-    while sgfInit <= maxChem:
+    while sgfInit <= maxChemVal:
         lgfInit = 0
-        while lgfInit <= maxChem:
+#        print('testing: SGF = {:.3f}'.format(sgfInit))
+        while lgfInit <= maxChemVal:
             V = np.zeros([nNodes])
             tStep = 0
-            qCount = 0
-            sCount = 0
-            mCount = 0
-            dCount = 0
+            countsArray = np.zeros(counters)
+            # countsArray = [quiet, split, move, die, north, south, east, west]
             while tStep < reps:
+                inputs[0] = sgfInit
+                inputs[1] = lgfInit
                 V = RecurrentNeuralNetwork(inputs, wMatrix, V)
                 iStatus = V[2] #np.random.random() #O[0]        # Proliferate:  Split
                 jStatus = V[3] #np.random.random() #O[1]        # Move:         Move
                 kStatus = V[4] #np.random.random() #O[2]        # Apoptosis:    Die
                 if iStatus < xThreshold and jStatus < xThreshold and kStatus < xThreshold:
-                    qCount += 1 #'Quiet'
+                    countsArray[0] += 1 #'Quiet'
                 else:
                     for ix in iStatus, jStatus, kStatus:
                         if maxVal < ix:
                             maxVal = ix
                     if abs(maxVal - iStatus) <= yThreshold:
-                        sCount += 1 #'Split'
+                        countsArray[1] += 1 #'Split'
                     elif abs(maxVal - jStatus) <= yThreshold:
-                        mCount += 1 #'Move'
+                        countsArray[2] += 1 #'Move'
                     else:
-                        dCount += 1 #'Die'
+                        countsArray[3] += 1 #'Die'
+                        # boundaries for orientation
+                #arrow = V[7]  #np.random.random()
+                #if arrow < sBoundary:
+                    #if arrow < nBoundary:
+                        ## orientation North
+                        #countsArray[4] += 1
+                    #else:
+                        ## orientation South
+                        #countsArray[5] += 1
+                #else: 
+                    #if arrow < eBoundary:
+                        ## orientation East
+                        #countsArray[6] += 1
+                    #else:   #arrow < wBoundary:
+                        ## orientation West
+                        #countsArray[7] += 1
                 tStep += 1
-                chemMap[lgfInit*100,] = np.array([])
             
-            #print('testing: LGF = {:.2f}, SGF = {:.2f}'.format(lgfInit, sgfInit))
-            #with open('chem_maps/{}.csv'.format(fileName), 'a') as csvfile:
-                #writer = csv.writer(csvfile)
-                #[writer.writerow(row) for row in data]
-                #csvfile.write('\n\n')
-            #    csvfile.write('{:.2f}\t{:.2f}\t{}\t{}\t{}\t{}\n'.format(sgfInit, lgfInit, qCount, sCount, mCount, dCount))
+            indexes = np.argsort(countsArray)
+            if countsArray[indexes[-1]] - countsArray[indexes[-2]] <= 10:
+                chemMap[int(lgfInit*scale), int(sgfInit*scale)] = 0
+            else:
+                if indexes[-1] == 0:
+                    chemMap[int(lgfInit*scale), int(sgfInit*scale)] = 1
+                elif indexes[-1] == 1:
+                    chemMap[int(lgfInit*scale), int(sgfInit*scale)] = 2
+                elif indexes[-1] == 2:
+                    chemMap[int(lgfInit*scale), int(sgfInit*scale)] = 3
+                else:
+                    chemMap[int(lgfInit*scale), int(sgfInit*scale)] = 4
+                    
             lgfInit += delta
-        with open('chem_maps/{}.csv'.format(fileName), 'a') as csvfile:
-            csvfile.write('\n\n')
+        #with open('chem_maps/{}.csv'.format(fileName), 'a') as csvfile:
+        #    csvfile.write('\n\n')
         sgfInit += delta
+    with open('chem_maps/{}.csv'.format(fileName), 'w') as csvfile:
+       writer = csv.writer(csvfile)
+       [writer.writerow(row) for row in chemMap]
+    #with open(networkFileName, 'w') as csvfile:
+        #writer = csv.writer(csvfile)
+        #[writer.writerow(r) for r in bestIndividuals]
+       #csvfile.write('\n\n')
+       #csvfile.write('{:.2f}\t{:.2f}\t{}\t{}\t{}\t{}\n'.format(sgfInit, lgfInit, qCount, sCount, mCount, dCount))
+
 # RnnDynamics
 
 #def FitnessGen(nGen):
@@ -186,13 +225,23 @@ def RnnDynamics(timedateStr):
     #"""
 
 if __name__ == '__main__':
+    comment_string = sys.argv[1]
     timedateStr = '{0:%Y%m%d_%H%M%S}'.format(dt.now())
-    #'{:%Y%m%d}'.format(dt.now())
+    runsMainFile = 'runs/run_{0}.log'.format(timedateStr)
+
+    # WARNING 
+    # it's not allowed to run several test at the same time since the args for the GA have to change for every single test!!
+    # also, if they use the same timedate string the same run log file will be used!!
+    
+    with open(runsMainFile,'a') as csvfile:
+        csvfile.write('# Run description:\n')
+        csvfile.write('# {}\n\n'.format(comment_string))
+    
     # ProcInds(timedateStr)
     # ProcChunks(timedateStr)
     # ProcDefaultChunks(timedateStr)
     # GetfitnessStats(timedateStr)
     # NNodesvsFitness(timedateStr)
-    # RnnDynamics(timedateStr)
+    RnnDynamics(timedateStr)
     # CrossProbvsFitness(timedateStr)
-    NGenvsFitness(timedateStr)
+    # NGenvsFitness(timedateStr)
