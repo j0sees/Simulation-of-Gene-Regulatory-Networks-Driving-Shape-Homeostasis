@@ -9,6 +9,7 @@ import numpy as np
 from neat_cell_agent import *                    # it is allowed to call from this class because there's an __init__.py file in this directory
 from tools import *
 from plot import *
+from importlib import reload
 #import csv
 #import cProfile
 # from numba import jit
@@ -274,19 +275,34 @@ if __name__ == '__main__':
     mode = False
     # mode = True: cell_system as fitness function
     # mode = False: cell_system as display system
-    #fileName = sys.argv[1]
+    fileName = 'genomes/{}'.format(sys.argv[1])
+    config_file = 'genomes/{}'.format(sys.argv[2])
+    # config_file = '{}'.format(sys.argv[2])
     local_dir = os.path.dirname(__file__)
-    config_path = os.path.join(local_dir, 'test0_save_config')
+    config_path = os.path.join(local_dir, config_file)
     
     #wMatrix = GetrNN(fileName,individual)
     #wMatrix = wMatrix.reshape(nNodes,nNodes)
     #cProfile.run('sim(wMatrix,    timeSteps,  iGen, nNodes, individual, nLattice, mode)')
-    # parameters
+
+    # Config
+    config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,neat.DefaultSpeciesSet, neat.DefaultStagnation,config_path)
+
     # load the winner
-    with open('test0_pickled_genome', 'rb') as f:
-        genome = pickle.load(f)
-        
-    network = neat.nn.recurrent.RecurrentNetwork.create(genome, config_path)
+    print('genome file: {0}\nconfig file: {1}'.format(fileName, config_file))
+    enc = sys.getdefaultencoding()
+    print('=> before encoding: {}'.format(enc))
+
+    reload(sys)  
+    #sys.setdefaultencoding('ascii')
+
+    enc = sys.getdefaultencoding()
+    print('=> after encoding: {}'.format(enc))
+
+    with open(fileName, 'rb') as f:
+        genome = pickle.load(f, encoding = 'bytes')
+
+    network = neat.nn.RecurrentNetwork.create(genome, config)
     sim(network, timeSteps, nLattice, mode)
     plt.close()
 #else:
