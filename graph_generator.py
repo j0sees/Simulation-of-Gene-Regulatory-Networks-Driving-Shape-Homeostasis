@@ -65,7 +65,7 @@ if __name__ == '__main__':
             # save network information and location for future use
             indInfo = 'n{0:02d}P{1:.2f}r{2:02d}'.format(nNodes, nP, rep)
             with open(runsMainFile,'a') as csvfile:
-                csvfile.write('{0:03d}: Info {}\n'.format(graphCounter, indInfo))
+                csvfile.write('{0:03d}: Info {1}\n'.format(graphCounter, indInfo))
                 #print('container shape: {}, flattened matrix shape: {}'.format(arrayContainer.shape, wMatrix.ravel().shape))
                 arrayContainer[graphCounter,:] = wMatrix.ravel()
                 
@@ -77,7 +77,7 @@ if __name__ == '__main__':
     # Create filename: unique, related to current time
     popFileID = '{0:%Y%m%d_%H%M%S_%f}'.format(dt.now())
     networkFileName = 'populations/{0}.csv'.format(popFileID)
-
+    print('Generated network file name:\n{}'.format(popFileID))
     # save network name
     with open(runsMainFile,'a') as csvfile:
         #csvfile.write('{}'.format(fitnessArray))

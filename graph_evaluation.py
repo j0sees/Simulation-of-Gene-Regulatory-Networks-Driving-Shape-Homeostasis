@@ -65,8 +65,20 @@ if __name__ == '__main__':
     fitnessArray = np.zeros(nNets)
     with poolcontext(processes = nProcs) as pool:
         fitnessArray = pool.map(partialEval, index_list)
-        
-    arrayFile = 'test'
+    sortedIndexes = np.argsort(fitnessArray)
+    
+    arrayFile = '{}_fitness.csv'.format(fileName)
     with open(arrayFile, 'w') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(fitnessArray)
+        writer.writerow(sortedIndexes)
+        # Save generated network, unique for each run
+
+    sortedArrayFile = 'populations/{}_sorted.csv'.format(fileName)
+    sortedArray = np.zeros([nNets, nNodes])
+    for r in range(nNets):
+        sortedArray[r,:] = networkContainer[sortedIndexes[r],:]
+        
+    with open(sortedArrayFile, 'w') as csvfile:
+        writer = csv.writer(csvfile)
+        [writer.writerow(r) for r in sortedArray]

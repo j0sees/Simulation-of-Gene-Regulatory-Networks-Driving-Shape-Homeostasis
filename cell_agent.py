@@ -19,7 +19,7 @@ class cell:
         self.deathCounter = 0                       # Countdown to extinction
         self.deathTime = 1                          # Time scale for dying
         self.amidead = False                        # Cell dead or alive
-        self.quietCounter = 0                       # Quiet counter
+        #self.quietCounter = 0                       # Quiet counter
         #self.border = 0                             # size of the lattice
         self.sgfAmount = 0                          # Amount of "pheromone" to deposit in the grid
         self.lgfAmount = 0
@@ -83,6 +83,7 @@ class cell:
         self.V = RecurrentNeuralNetwork(inputs, self.wMatrix, self.V)
         #self.neighbourList = flatList([flatList([self.yPos - 1, self.xPos]), flatList([self.yPos + 1, self.xPos]), flatList([self.yPos, self.xPos - 1]), flatList([self.yPos, self.xPos + 1])])
         self.neighbourList = [[self.yPos - 1, self.xPos], [self.yPos + 1, self.xPos], [self.yPos, self.xPos - 1], [self.yPos, self.xPos + 1]]
+        #print('neighbour List: {}'.format(self.neighbourList))
         #border = self.border
         # possible states: split, move, die
         iStatus = self.V[2] #np.random.random() #O[0]        # Proliferate:  Split
@@ -103,32 +104,39 @@ class cell:
             eBoundary = 0.75
             #wBoundary = 1
             arrow = self.V[7]  #np.random.random()
+            #print('output value from the network: {:.3f}'.format(arrow))
             # oriented according to numpy order v>, not usual >^
             if arrow < sBoundary:
                 if arrow < nBoundary:
                     #xCoord = self.xPos 
                     #yCoord = self.yPos - 1
                     self.orientation = self.neighbourList[0]
-                # orientation North
+                    # orientation North
+                    #print('preferred direction is north!')
                 else:
                     # orientation South
                     # xCoord = self.xPos 
                     # yCoord = self.yPos + 1
                     self.orientation = self.neighbourList[1]
+                    #print('preferred direction is south!')
             else: 
                 if arrow < eBoundary:
                     # orientation East
                     #xCoord = self.xPos + 1
                     #yCoord = self.yPos 
                     self.orientation = self.neighbourList[3]
+                    #print('preferred direction is east!')
                 else:   #arrow < wBoundary:
                     # orientation West
                     #xCoord = self.xPos - 1
                     #yCoord = self.yPos
                     self.orientation = self.neighbourList[2]
+                    #print('preferred direction is west!')
             #self.orientation = [yCoord, xCoord]
         else:                                           # update orientation as current position if compass False
             self.orientation = [self.yPos, self.xPos]
+            #print('no preferred direction... :(')
+        #print('orientation: {}'.format(self.orientation))
         # if
         #print('neighbourList type: {}'.format(type(self.neighbourList)))
         #print('Current pos: [{}, {}], arrow: {:.3f}, preferred direction: {}'.format(self.yPos, self.xPos, arrow, self.orientation))
@@ -161,7 +169,7 @@ class cell:
     #@jit
     def Quiet(self,grid):
         grid[self.yPos][self.xPos] = 1
-        self.quietCounter += 1
+        #self.quietCounter += 1
     # Quiet
 
     #@jit
@@ -197,9 +205,9 @@ class cell:
                     xOri = self.orientation[1]
                     yOri = self.orientation[0]
                     if CheckifPreferred(xOri, yOri, neighbr[1], neighbr[0]):    # Check if is preferred
-                        grid[yOri][xOri] = 2      # new position gets a 2 value to mark as moving cell
-                        grid[self.yPos][self.xPos] = 0        # old position gets a -1 value to indicate that there was a cell there before
-                        self.xPos = xOri                                  # update position
+                        grid[yOri][xOri] = 2                # new position gets a 2 value to mark as moving cell
+                        grid[self.yPos][self.xPos] = 0      # old position gets a -1 value to indicate that there was a cell there before
+                        self.xPos = xOri                                        # update position
                         self.yPos = yOri
                         needOtherNeighbours = False
                         # DEBUG

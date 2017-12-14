@@ -91,7 +91,8 @@ def sim(network, timeSteps, nLattice):
         # Timing!
         start_time_tmpListLoop = time.time()
         tmpCellListLength = len(tmpCellList)
-        while len(tmpCellList) > 0:                 # while  the tmp list of cells is longer than 1
+        quietCounter = 0
+        while len(tmpCellList) > 0:                 # while the tmp list of cells is longer than 1
             # 1st step => choose a random cell from the list of existing cells
             rndCell = np.random.randint(len(tmpCellList))
             # store lattice size
@@ -117,6 +118,7 @@ def sim(network, timeSteps, nLattice):
             # according to cell status perform action: split or stay quiet
             if tmpCellList[rndCell].state == 'Quiet':           # Check the state
                 tmpCellList[rndCell].Quiet(cellGrid)            # call method that performs selected action
+                quietCounter += 1
                 del tmpCellList[rndCell]                        # delete cell from temporal list
 
             elif tmpCellList[rndCell].state == 'Split':
@@ -155,11 +157,39 @@ def sim(network, timeSteps, nLattice):
         #secs = end_time_chemicalsUpdate - start_time_chemicalsUpdate
         #print('time taken to update chemicals:' + str(secs))
 
+        ####################################################################
+        ##       IN-PLACE UPDATE
+        ####################################################################
+        #chemGrid[:,:,0] *=
+        #SGFDiffEq(s_matrix, sigma_matrix, deltaS, deltaT):
+        #updated_matrix = s_matrix + deltaT*(sigma_matrix - deltaS*s_matrix)
+        #return updated_matrix
+        ## sgfDiffEq
+
+        ## TODO use linalg solve to make it faster and numerically more stable
+        ## LGF dynamics with matrix approach
+        ##@jit # WARNING ON is good!!
+    #def LGFDiffEq(i_matrix, t_matrix, l_matrix, lambda_matrix, deltaL, deltaT, deltaR, D):
+        #alpha = D*deltaT/(deltaR**2)                            # constant
+        #f = (deltaT/2.)*(lambda_matrix - deltaL*l_matrix)       # term that takes into account LFG production for half time step
+        #g = linalg.inv(i_matrix - (alpha/2.)*t_matrix)          # inverse of some intermediate matrix
+        #h = i_matrix + (alpha/2.)*t_matrix                      # some intermediate matrix
+        ##l_halftStep = g@(l_matrix@h + f)                        # half time step calculation for LGF values
+        #l_halftStep = np.matmul(g,(np.matmul(l_matrix,h) + f))                        # half time step calculation for LGF values
+        ##print('grid after half time step...\n' + str(l_halftStep))
+        #f = (deltaT/2.)*(lambda_matrix - deltaL*l_halftStep)    # updated term...
+        #l_tStep = np.matmul((np.matmul(h,l_halftStep) + f),g)                         # final computation
+        #return l_tStep
+
+        ###################################################################
+        #       IN-PLACE UPDATE
+        ###################################################################
+
         #print('grid after update...\n' + str(cellGrid[:,:,2]))
         #print('################################LGF total = ' + str(chemsum))
         #print('updated grid:\n' + str(cellGrid[:,:,0]))
 
-        if len(cellList) == 0:                                      # if cells die during the simulation resturn two different structs
+        if len(cellList) == 0 or quietCounter == len(cellList):       # if cells die during the simulation resturn two different structs
             halfwayStruct = np.zeros([nLattice,nLattice])
             finalStruct = np.ones([nLattice,nLattice])
             #print('zero cells!')
@@ -290,7 +320,7 @@ def EvaluateIndividual(timeSteps, nNodes, nLattice, individual):
 def partialEval(ind):
     # call the target function
     #print('ts {}, nN {}, nL {}, ind {}'.format(timeSteps, nNodes, nLattice, ind))
-    return EvaluateIndividual(timeSteps, nNodes, nLattice, int(ind))
+    return EvaluateIndividual(timeSteps, nNodes, nLattice, ind)
 
 #def YourFitnessFunction(someParam1, param2, x)
     ##do something
@@ -309,34 +339,35 @@ if __name__ == '__main__':
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
     # nProcs*cycles = 4*int + 2
     # popSize = nProcs*cycles
-    nRuns = int(sys.argv[1]) #10
-    nProcs = 10 # int(sys.argv[1])                              # multiprocessing will use as many cores as it can see
+    nRuns = int(sys.argv[2]) #10
+    nProcs = 21 # int(sys.argv[1])                              # multiprocessing will use as many cores as it can see
     #maxproc = 1
     DEFAULT_VALUE = -1                                          # WARNING is this necessary?
-    popSize = 22 # int(sys.argv[2])                              # Population size. Must have certain 
-    nNodes = 25 # int(sys.argv[2])
+    popSize = 21 # int(sys.argv[2])                              # Population size. Must have certain 
+    nNodes = int(sys.argv[3])
     nGenes = nNodes**2                                          # Number of genes
     crossoverProb = 0.5 #float(sys.argv[2])                                         # Crossover probability
     mutationProb = 1.                                          # Mutation probability
     crossMutProb = 0.5                                          # probability of doing mutation or crossover
     #tournamentSelParam = 0.75                                  # Tournament selection parameter
     tournamentSize = 4                                          # Tournament size. EVEN
-    eliteNum = 2                                                # number of elite solutions to carry to next generation
-    nOfGenerations = int(sys.argv[2])
+    eliteNum = 1                                                # number of elite solutions to carry to next generation
+    nOfGenerations = 10#int(sys.argv[3])                       # 10 is a reasonable number since the GA is so efficient...
     timeSteps = 200
     nLattice = 50
     chunkSize = 1 # int(sys.argv[2])
     #fileHeader = sys.argv[2]
+    
     gaInfo = 'p{0:02d}g{1:04d}x{2:0.1f}c{3:0.1f}m{4:0.1f}t{5}e{6}G{7:02d}'.format(popSize,nGenes,crossMutProb,crossoverProb,mutationProb,tournamentSize,eliteNum, nOfGenerations)
     mpInfo = 'P{0:02d}C{1:02d}'.format(nProcs, chunkSize)
-    simInfo = 'n{0:02d}T{1:03d}L{2:02d}'.format(nNodes, timeSteps, nLattice)
+    simInfo = 'n{0:02d}T{1:03d}L{2:02d}R{3:02d}'.format(nNodes, timeSteps, nLattice, nRuns)
     
     iRun = 0
     benchmakingData = np.zeros([nRuns,2])
     statsData = np.zeros([nRuns,nOfGenerations,2])
     populationFiles = []
-    infofFileID = sys.argv[3] #'{0:%Y%m%d_%H%M%S}'.format(dt.now())
-    runsMainFile = 'runs/run_{}.log'.format(infofFileID)
+    infofFileID = sys.argv[1] #'{0:%Y%m%d_%H%M%S}'.format(dt.now())
+    runsMainFile = 'runs/run_{0}.log'.format(infofFileID)
     benchmarkFile = 'benchmarks/{0}.csv'.format(infofFileID)
     statsFile = 'stats/{0}.csv'.format(infofFileID)
 
@@ -344,11 +375,11 @@ if __name__ == '__main__':
     #statsFiles
     
     with open(runsMainFile,'a') as csvfile:
-        csvfile.write('####################################\n')
+        csvfile.write('#######################################\n')
         csvfile.write('# GA Info: {}\n# mp Info: {}\n# Sim Info: {}\n'.format(gaInfo, mpInfo, simInfo))
 
     while iRun < nRuns:
-        print('# Run number {} of {}'.format(iRun+1, nRuns))
+        print('# Run number {} of {}'.format(iRun + 1, nRuns))
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
         #       INITIALISATION             #
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -368,13 +399,14 @@ if __name__ == '__main__':
         population = population.reshape(popSize, nGenes)                        # Reshape as popSize x nGenes matrix
         #print('population length: {}'.format(len(population)))
         
-        # = np.zeros([])
-        np.random.seed()
-        randPop = -1. + 2.*np.random.rand(popSize, nGenes)
+        csvFile = 'populations/zero_fitness_pop.csv'
+        randPop = GetPop(csvFile)
+        
+        #np.random.seed()
+        #randPop = -1. + 2.*np.random.rand(popSize, nGenes)
         #population = -1. + 2.*np.random.rand(popSize, nGenes)
+        
         np.copyto(population, randPop)
-        #for ix in range(popSize*nGenes):
-        #    population[ix] = -1. + 2.*np.random.random()                        # Generate population
         
         #print('population shared array created successfully!')
 
@@ -398,7 +430,7 @@ if __name__ == '__main__':
             #nNodes_list = [nNodes for x in range(popSize)]
             #nLattice_list = [nLattice for x in range(popSize)]
             #index_list = list(range(popSize))
-            index_list = [int(x) for x in range(popSize)]
+            index_list = [ x for x in range(popSize)]
             #print('{}'.format(index_list))
             #index_list = np.arange(popSize)
             #args = zip(index_list, timeSteps_list, iGen_list, nNodes_list, nLattice_list)
@@ -440,12 +472,15 @@ if __name__ == '__main__':
             fitnessInfo[iGen, 0] = np.amax(fitness) #sorted_fitness[popSize - 1]                   # np.amax(fitness)
             fitnessInfo[iGen, 1] = np.average(fitness)
             #print('Gen: {2}\t=>\tmax fit: {0:.3f},\tavg fit: {1:.3f}'.format(fitnessInfo[iGen, 0], fitnessInfo[iGen, 1], iGen + 1))
-            print('Gen: {2}\t=>\tavg fit: {1:.3f}\nfit array: \n{0}'.format(fitness, fitnessInfo[iGen, 1], iGen + 1))
+            print('Gen: {2}\t=>\tavg fit: {1:.3f}\tmax fit: {0}'.format(fitnessInfo[iGen, 0], fitnessInfo[iGen, 1], iGen + 1))
+            string = [float('{:.3f}'.format(x)) for x in fitness]
+            print('{}'.format(string))
             # DEBUG
             #print('sorted fitness array, before deleting:\n' + str(fitness))
 
             # 2nd step: Elitism => Save the best individuals for next generation
             iElit = 1                                               # Elite counter: individuals with the best fitness are kept untouched
+            # WARNING use list[-1]
             while iElit <= eliteNum:
                 #index = fitness[popSize - iElit][1]                # get the index of the last members of the list, i.e., most fit
                 index = sorted_fitness[popSize - iElit]

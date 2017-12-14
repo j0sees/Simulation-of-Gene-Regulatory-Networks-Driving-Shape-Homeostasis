@@ -15,13 +15,15 @@ or inherit from ParallelEvaluator if you need to do something more complicated.
 """
 
 from __future__ import print_function
-
+from datetime import datetime as dt
 import math
 import os
+import sys
 import time
 from main_GA import sim
 import neat
 import pickle
+from importlib import reload
 
 #import visualize
 
@@ -83,6 +85,7 @@ def EvaluateIndividual(genome, config):
 
 def run(config_file):
     # Load configuration.
+    nWorkers = 10
     config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,
                          neat.DefaultSpeciesSet, neat.DefaultStagnation,
                          config_file)
@@ -95,13 +98,26 @@ def run(config_file):
     stats = neat.StatisticsReporter()
     p.add_reporter(stats)
 
+    enc = sys.getdefaultencoding()
+    print('=> before encoding: {}'.format(enc))
+
+    reload(sys)  
+    sys.setdefaultencoding('UTF-8')
+
+    enc = sys.getdefaultencoding()
+    print('=> after encoding: {}'.format(enc))
+
+
     # Run for up to 300 generations.
-    pe = neat.ParallelEvaluator(3, EvaluateIndividual)
+    pe = neat.ParallelEvaluator(nWorkers, EvaluateIndividual)
     winner = p.run(pe.evaluate)
 
     # Save the winner.
-    filename = 'test_pickled_genome'#.format()
-    config.save('test_save_config')
+    timedateStr = '{0:%Y%m%d_%H%M%S_%f}'.format(dt.now())
+    filename = 'genomes/{}_winner_genome'.format(timedateStr)
+    config.save('genomes/{}_config'.format(timedateStr))
+    
+    print('=> Encoding: {}'.format(enc))
     with open(filename, 'wb') as f:
         pickle.dump(winner, f)
 
@@ -122,7 +138,6 @@ def run(config_file):
     visualize.draw_net(config, winner, True)#, node_names = node_names)
     visualize.plot_stats(stats, ylog=False, view=True)
     visualize.plot_species(stats, view=True)
-
 
 if __name__ == '__main__':
     # Determine path to configuration file. This path manipulation is
