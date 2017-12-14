@@ -5,46 +5,6 @@ import numpy as np
 #from main import *
 #from numba import jit
 
-# Evaluate variable using the fitness function
-
-# @jit
-#def EvaluateIndividual(individual, timeSteps, iGen, nNodes, nLattice, mode):
-    #totSum = 0.
-    ##print('generating wMatrix...')
-    #wMatrix = population[individual,:].reshape(nNodes,nNodes)
-    ##print('process: {} has recovered xMatrix!'.format(os.getpid()))
-    #deltaM = sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice, mode)
-    #deltaMatrix = np.array(deltaM)
-    ##m, n = deltaMatrix.shape()
-    ##m = 50
-    #for ix in range(nLattice):
-        #for jx in range(nLattice):
-            #totSum += deltaMatrix[ix,jx]
-    ## DEBUG
-    ##print('total sum on delta matrix: ' + str(totSum))
-    #if totSum <= int((nLattice**2)*0.1) or totSum == int(nLattice**2):
-        #fitness[individual] = 0.
-    #else:
-        #fitness[individual] = 1. - (1./(nLattice**2))*totSum
-    #return fitness
-# # EvaluateIndividual
-
-#@jit
-#def EvaluateIndividual2(individual, timeSteps, iGen, nNodes, nLattice, mode):
-#    print('process: {} here!! individual: {}'.format(os.getpid(), individual))
-#    fitness[individual] =
-    #print('process: {} here!! array:\n {}'.format(os.getpid(), population[individual,:]))
-    #fitness[individual] = 0.
-# EvaluateIndividual
-
-# Dirac's delta function
-#def DiracDelta(a, b):
-    #if a == b:
-        #return 0
-    #else:
-        #return 1
-# DiracDelta
-
 # Crossover: length preserving
 #TODO implement length change
 #@jit
@@ -93,6 +53,46 @@ def Mutate(parent1, parent2, mutationProb):
     else:
         return parent1, parent2
 # Mutation
+
+# Evaluate variable using the fitness function
+
+# @jit
+#def EvaluateIndividual(individual, timeSteps, iGen, nNodes, nLattice, mode):
+    #totSum = 0.
+    ##print('generating wMatrix...')
+    #wMatrix = population[individual,:].reshape(nNodes,nNodes)
+    ##print('process: {} has recovered xMatrix!'.format(os.getpid()))
+    #deltaM = sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice, mode)
+    #deltaMatrix = np.array(deltaM)
+    ##m, n = deltaMatrix.shape()
+    ##m = 50
+    #for ix in range(nLattice):
+        #for jx in range(nLattice):
+            #totSum += deltaMatrix[ix,jx]
+    ## DEBUG
+    ##print('total sum on delta matrix: ' + str(totSum))
+    #if totSum <= int((nLattice**2)*0.1) or totSum == int(nLattice**2):
+        #fitness[individual] = 0.
+    #else:
+        #fitness[individual] = 1. - (1./(nLattice**2))*totSum
+    #return fitness
+# # EvaluateIndividual
+
+#@jit
+#def EvaluateIndividual2(individual, timeSteps, iGen, nNodes, nLattice, mode):
+#    print('process: {} here!! individual: {}'.format(os.getpid(), individual))
+#    fitness[individual] =
+    #print('process: {} here!! array:\n {}'.format(os.getpid(), population[individual,:]))
+    #fitness[individual] = 0.
+# EvaluateIndividual
+
+# Dirac's delta function
+#def DiracDelta(a, b):
+    #if a == b:
+        #return 0
+    #else:
+        #return 1
+# DiracDelta
 
 #def DifferentIndex(x1, y1):
     #if x1 == y1:
