@@ -2,9 +2,9 @@
 #--- based on the parameters for the XOR-2 experiment 	---#
 
 [NEAT]
-fitness_criterion     = mean
+fitness_criterion     = max
 # algorithm finishes when avg fitness reaches threshold value
-fitness_threshold     = 0.5
+fitness_threshold     = 0.9
 pop_size              = 20
 reset_on_extinction   = False
 # If this evaluates to True, when all species simultaneously become 
