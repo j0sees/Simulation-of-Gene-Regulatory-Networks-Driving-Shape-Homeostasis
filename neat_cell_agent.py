@@ -7,7 +7,7 @@ import neat
 
 class cell:
     # defines whats needed when a new agent (Cell) of this class is created
-    def __init__(self, yPos, xPos, genome, config):
+    def __init__(self, yPos, xPos, network):
         self.state = 'Quiet'                        # State of the cell. DEFAULT: quiet
         self.xPos = xPos                            # Initial position on x axis
         self.yPos = yPos                            # Initial position on y axis
@@ -27,9 +27,9 @@ class cell:
         # Neural network stuff
         #self.wMatrix = np.array(w)
         #self.WMatrix = W
-        self.genome = genome
-        self.config = config
-        self.network = neat.nn.recurrent.RecurrentNetwork.create(genome, config)
+        #self.genome = genome
+        #self.config = config
+        self.network = network #neat.nn.recurrent.RecurrentNetwork.create(genome, config)
  #self.phi = phi
         #self.theta = theta
 #        self.nNodes = nodes                            # WARNING hardcoded!
@@ -240,7 +240,7 @@ class cell:
                         if CheckifPreferred(xOri, yOri, neighbr[1], neighbr[0]):    # Check if is preferred
                             grid[yOri][xOri] = 1         # new position gets a 1 value to mark as new quiet cell
                             grid[self.yPos][self.xPos] = 3                               # mark as splitting cell
-                            cellList.append(cell(yOri, xOri, self.genome, self.config))
+                            cellList.append(cell(yOri, xOri, self.network))
                             needOtherNeighbours = False
                             #print('{}: new cell at preferred position!'.format(neighbr))                                       
                             break
@@ -260,7 +260,7 @@ class cell:
                     #print('preferred position not available. New cell at {}'.format(availableSpots[r]))
                     grid[availableSpots[r][0]][availableSpots[r][1]] = 1         # new position gets a 1 value to mark as new quiet cell
                     grid[self.yPos][self.xPos] = 3                               # mark as splitting cell
-                    cellList.append(cell(availableSpots[r][0], availableSpots[r][1],  self.genome, self.config))
+                    cellList.append(cell(availableSpots[r][0], availableSpots[r][1],  self.network))
                     # DEBUG
                     #print('cell moved!')
                 else:

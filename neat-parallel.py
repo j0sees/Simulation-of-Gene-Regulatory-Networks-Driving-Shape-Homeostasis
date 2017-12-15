@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 A parallel version of XOR using neat.parallel.
 
@@ -23,34 +24,29 @@ import time
 import main_GA
 import neat
 import pickle
-from importlib import reload
+#from importlib import reload
 
 #import visualize
 
-# 2-input XOR inputs and expected outputs.
-xor_inputs = [(0.0, 0.0), (0.0, 1.0), (1.0, 0.0), (1.0, 1.0)]
-xor_outputs = [   (0.0,),     (1.0,),     (1.0,),     (0.0,)]
+#def eval_genome(genome, config):
+    #"""
+    #This function will be run in parallel by ParallelEvaluator.  It takes two
+    #arguments (a single genome and the genome class configuration data) and
+    #should return one float (that genome's fitness).
 
+    #Note that this function needs to be in module scope for multiprocessing.Pool
+    #(which is what ParallelEvaluator uses) to find it.  Because of this, make
+    #sure you check for __main__ before executing any code (as we do here in the
+    #last few lines in the file), otherwise you'll have made a fork bomb
+    #instead of a neuroevolution demo. :)
+    #"""
 
-def eval_genome(genome, config):
-    """
-    This function will be run in parallel by ParallelEvaluator.  It takes two
-    arguments (a single genome and the genome class configuration data) and
-    should return one float (that genome's fitness).
-
-    Note that this function needs to be in module scope for multiprocessing.Pool
-    (which is what ParallelEvaluator uses) to find it.  Because of this, make
-    sure you check for __main__ before executing any code (as we do here in the
-    last few lines in the file), otherwise you'll have made a fork bomb
-    instead of a neuroevolution demo. :)
-    """
-
-    net = neat.nn.FeedForwardNetwork.create(genome, config)
-    error = 4.0
-    for xi, xo in zip(xor_inputs, xor_outputs):
-        output = net.activate(xi)
-        error -= (output[0] - xo[0]) ** 2
-    return error
+    #net = neat.nn.FeedForwardNetwork.create(genome, config)
+    #error = 4.0
+    #for xi, xo in zip(xor_inputs, xor_outputs):
+        #output = net.activate(xi)
+        #error -= (output[0] - xo[0]) ** 2
+    #return error
 
 def EvaluateIndividual(genome, config):
     totSum = 0.
@@ -63,7 +59,9 @@ def EvaluateIndividual(genome, config):
 
     # Timing!
     start_time_chemicalsUpdate = time.time()
-    deltaM = main_GA.sim(genome, config, timeSteps, nLattice)
+    network = neat.nn.recurrent.RecurrentNetwork.create(genome, config)
+
+    deltaM = main_GA.sim(network, timeSteps, nLattice)
     # Timing!
     end_time_chemicalsUpdate = time.time()
     secs = end_time_chemicalsUpdate - start_time_chemicalsUpdate
@@ -102,14 +100,14 @@ def run(config_file):
     stats = neat.StatisticsReporter()
     p.add_reporter(stats)
 
-    enc = sys.getdefaultencoding()
-    print('=> before encoding: {}'.format(enc))
+    #enc = sys.getdefaultencoding()
+    #print('=> before encoding: {}'.format(enc))
 
-    reload(sys)  
-    sys.setdefaultencoding('UTF-8')
+    #reload(sys)  
+    #sys.setdefaultencoding('utf-8')
 
-    enc = sys.getdefaultencoding()
-    print('=> after encoding: {}'.format(enc))
+    #enc = sys.getdefaultencoding()
+    #print('=> after encoding: {}'.format(enc))
 
 
     # Run for up to 300 generations.
@@ -118,12 +116,18 @@ def run(config_file):
 
     # Save the winner.
     timedateStr = '{0:%Y%m%d_%H%M%S_%f}'.format(dt.now())
-    filename = 'genomes/{}_winner_genome'.format(timedateStr)
+    filename1 = 'genomes/{}_winner_genome0'.format(timedateStr)
+    filename2 = 'genomes/{}_winner_genome1'.format(timedateStr)
+    filename3 = 'genomes/{}_winner_genome2'.format(timedateStr)
     config.save('genomes/{}_config'.format(timedateStr))
     
-    print('=> Encoding: {}'.format(enc))
-    with open(filename, 'wb') as f:
-        pickle.dump(winner, f)
+    with open(filename1, 'wb') as f:
+        pickle.dump(winner, f, 0)
+    with open(filename2, 'wb') as f:
+        pickle.dump(winner, f, 1)
+    with open(filename3, 'wb') as f:
+        pickle.dump(winner, f, 2)
+
 
     # Log statistics.
     stats.save()
