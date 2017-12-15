@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 A parallel version of XOR using neat.parallel.
 
@@ -102,7 +103,7 @@ def run(config_file):
     #print('=> before encoding: {}'.format(enc))
 
     #reload(sys)  
-    #sys.setdefaultencoding('UTF-8')
+    #sys.setdefaultencoding('utf-8')
 
     #enc = sys.getdefaultencoding()
     #print('=> after encoding: {}'.format(enc))
@@ -114,12 +115,17 @@ def run(config_file):
 
     # Save the winner.
     timedateStr = '{0:%Y%m%d_%H%M%S_%f}'.format(dt.now())
-    filename = 'genomes/{}_winner_genome'.format(timedateStr)
+    filename1 = 'genomes/{}_winner_genome0'.format(timedateStr)
+    filename2 = 'genomes/{}_winner_genome1'.format(timedateStr)
+    filename3 = 'genomes/{}_winner_genome2'.format(timedateStr)
     config.save('genomes/{}_config'.format(timedateStr))
     
-    #print('=> Encoding: {}'.format(enc))
-    with open(filename, 'wb') as f:
-        pickle.dump(winner, f)
+    with open(filename1, 'wb') as f:
+        pickle.dump(winner, f, 0)
+    with open(filename2, 'wb') as f:
+        pickle.dump(winner, f, 1)
+    with open(filename3, 'wb') as f:
+        pickle.dump(winner, f, 2)
 
     # Log statistics.
     stats.save()

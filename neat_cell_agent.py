@@ -29,10 +29,8 @@ class cell:
         #self.WMatrix = W
         #self.genome = genome
         #self.config = config
-        #self.network = neat.nn.recurrent.RecurrentNetwork.create(self.genome,self.config)
+        #self.network = neat.nn.RecurrentNetwork.create(self.genome,self.config)
         self.network = network
-        #self.phi = phi
-        #self.theta = theta
 #        self.nNodes = nodes                            # WARNING hardcoded!
 #        self.nInputs = 2
 #        self.V = np.zeros([self.nNodes])
