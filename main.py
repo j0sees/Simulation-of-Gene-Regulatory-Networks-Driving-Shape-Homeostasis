@@ -277,30 +277,27 @@ if __name__ == '__main__':
     # mode = False: cell_system as display system
     fileName = 'genomes/{}'.format(sys.argv[1])
     config_file = 'genomes/{}'.format(sys.argv[2])
-    # config_file = '{}'.format(sys.argv[2])
+    #config_file = '{}'.format(sys.argv[2])
     local_dir = os.path.dirname(__file__)
     config_path = os.path.join(local_dir, config_file)
-    
-    #wMatrix = GetrNN(fileName,individual)
-    #wMatrix = wMatrix.reshape(nNodes,nNodes)
-    #cProfile.run('sim(wMatrix,    timeSteps,  iGen, nNodes, individual, nLattice, mode)')
 
     # Config
-    config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,neat.DefaultSpeciesSet, neat.DefaultStagnation,config_path)
+    config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,neat.DefaultSpeciesSet, neat.DefaultStagnation, config_path)
 
     # load the winner
     print('genome file: {0}\nconfig file: {1}'.format(fileName, config_file))
-    enc = sys.getdefaultencoding()
-    print('=> before encoding: {}'.format(enc))
+    #enc = sys.getdefaultencoding()
+    #print('=> before encoding: {}'.format(enc))
 
-    reload(sys)  
-    #sys.setdefaultencoding('ascii')
+    #reload(sys)  
+    ##sys.setdefaultencoding('ascii')
 
-    enc = sys.getdefaultencoding()
-    print('=> after encoding: {}'.format(enc))
+    #enc = sys.getdefaultencoding()
+    #print('=> after encoding: {}'.format(enc))
 
     with open(fileName, 'rb') as f:
         genome = pickle.load(f, encoding = 'bytes')
+        print('=> Pickling OK!')
 
     network = neat.nn.RecurrentNetwork.create(genome, config)
     sim(network, timeSteps, nLattice, mode)
