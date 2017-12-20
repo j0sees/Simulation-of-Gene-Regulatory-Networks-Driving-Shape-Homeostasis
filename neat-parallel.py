@@ -21,12 +21,10 @@ import math
 import os
 import sys
 import time
-from main_GA import sim
+import main_GA
 import neat
 import pickle
-#from importlib import reload
-
-#import visualize
+import visualize
 
 #def eval_genome(genome, config):
     #"""
@@ -60,7 +58,8 @@ def EvaluateIndividual(genome, config):
     # Timing!
     start_time_chemicalsUpdate = time.time()
     network = neat.nn.recurrent.RecurrentNetwork.create(genome, config)
-    deltaM = sim(network, timeSteps, nLattice)
+
+    deltaM = main_GA.sim(network, timeSteps, nLattice)
     # Timing!
     end_time_chemicalsUpdate = time.time()
     secs = end_time_chemicalsUpdate - start_time_chemicalsUpdate
@@ -86,7 +85,7 @@ def EvaluateIndividual(genome, config):
 
 def run(config_file):
     # Load configuration.
-    nWorkers = 3 
+    nWorkers = 10
     config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,
                          neat.DefaultSpeciesSet, neat.DefaultStagnation,
                          config_file)
@@ -127,23 +126,28 @@ def run(config_file):
     with open(filename3, 'wb') as f:
         pickle.dump(winner, f, 2)
 
+
     # Log statistics.
     stats.save()
 
     # Display the winning genome.
     print('\nBest genome:\n{!s}'.format(winner))
 
-    # Show output of the most fit genome against training data.
+    Show output of the most fit genome against training data.
     print('\nOutput:')
     winner_net = neat.nn.FeedForwardNetwork.create(winner, config)
-    #for xi, xo in zip(xor_inputs, xor_outputs):
-    #    output = winner_net.activate(xi)
-    #    print("input {!r}, expected output {!r}, got {!r}".format(xi, xo, output))
+    for xi, xo in zip(xor_inputs, xor_outputs):
+       output = winner_net.activate(xi)
+       print("input {!r}, expected output {!r}, got {!r}".format(xi, xo, output))
 
     #node_names = {-1:'A', -2: 'B', 0:'A XOR B'}
-    #visualize.draw_net(config, winner, True)#, node_names = node_names)
-    #visualize.plot_stats(stats, ylog=False, view=True)
-    #visualize.plot_species(stats, view=True)
+    print('Plots...')
+    visualize.draw_net(config, winner, view=False)
+    print('network... DONE!')
+    visualize.plot_stats(stats, ylog=False, view=False)
+    print('stats... DONE!')
+    visualize.plot_species(stats, view=False)
+    print('species... DONE!')
 
 if __name__ == '__main__':
     # Determine path to configuration file. This path manipulation is

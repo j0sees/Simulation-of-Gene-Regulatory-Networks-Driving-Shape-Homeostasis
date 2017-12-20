@@ -9,7 +9,7 @@ import numpy as np
 from neat_cell_agent import *                    # it is allowed to call from this class because there's an __init__.py file in this directory
 from tools import *
 from plot import *
-from importlib import reload
+#from importlib import reload
 #import csv
 #import cProfile
 # from numba import jit
@@ -65,7 +65,8 @@ def sim(network, timeSteps, nLattice, mode):
     ##### Timing!
     #start_time_figurecall = time.time()
     ## Plot figure and subplots
-    cellsFigure, cellsSubplot, sgfSubplot, lgfSubplot, cellPlot, sgfPlot, lgfPlot = Environment.CellsGridFigure(nLattice, mode)
+    #cellsFigure, cellsSubplot, sgfSubplot, lgfSubplot, cellPlot, sgfPlot, lgfPlot = Environment.CellsGridFigure(nLattice, mode)
+    cellsFigure, cellsSubplot, sgfSubplot, lgfSubplot, cellPlot, sgfPlot, lgfPlot = CellsGridFigure(nLattice, mode)
     #end_time_figurecall = time.time()
     #secs = end_time_figurecall - start_time_figurecall
 
@@ -207,7 +208,7 @@ def sim(network, timeSteps, nLattice, mode):
         #else:
             ## Timing!
             #start_time_plotUpdate = time.time()
-        Environment.AntGridPlot(    cellGrid,
+        AntGridPlot(    cellGrid,
                                     chemGrid,
                                     nLattice,
                                     cellsFigure,
@@ -296,7 +297,7 @@ if __name__ == '__main__':
     #print('=> after encoding: {}'.format(enc))
 
     with open(fileName, 'rb') as f:
-        genome = pickle.load(f, encoding = 'bytes')
+        genome = pickle.load(f)#, encoding = 'bytes')
         print('=> Pickling OK!')
 
     network = neat.nn.RecurrentNetwork.create(genome, config)

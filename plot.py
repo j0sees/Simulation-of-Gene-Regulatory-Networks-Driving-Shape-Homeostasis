@@ -1,163 +1,173 @@
 import sys
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 # to check for matplotlib backend: >> matplotlib.get_backend()
 from matplotlib.colors import ListedColormap
-import networkx as nx
+#import networkx as nx
 import tools
 import matplotlib.colors as colors
 import matplotlib.cm as cmx
 #import pylab
 #from mpl_toolkits.axes_grid1 import ImageGrid
 
-class Environment:
+#class Environment:
 
-    def CellsGridFigure(fieldSize, mode):
-        # mode = True: cell_system as fitness function
-        # mode = False: cell_system as display system
-        plt.close()
+def CellsGridFigure(fieldSize, mode):
+    # mode = True: cell_system as fitness function
+    # mode = False: cell_system as display system
+    plt.close()
 
-        #discrete color scheme
-        cMap = ListedColormap(['w', 'g', 'b', 'r'])
+    #discrete color scheme
+    cMap = ListedColormap(['w', 'g', 'b', 'r'])
 
-        cellsFigure, (cellsSubplot,sgfSubplot,lgfSubplot) = plt.subplots(1, 3, figsize = (15,5))
-        #plt.tick_params(axis='x', left='off', bottom='off', labelleft='off', labelbottom='off')
+    cellsFigure, (cellsSubplot,sgfSubplot,lgfSubplot) = plt.subplots(1, 3, figsize = (15,5))
+    #plt.tick_params(axis='x', left='off', bottom='off', labelleft='off', labelbottom='off')
 
-        cellsSubplot.set_aspect('equal')                        # TODO does this work?
-        sgfSubplot.set_aspect('equal')
-        lgfSubplot.set_aspect('equal')
+    cellsSubplot.set_aspect('equal')                        # TODO does this work?
+    sgfSubplot.set_aspect('equal')
+    lgfSubplot.set_aspect('equal')
 
-        cellsFigure.suptitle('Cell System')
+    cellsFigure.suptitle('Cell System')
 
-        cellGrid = np.zeros([fieldSize, fieldSize])             # may need a new name, same as in main...
-        sgfGrid = np.zeros([fieldSize, fieldSize])
-        lgfGrid = np.zeros([fieldSize, fieldSize])
+    cellGrid = np.zeros([fieldSize, fieldSize])             # may need a new name, same as in main...
+    sgfGrid = np.zeros([fieldSize, fieldSize])
+    lgfGrid = np.zeros([fieldSize, fieldSize])
 
-        cellsSubplot.set_title('Cells')
+    cellsSubplot.set_title('Cells')
 
 #        cellsSubplot.axis('off')
 
-        sgfSubplot.set_title('SGF')
+    sgfSubplot.set_title('SGF')
 #        sgfSubplot.axis('off')
 
-        lgfSubplot.set_title('LGF')
- #       lgfSubplot.axis('off')
+    lgfSubplot.set_title('LGF')
+#       lgfSubplot.axis('off')
 
-        cellPlot = cellsSubplot.imshow(cellGrid, origin = 'lower', cmap = cMap, interpolation = 'none', vmin = 0, vmax = 3)
-        cbar1 = cellsFigure.colorbar(cellPlot, ax = cellsSubplot, ticks = [], orientation='horizontal')#, shrink=0.75)
-        #cbar1.ax.set_yticklabels(['dead', 'quiet', 'moving', 'splitting'])
-        ##legend
-        #cbar = plt.colorbar(cellPlot)
+    cellPlot = cellsSubplot.imshow(cellGrid, origin = 'lower', cmap = cMap, interpolation = 'none', vmin = 0, vmax = 3)
+    cbar1 = cellsFigure.colorbar(cellPlot, ax = cellsSubplot, ticks = [], orientation='horizontal')#, shrink=0.75)
+    #cbar1.ax.set_yticklabels(['dead', 'quiet', 'moving', 'splitting'])
+    ##legend
+    #cbar = plt.colorbar(cellPlot)
 
-        # hide ticks
-        cellsSubplot.axes.xaxis.set_ticklabels([])
-        cellsSubplot.axes.yaxis.set_ticklabels([])
-        cellsSubplot.axes.get_xaxis().set_visible(False)
-        cellsSubplot.axes.get_yaxis().set_visible(False)
-        #cellPlot.axes.xaxis.set_ticklabels([])
-        #cellPlot.axes.yaxis.set_ticklabels([])
-        
-        cbar1.ax.get_yaxis().set_ticks([])
-        for j, lab in enumerate(['$empty$','$quiet$','$moving$','$divided$']):
-            cbar1.ax.text((2 * j + 1) / 8.0, .5, lab, ha = 'center', va = 'center')#, rotation=270)
-        cbar1.ax.get_yaxis().labelpad = 15
-        cbar1.ax.set_ylabel('states', rotation = 270)
+    # hide ticks
+    cellsSubplot.axes.xaxis.set_ticklabels([])
+    cellsSubplot.axes.yaxis.set_ticklabels([])
+    cellsSubplot.axes.get_xaxis().set_visible(False)
+    cellsSubplot.axes.get_yaxis().set_visible(False)
+    #cellPlot.axes.xaxis.set_ticklabels([])
+    #cellPlot.axes.yaxis.set_ticklabels([])
+    
+    cbar1.ax.get_yaxis().set_ticks([])
+    for j, lab in enumerate(['$empty$','$quiet$','$moving$','$divided$']):
+        cbar1.ax.text((2 * j + 1) / 8.0, .5, lab, ha = 'center', va = 'center')#, rotation=270)
+    cbar1.ax.get_yaxis().labelpad = 15
+    cbar1.ax.set_ylabel('states', rotation = 270)
 
-        sgfPlot = sgfSubplot.imshow(sgfGrid, origin = 'lower', cmap = 'Reds', interpolation = 'none', vmin = 0, vmax = 0.05)
-        cbar2 = cellsFigure.colorbar(sgfPlot, ax = sgfSubplot, orientation = 'horizontal')
+    sgfPlot = sgfSubplot.imshow(sgfGrid, origin = 'lower', cmap = 'Reds', interpolation = 'none', vmin = 0, vmax = 0.05)
+    cbar2 = cellsFigure.colorbar(sgfPlot, ax = sgfSubplot, orientation = 'horizontal')
 
-        # hide ticks
-        sgfPlot.axes.xaxis.set_ticklabels([])
-        sgfPlot.axes.yaxis.set_ticklabels([])
-        sgfPlot.axes.get_xaxis().set_visible(False)
-        sgfPlot.axes.get_yaxis().set_visible(False)
+    # hide ticks
+    sgfPlot.axes.xaxis.set_ticklabels([])
+    sgfPlot.axes.yaxis.set_ticklabels([])
+    sgfPlot.axes.get_xaxis().set_visible(False)
+    sgfPlot.axes.get_yaxis().set_visible(False)
 
-        lgfPlot = lgfSubplot.imshow(lgfGrid, origin = 'lower', cmap = 'Blues', interpolation = 'none', vmin = 0, vmax = 3)
-        cbar3 = cellsFigure.colorbar(lgfPlot, ax = lgfSubplot, orientation = 'horizontal')
+    lgfPlot = lgfSubplot.imshow(lgfGrid, origin = 'lower', cmap = 'Blues', interpolation = 'none', vmin = 0, vmax = 3)
+    cbar3 = cellsFigure.colorbar(lgfPlot, ax = lgfSubplot, orientation = 'horizontal')
 
-        # hide ticks
-        lgfPlot.axes.xaxis.set_ticklabels([])
-        lgfPlot.axes.yaxis.set_ticklabels([])
-        lgfPlot.axes.get_xaxis().set_visible(False)
-        lgfPlot.axes.get_yaxis().set_visible(False)
+    # hide ticks
+    lgfPlot.axes.xaxis.set_ticklabels([])
+    lgfPlot.axes.yaxis.set_ticklabels([])
+    lgfPlot.axes.get_xaxis().set_visible(False)
+    lgfPlot.axes.get_yaxis().set_visible(False)
 
-        if mode == False:
-            plt.show(block = False)
+    #if mode == False:
+    #    plt.show(block = False)
 
-        plt.ion()
-        #plt.pause(0.001)
-        cellsFigure.canvas.draw()
-        plt.ioff()
+    plt.ion()
+    #plt.pause(0.001)
+    cellsFigure.canvas.draw()
+    plt.ioff()
 
-        # function returns the figure, subplots and plots
-        return cellsFigure, cellsSubplot, sgfSubplot, lgfSubplot, cellPlot, sgfPlot, lgfPlot
-    # CellsGridFigure
+    # function returns the figure, subplots and plots
+    return cellsFigure, cellsSubplot, sgfSubplot, lgfSubplot, cellPlot, sgfPlot, lgfPlot
+# CellsGridFigure
 
-    def AntGridPlot(cellGrid,
-                    chemGrid,
-                    nLattice,
-                    cellsFigure,
-                    cellsSubplot,
-                    sgfSubplot,
-                    lgfSubplot,
-                    cellPlot,
-                    sgfPlot,
-                    lgfPlot,
-                    tStep,
-                    mode):
+def AntGridPlot(cellGrid,
+                chemGrid,
+                nLattice,
+                cellsFigure,
+                cellsSubplot,
+                sgfSubplot,
+                lgfSubplot,
+                cellPlot,
+                sgfPlot,
+                lgfPlot,
+                tStep,
+                mode):
 
-        cell_data = cellGrid         # slice the grid to get the layer with the cell positions
-        sgf_data = chemGrid[:,:,0]          # slice the grid to get the layer with the SGF profile
-        lgf_data = chemGrid[:,:,1]          # slice the grid to get the layer with the LGF profile
+    cell_data = cellGrid         # slice the grid to get the layer with the cell positions
+    sgf_data = chemGrid[:,:,0]          # slice the grid to get the layer with the SGF profile
+    lgf_data = chemGrid[:,:,1]          # slice the grid to get the layer with the LGF profile
 
-        Environment.UpdatePlot( cellsFigure,
-                                cellsSubplot,
-                                sgfSubplot,
-                                lgfSubplot,
-                                cellPlot,
-                                sgfPlot,
-                                lgfPlot,
-                                cell_data,
-                                sgf_data,
-                                lgf_data,
-                                tStep,
-                                mode)
+    #Environment.UpdatePlot( cellsFigure,
+                            #cellsSubplot,
+                            #sgfSubplot,
+                            #lgfSubplot,
+                            #cellPlot,
+                            #sgfPlot,
+                            #lgfPlot,
+                            #cell_data,
+                            #sgf_data,
+                            #lgf_data,
+                            #tStep,
+                            #mode)
+    UpdatePlot( cellsFigure,
+                            cellsSubplot,
+                            sgfSubplot,
+                            lgfSubplot,
+                            cellPlot,
+                            sgfPlot,
+                            lgfPlot,
+                            cell_data,
+                            sgf_data,
+                            lgf_data,
+                            tStep,
+                            mode)
 
-    def UpdatePlot( cellsFigure,
-                    cellsSubplot,
-                    sgfSubplot,
-                    lgfSubplot,
-                    cellPlot,
-                    sgfPlot,
-                    lgfPlot,
-                    cell_data,
-                    sgf_data,
-                    lgf_data,
-                    tStep,
-                    mode):
-        #
-        cellPlot.set_data(cell_data)
-        sgfPlot.set_data(sgf_data)
-        lgfPlot.set_data(lgf_data)
-        #
-        cellsSubplot.draw_artist(cellsSubplot.patch)
-        cellsSubplot.draw_artist(cellPlot)
-        sgfSubplot.draw_artist(sgfPlot)
-        lgfSubplot.draw_artist(lgfPlot)
-        
-        #
-        cellsFigure.canvas.update()
-        cellsFigure.canvas.flush_events()
-        #cellsSubplot.spines['right'].set_visible(True)
-        #cellsSubplot.spines['top'].set_visible(True)
-        #cellsSubplot.spines['bottom'].set_visible(True)
-        #cellsSubplot.spines['left'].set_visible(True)        
-
-#        if mode == False:
-#            plt.savefig('plots/ind493/cell_system-{:03d}.png'.format(tStep), format='png', bbox_inches='tight')
-#            plt.savefig('plots/ind493/cell_system-{:03d}.eps'.format(tStep), format='eps', bbox_inches='tight')
-#                        'CA_gen' + '{:02d}'.format(iGen) + '_ind' + '{:02d}'.format(individual) +'_tstep' + '{:03d}'.format(tStep) + '.png', )
-    # UpdatePlot
+def UpdatePlot( cellsFigure,
+                cellsSubplot,
+                sgfSubplot,
+                lgfSubplot,
+                cellPlot,
+                sgfPlot,
+                lgfPlot,
+                cell_data,
+                sgf_data,
+                lgf_data,
+                tStep,
+                mode):
+    #
+    cellPlot.set_data(cell_data)
+    sgfPlot.set_data(sgf_data)
+    lgfPlot.set_data(lgf_data)
+    #
+    cellsSubplot.draw_artist(cellsSubplot.patch)
+    cellsSubplot.draw_artist(cellPlot)
+    sgfSubplot.draw_artist(sgfPlot)
+    lgfSubplot.draw_artist(lgfPlot)
+    
+    #
+    #cellsFigure.canvas.update()
+    #cellsFigure.canvas.flush_events()
+    
+    if mode == False:
+        #plt.savefig('plots/test/cell_system-{:03d}.png'.format(tStep), format='png', bbox_inches='tight')
+        plt.savefig('plots/cell_system-{:03d}.png'.format(tStep), format='png', bbox_inches='tight')
+        #           'CA_gen' + '{:02d}'.format(iGen) + '_ind' + '{:02d}'.format(individual) +'_tstep' + '{:03d}'.format(tStep) + '.png', )
+# UpdatePlot
 # Environment
 
 def FitvsNnodesPlot(statsFile):
