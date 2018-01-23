@@ -24,27 +24,9 @@ import time
 import main_GA
 import neat
 import pickle
+#import json
 import visualize
-
-#def eval_genome(genome, config):
-    #"""
-    #This function will be run in parallel by ParallelEvaluator.  It takes two
-    #arguments (a single genome and the genome class configuration data) and
-    #should return one float (that genome's fitness).
-
-    #Note that this function needs to be in module scope for multiprocessing.Pool
-    #(which is what ParallelEvaluator uses) to find it.  Because of this, make
-    #sure you check for __main__ before executing any code (as we do here in the
-    #last few lines in the file), otherwise you'll have made a fork bomb
-    #instead of a neuroevolution demo. :)
-    #"""
-
-    #net = neat.nn.FeedForwardNetwork.create(genome, config)
-    #error = 4.0
-    #for xi, xo in zip(xor_inputs, xor_outputs):
-        #output = net.activate(xi)
-        #error -= (output[0] - xo[0]) ** 2
-    #return error
+import subprocess as sp
 
 def EvaluateIndividual(genome, config):
     totSum = 0.
@@ -64,28 +46,19 @@ def EvaluateIndividual(genome, config):
     end_time_chemicalsUpdate = time.time()
     secs = end_time_chemicalsUpdate - start_time_chemicalsUpdate
 
-    #print('Proc: {}, time taken run sim: {:.3f}'.format(os.getpid(), secs))
-    #print('process: {} done with individual: {}!'.format(os.getpid(), individual))
     deltaMatrix = deltaM
 
     for ix in range(nLattice):
         for jx in range(nLattice):
             totSum += deltaMatrix[ix,jx]
-    # DEBUG
-    # print('total sum on delta matrix: ' + str(totSum))
-    #if totSum <= int((nLattice**2)*0.1) or totSum == int(nLattice**2):
-    #    fitness[individual] = 0.
-    #else:
-    
-    #fitness[individual] = 1. - (1./(nLattice**2))*totSum
+
     fit = 1. - (1./(nLattice**2))*totSum
     #print('Proc {} computed fitness: {}'.format(os.getpid(), fit))
     return fit
 # EvaluateIndividual
 
-def run(config_file):
+def run(config_file, nWorkers, nGen, timedateStr):
     # Load configuration.
-    nWorkers = 10
     config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,
                          neat.DefaultSpeciesSet, neat.DefaultStagnation,
                          config_file)
@@ -110,49 +83,66 @@ def run(config_file):
 
     # Run for up to 300 generations.
     pe = neat.ParallelEvaluator(nWorkers, EvaluateIndividual)
-    winner = p.run(pe.evaluate)
+    winner = p.run(pe.evaluate, nGen)
 
     # Save the winner.
-    timedateStr = '{0:%Y%m%d_%H%M%S_%f}'.format(dt.now())
-    filename1 = 'genomes/{}_winner_genome0'.format(timedateStr)
-    filename2 = 'genomes/{}_winner_genome1'.format(timedateStr)
-    filename3 = 'genomes/{}_winner_genome2'.format(timedateStr)
+    filename = 'genomes/{}_winner_genome'.format(timedateStr)
+#    filename2 = 'genomes/{}_winner_genome1'.format(timedateStr)
+#    filename3 = 'genomes/{}_winner_genome2'.format(timedateStr)
     config.save('genomes/{}_config'.format(timedateStr))
     
-    with open(filename1, 'wb') as f:
-        pickle.dump(winner, f, 0)
-    with open(filename2, 'wb') as f:
-        pickle.dump(winner, f, 1)
-    with open(filename3, 'wb') as f:
+    ## WARNING neat doesn't like json...
+    #with open(filename, 'w') as f:
+    #    json.dump(winner, f)
+    
+    ## TODO Use json instead of pickle!!
+    #with open(filename, 'wb') as f:
+    #    pickle.dump(winner, f, 0)
+    #with open(filename2, 'wb') as f:
+        #pickle.dump(winner, f, 1)
+    with open(filename, 'wb') as f:
         pickle.dump(winner, f, 2)
-
 
     # Log statistics.
     stats.save()
 
     # Display the winning genome.
-    print('\nBest genome:\n{!s}'.format(winner))
-
-    Show output of the most fit genome against training data.
-    print('\nOutput:')
-    winner_net = neat.nn.FeedForwardNetwork.create(winner, config)
-    for xi, xo in zip(xor_inputs, xor_outputs):
-       output = winner_net.activate(xi)
-       print("input {!r}, expected output {!r}, got {!r}".format(xi, xo, output))
-
-    #node_names = {-1:'A', -2: 'B', 0:'A XOR B'}
-    print('Plots...')
-    visualize.draw_net(config, winner, view=False)
-    print('network... DONE!')
-    visualize.plot_stats(stats, ylog=False, view=False)
-    print('stats... DONE!')
-    visualize.plot_species(stats, view=False)
-    print('species... DONE!')
+    #print('\nBest genome:\n{!s}'.format(winner))
+    print('=> Plots: no plots yet...')
+    #visualize.draw_net(config, winner, view=False)
+    #print('\tnetwork... DONE!')
+    #visualize.plot_stats(stats, ylog=False, view=False)
+    #print('\tstats... DONE!')
+    #visualize.plot_species(stats, view=False)
+    #print('\tspecies... DONE!')
+    print('Done.')
+    
+    # rename stat files to particular names
+    rename1 = 'mv fitness_history.csv stats/{}_fitness_history.csv'.format(timedateStr)
+    rename2 = 'mv speciation.csv stats/{}_speciation.csv'.format(timedateStr)
+    rename3 = 'mv species_fitness.csv stats/{}_species_fitness.csv'.format(timedateStr)
+    subproc = sp.call(rename1, shell = True)
+    subproc = sp.call(rename2, shell = True)
+    subproc = sp.call(rename3, shell = True)
 
 if __name__ == '__main__':
+    nWorkers = 20
+    nGen = 1
+    current_time = '{0:%Y%m%d_%H%M%S_%f}'.format(dt.now())
+    
+    #command = 'mkdir plots/{}'.format(time)
+    #subproc = sp.call(command, shell = True)
+    
     # Determine path to configuration file. This path manipulation is
     # here so that the script will run successfully regardless of the
     # current working directory.
     local_dir = os.path.dirname(__file__)
     config_path = os.path.join(local_dir, 'config-ca')
-    run(config_path)
+    
+    # Run NEAT algorithm
+    print('=> Running NEAT...\n')
+    run(config_path, nWorkers, nGen, current_time)
+    
+    # Post-processing
+    #command = 'ffmpeg -f image2 -pattern_type glob -framerate 24 -i \'plots/{}/cell_system-*.png\' -s 2048x2048 cell_system9.mp4'.format()
+    #subproc = sp.call(command, shell = True)
