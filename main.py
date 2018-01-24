@@ -9,13 +9,14 @@ import numpy as np
 from neat_cell_agent import *                    # it is allowed to call from this class because there's an __init__.py file in this directory
 from tools import *
 from plot import *
+import subprocess as sp
 #from importlib import reload
 #import csv
 #import cProfile
 # from numba import jit
 
 #@jit
-def sim(network, timeSteps, nLattice, mode):
+def sim(network, timeSteps, nLattice, mode, timeString):
     """
     Parameters: sim(wMatrix, numberOfTimeSteps, NumberOfGeneration, nNodes, individual, nLattice, mode)
     # mode = True: cell_system as fitness function
@@ -31,7 +32,7 @@ def sim(network, timeSteps, nLattice, mode):
     semiFlatGrid = [flatList(npCellGrid[r,:]) for r in range(nLattice)]
     cellGrid = flatList(semiFlatGrid)
     chemGrid = np.zeros([nLattice,nLattice,2])
-    SGF_read = 0.                                # in the future values will be read from the grid
+    SGF_read = 0.                               # in the future values will be read from the grid
     LGF_read = 0.
     ix = int(nLattice/2)                        # Initial position for the mother cell
     iy = int(nLattice/2)                        # Initial position for the mother cell
@@ -40,11 +41,11 @@ def sim(network, timeSteps, nLattice, mode):
     cellList = []                               # List for cell agents
 
     # SGF/LGF dynamics parameters
-    deltaT = 1.                                  # time step for discretisation [T]
-    deltaR = 1.                                  # space step for discretisation [L]
+    deltaT = 1.                                 # time step for discretisation [T]
+    deltaR = 1.                                 # space step for discretisation [L]
     deltaS = 0.5                                # decay rate for SGF
-    deltaL = 0.1                                 # decay rate for LGF
-    diffConst = 1.#0.05                              # diffusion constant D [dimentionless]
+    deltaL = 0.1                                # decay rate for LGF
+    diffConst = 1.#0.05                         # diffusion constant D [dimentionless]
     t_matrix = GenerateTMatrix(nLattice)        # T matrix for LGF operations
     i_matrix = GenerateIMatrix(nLattice)        # I matrix for LGF operations
     
@@ -209,17 +210,18 @@ def sim(network, timeSteps, nLattice, mode):
             ## Timing!
             #start_time_plotUpdate = time.time()
         AntGridPlot(    cellGrid,
-                                    chemGrid,
-                                    nLattice,
-                                    cellsFigure,
-                                    cellsSubplot,
-                                    sgfSubplot,
-                                    lgfSubplot,
-                                    cellPlot,
-                                    sgfPlot,
-                                    lgfPlot,
-                                    iTime,
-                                    mode)
+                        chemGrid,
+                        nLattice,
+                        cellsFigure,
+                        cellsSubplot,
+                        sgfSubplot,
+                        lgfSubplot,
+                        cellPlot,
+                        sgfPlot,
+                        lgfPlot,
+                        iTime,
+                        mode,
+                        timeString)
             ## Timing!
             #end_time_plotUpdate = time.time()
             #secs = end_time_plotUpdate - start_time_plotUpdate
@@ -276,11 +278,15 @@ if __name__ == '__main__':
     mode = False
     # mode = True: cell_system as fitness function
     # mode = False: cell_system as display system
-    fileName = 'genomes/{}'.format(sys.argv[1])
-    config_file = 'genomes/{}'.format(sys.argv[2])
+    #timeString = '{}'.format(sys.argv[1])
+    fileName = 'genomes/{}_winner_genome'.format(sys.argv[1])
+    config_file = 'genomes/{}_config'.format(sys.argv[1])
     #config_file = '{}'.format(sys.argv[2])
     local_dir = os.path.dirname(__file__)
     config_path = os.path.join(local_dir, config_file)
+
+    mkdir = 'mkdir plots/{}'.format(sys.argv[1])
+    subproc = sp.call(mkdir, shell = True)
 
     # Config
     config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,neat.DefaultSpeciesSet, neat.DefaultStagnation, config_path)
@@ -301,7 +307,7 @@ if __name__ == '__main__':
         print('=> Pickling OK!')
 
     network = neat.nn.RecurrentNetwork.create(genome, config)
-    sim(network, timeSteps, nLattice, mode)
+    sim(network, timeSteps, nLattice, mode, sys.argv[1])
     plt.close()
 #else:
     # if called from another script

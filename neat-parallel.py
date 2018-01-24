@@ -57,7 +57,7 @@ def EvaluateIndividual(genome, config):
     return fit
 # EvaluateIndividual
 
-def run(config_file, nWorkers, nGen, timedateStr):
+def run(config_file, nWorkers, nGen, timedateStr, nUniqueGenomes):
     # Load configuration.
     config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,
                          neat.DefaultSpeciesSet, neat.DefaultStagnation,
@@ -85,23 +85,22 @@ def run(config_file, nWorkers, nGen, timedateStr):
     pe = neat.ParallelEvaluator(nWorkers, EvaluateIndividual)
     winner = p.run(pe.evaluate, nGen)
 
+
     # Save the winner.
     filename = 'genomes/{}_winner_genome'.format(timedateStr)
+#    filename = 'genomes/{}_best_unique_genomes'.format(timedateStr)
 #    filename2 = 'genomes/{}_winner_genome1'.format(timedateStr)
 #    filename3 = 'genomes/{}_winner_genome2'.format(timedateStr)
     config.save('genomes/{}_config'.format(timedateStr))
     
-    ## WARNING neat doesn't like json...
-    #with open(filename, 'w') as f:
-    #    json.dump(winner, f)
-    
-    ## TODO Use json instead of pickle!!
-    #with open(filename, 'wb') as f:
-    #    pickle.dump(winner, f, 0)
-    #with open(filename2, 'wb') as f:
-        #pickle.dump(winner, f, 1)
+    # TEST Save best unique genomes 
+#    unique_genomes = stats.best_unique_genomes(nUniqueGenomes)
+
     with open(filename, 'wb') as f:
         pickle.dump(winner, f, 2)
+
+#    with open(filename, 'wb') as f:
+#        pickle.dump(unique_genomes, f, 2)
 
     # Log statistics.
     stats.save()
@@ -115,7 +114,6 @@ def run(config_file, nWorkers, nGen, timedateStr):
     #print('\tstats... DONE!')
     #visualize.plot_species(stats, view=False)
     #print('\tspecies... DONE!')
-    print('Done.')
     
     # rename stat files to particular names
     rename1 = 'mv fitness_history.csv stats/{}_fitness_history.csv'.format(timedateStr)
@@ -124,11 +122,13 @@ def run(config_file, nWorkers, nGen, timedateStr):
     subproc = sp.call(rename1, shell = True)
     subproc = sp.call(rename2, shell = True)
     subproc = sp.call(rename3, shell = True)
+    print('Done.')
 
 if __name__ == '__main__':
-    nWorkers = 20
+    nWorkers = 10
     nGen = 1
     current_time = '{0:%Y%m%d_%H%M%S_%f}'.format(dt.now())
+    nUniqueGenomes = 5
     
     #command = 'mkdir plots/{}'.format(time)
     #subproc = sp.call(command, shell = True)
@@ -141,8 +141,4 @@ if __name__ == '__main__':
     
     # Run NEAT algorithm
     print('=> Running NEAT...\n')
-    run(config_path, nWorkers, nGen, current_time)
-    
-    # Post-processing
-    #command = 'ffmpeg -f image2 -pattern_type glob -framerate 24 -i \'plots/{}/cell_system-*.png\' -s 2048x2048 cell_system9.mp4'.format()
-    #subproc = sp.call(command, shell = True)
+    run(config_path, nWorkers, nGen, current_time, nUniqueGenomes)

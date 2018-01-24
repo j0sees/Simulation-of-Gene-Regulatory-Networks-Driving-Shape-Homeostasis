@@ -1,9 +1,11 @@
 import sys
 import numpy as np
 import matplotlib
+# WARNING to use in ozzy
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 # to check for matplotlib backend: >> matplotlib.get_backend()
+
 from matplotlib.colors import ListedColormap
 #import networkx as nx
 import tools
@@ -106,7 +108,8 @@ def AntGridPlot(cellGrid,
                 sgfPlot,
                 lgfPlot,
                 tStep,
-                mode):
+                mode,
+                timeString):
 
     cell_data = cellGrid         # slice the grid to get the layer with the cell positions
     sgf_data = chemGrid[:,:,0]          # slice the grid to get the layer with the SGF profile
@@ -125,17 +128,18 @@ def AntGridPlot(cellGrid,
                             #tStep,
                             #mode)
     UpdatePlot( cellsFigure,
-                            cellsSubplot,
-                            sgfSubplot,
-                            lgfSubplot,
-                            cellPlot,
-                            sgfPlot,
-                            lgfPlot,
-                            cell_data,
-                            sgf_data,
-                            lgf_data,
-                            tStep,
-                            mode)
+                cellsSubplot,
+                sgfSubplot,
+                lgfSubplot,
+                cellPlot,
+                sgfPlot,
+                lgfPlot,
+                cell_data,
+                sgf_data,
+                lgf_data,
+                tStep,
+                mode,
+                timeString)
 
 def UpdatePlot( cellsFigure,
                 cellsSubplot,
@@ -148,7 +152,8 @@ def UpdatePlot( cellsFigure,
                 sgf_data,
                 lgf_data,
                 tStep,
-                mode):
+                mode,
+                timeString):
     #
     cellPlot.set_data(cell_data)
     sgfPlot.set_data(sgf_data)
@@ -164,11 +169,8 @@ def UpdatePlot( cellsFigure,
     #cellsFigure.canvas.flush_events()
     
     if mode == False:
-        #plt.savefig('plots/test/cell_system-{:03d}.png'.format(tStep), format='png', bbox_inches='tight')
-        plt.savefig('plots/cell_system-{:03d}.png'.format(tStep), format='png', bbox_inches='tight')
-        #           'CA_gen' + '{:02d}'.format(iGen) + '_ind' + '{:02d}'.format(individual) +'_tstep' + '{:03d}'.format(tStep) + '.png', )
+        plt.savefig('plots/{0}/cell_system-{1:03d}.png'.format(timeString, tStep), format='png', bbox_inches='tight')
 # UpdatePlot
-# Environment
 
 def FitvsNnodesPlot(statsFile):
     varSpace = 5
