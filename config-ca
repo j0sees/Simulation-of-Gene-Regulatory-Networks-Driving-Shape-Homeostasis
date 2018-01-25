@@ -11,6 +11,11 @@ reset_on_extinction   = False
 # extinct due to stagnation, a new random population will be created. 
 # If False, a CompleteExtinctionException will be thrown.
 
+no_fitness_termination = False
+# If this evaluates to True, then the fitness_criterion and 
+# fitness_threshold are ignored for termination
+
+
 [DefaultGenome]
 # node activation options
 activation_default      = sigmoid
@@ -37,19 +42,19 @@ compatibility_disjoint_coefficient = 1.0
 compatibility_weight_coefficient   = 0.5
 
 # connection add/remove rates
-conn_add_prob           = 0.5
-conn_delete_prob        = 0.5
+conn_add_prob           = 0.2
+conn_delete_prob        = 0.2
 
 # connection enable options
 enabled_default         = True
 enabled_mutate_rate     = 0.01
 
 feed_forward            = False
-initial_connection      = full_direct
+initial_connection      = partial_nodirect 0.4
 
 # node add/remove rates
-node_add_prob           = 0.2
-node_delete_prob        = 0.2
+node_add_prob           = 0.1
+node_delete_prob        = 0.1
 
 # network parameters
 num_hidden              = 0

@@ -37,16 +37,9 @@ def EvaluateIndividual(genome, config):
     #wMatrix = # Get matrix from genome. population[individual,:].reshape(nNodes,nNodes)
     #nNodes = wMatrix.shape# int(np.sqrt(len(bestIndividuals[ind,:])))
 
-    # Timing!
-    start_time_chemicalsUpdate = time.time()
     network = neat.nn.recurrent.RecurrentNetwork.create(genome, config)
-
     deltaM = main_GA.sim(network, timeSteps, nLattice)
-    # Timing!
-    end_time_chemicalsUpdate = time.time()
-    secs = end_time_chemicalsUpdate - start_time_chemicalsUpdate
-
-    deltaMatrix = deltaM
+    deltaMatrix = np.array(deltaM)
 
     for ix in range(nLattice):
         for jx in range(nLattice):
@@ -59,8 +52,10 @@ def EvaluateIndividual(genome, config):
 
 def run(config_file, nWorkers, nGen, timedateStr, nUniqueGenomes):
     # Load configuration.
-    config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,
-                         neat.DefaultSpeciesSet, neat.DefaultStagnation,
+    config = neat.Config(neat.DefaultGenome, 
+                         neat.DefaultReproduction,
+                         neat.DefaultSpeciesSet, 
+                         neat.DefaultStagnation,
                          config_file)
 
     # Create the population, which is the top-level object for a NEAT run.
@@ -80,11 +75,9 @@ def run(config_file, nWorkers, nGen, timedateStr, nUniqueGenomes):
     #enc = sys.getdefaultencoding()
     #print('=> after encoding: {}'.format(enc))
 
-
     # Run for up to 300 generations.
     pe = neat.ParallelEvaluator(nWorkers, EvaluateIndividual)
     winner = p.run(pe.evaluate, nGen)
-
 
     # Save the winner.
     filename = 'genomes/{}_winner_genome'.format(timedateStr)
@@ -122,10 +115,11 @@ def run(config_file, nWorkers, nGen, timedateStr, nUniqueGenomes):
     subproc = sp.call(rename1, shell = True)
     subproc = sp.call(rename2, shell = True)
     subproc = sp.call(rename3, shell = True)
+    time.sleep(5)
     print('Done.')
 
 if __name__ == '__main__':
-    nWorkers = 10
+    nWorkers = 1
     nGen = 1
     current_time = '{0:%Y%m%d_%H%M%S_%f}'.format(dt.now())
     nUniqueGenomes = 5
