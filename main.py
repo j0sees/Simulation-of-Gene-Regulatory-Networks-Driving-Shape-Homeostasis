@@ -16,7 +16,7 @@ import subprocess as sp
 # from numba import jit
 
 #@jit
-def sim(network, timeSteps, nLattice, mode, timeString):
+def sim(network, timeSteps, nLattice, mode, timeString, iGenome):
     """
     Parameters: sim(wMatrix, numberOfTimeSteps, NumberOfGeneration, nNodes, individual, nLattice, mode)
     # mode = True: cell_system as fitness function
@@ -221,7 +221,8 @@ def sim(network, timeSteps, nLattice, mode, timeString):
                         lgfPlot,
                         iTime,
                         mode,
-                        timeString)
+                        timeString,
+                        iGenome)
             ## Timing!
             #end_time_plotUpdate = time.time()
             #secs = end_time_plotUpdate - start_time_plotUpdate
@@ -278,21 +279,19 @@ if __name__ == '__main__':
     mode = False
     # mode = True: cell_system as fitness function
     # mode = False: cell_system as display system
-    #timeString = '{}'.format(sys.argv[1])
-    fileName = 'genomes/{}_winner_genome'.format(sys.argv[1])
+
+    #fileName = 'genomes/{}_winner_genome'.format(sys.argv[1])
+    fileName = 'genomes/{}_best_unique_genomes'.format(sys.argv[1])
     config_file = 'genomes/{}_config'.format(sys.argv[1])
     #config_file = '{}'.format(sys.argv[2])
     local_dir = os.path.dirname(__file__)
     config_path = os.path.join(local_dir, config_file)
 
-    mkdir = 'mkdir plots/{}'.format(sys.argv[1])
-    subproc = sp.call(mkdir, shell = True)
-
     # Config
     config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,neat.DefaultSpeciesSet, neat.DefaultStagnation, config_path)
 
     # load the winner
-    print('genome file: {0}\nconfig file: {1}'.format(fileName, config_file))
+
     #enc = sys.getdefaultencoding()
     #print('=> before encoding: {}'.format(enc))
 
@@ -303,11 +302,15 @@ if __name__ == '__main__':
     #print('=> after encoding: {}'.format(enc))
 
     with open(fileName, 'rb') as f:
-        genome = pickle.load(f)#, encoding = 'bytes')
-        print('=> Pickling OK!')
+        genomes = pickle.load(f)#, encoding = 'bytes')
 
-    network = neat.nn.RecurrentNetwork.create(genome, config)
-    sim(network, timeSteps, nLattice, mode, sys.argv[1])
-    plt.close()
+    for iGenome in range(len(genomes)):
+        print('=> Running genome #{}'.format(iGenome))
+        mkdir = 'mkdir plots/{0}_{1}'.format(sys.argv[1], iGenome)
+        subproc = sp.call(mkdir, shell = True)
+        print('genome file: {0}\nconfig file: {1}'.format(fileName, config_file))
+        network = neat.nn.RecurrentNetwork.create(genomes[iGenome], config)
+        sim(network, timeSteps, nLattice, mode, sys.argv[1], iGenome)
+        plt.close()
 #else:
     # if called from another script

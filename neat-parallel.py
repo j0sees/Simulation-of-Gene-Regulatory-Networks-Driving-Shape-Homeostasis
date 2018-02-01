@@ -38,8 +38,8 @@ def EvaluateIndividual(genome, config):
     #nNodes = wMatrix.shape# int(np.sqrt(len(bestIndividuals[ind,:])))
 
     network = neat.nn.recurrent.RecurrentNetwork.create(genome, config)
-    deltaM = main_GA.sim(network, timeSteps, nLattice)
-    deltaMatrix = np.array(deltaM)
+    deltaMatrix = main_GA.sim(network, timeSteps, nLattice)
+#    deltaMatrix = deltaM
 
     for ix in range(nLattice):
         for jx in range(nLattice):
@@ -80,20 +80,20 @@ def run(config_file, nWorkers, nGen, timedateStr, nUniqueGenomes):
     winner = p.run(pe.evaluate, nGen)
 
     # Save the winner.
-    filename = 'genomes/{}_winner_genome'.format(timedateStr)
-#    filename = 'genomes/{}_best_unique_genomes'.format(timedateStr)
+#    filename = 'genomes/{}_winner_genome'.format(timedateStr)
+    filename = 'genomes/{}_best_unique_genomes'.format(timedateStr)
 #    filename2 = 'genomes/{}_winner_genome1'.format(timedateStr)
 #    filename3 = 'genomes/{}_winner_genome2'.format(timedateStr)
     config.save('genomes/{}_config'.format(timedateStr))
     
     # TEST Save best unique genomes 
-#    unique_genomes = stats.best_unique_genomes(nUniqueGenomes)
-
-    with open(filename, 'wb') as f:
-        pickle.dump(winner, f, 2)
+    unique_genomes = stats.best_unique_genomes(nUniqueGenomes)
 
 #    with open(filename, 'wb') as f:
-#        pickle.dump(unique_genomes, f, 2)
+#        pickle.dump(winner, f, 2)
+
+    with open(filename, 'wb') as f:
+        pickle.dump(unique_genomes, f, 2)
 
     # Log statistics.
     stats.save()
@@ -115,12 +115,12 @@ def run(config_file, nWorkers, nGen, timedateStr, nUniqueGenomes):
     subproc = sp.call(rename1, shell = True)
     subproc = sp.call(rename2, shell = True)
     subproc = sp.call(rename3, shell = True)
-    time.sleep(5)
+#    time.sleep(5)
     print('Done.')
 
 if __name__ == '__main__':
-    nWorkers = 1
-    nGen = 1
+    nWorkers = 10
+    nGen = 2000
     current_time = '{0:%Y%m%d_%H%M%S_%f}'.format(dt.now())
     nUniqueGenomes = 5
     

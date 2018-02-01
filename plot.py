@@ -109,7 +109,8 @@ def AntGridPlot(cellGrid,
                 lgfPlot,
                 tStep,
                 mode,
-                timeString):
+                timeString,
+                iGenome):
 
     cell_data = cellGrid         # slice the grid to get the layer with the cell positions
     sgf_data = chemGrid[:,:,0]          # slice the grid to get the layer with the SGF profile
@@ -139,7 +140,8 @@ def AntGridPlot(cellGrid,
                 lgf_data,
                 tStep,
                 mode,
-                timeString)
+                timeString,
+                iGenome)
 
 def UpdatePlot( cellsFigure,
                 cellsSubplot,
@@ -153,7 +155,8 @@ def UpdatePlot( cellsFigure,
                 lgf_data,
                 tStep,
                 mode,
-                timeString):
+                timeString,
+                iGenome):
     #
     cellPlot.set_data(cell_data)
     sgfPlot.set_data(sgf_data)
@@ -169,7 +172,7 @@ def UpdatePlot( cellsFigure,
     #cellsFigure.canvas.flush_events()
     
     if mode == False:
-        plt.savefig('plots/{0}/cell_system-{1:03d}.png'.format(timeString, tStep), format='png', bbox_inches='tight')
+        plt.savefig('plots/{0}_{1}/cell_system-{2:03d}.png'.format(timeString, iGenome, tStep,), format='png', bbox_inches='tight')
 # UpdatePlot
 
 def FitvsNnodesPlot(statsFile):
