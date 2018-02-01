@@ -5,13 +5,13 @@
 fitness_criterion     = max
 # algorithm finishes when avg fitness reaches threshold value
 fitness_threshold     = 0.9
-pop_size              = 20
+pop_size              = 100
 reset_on_extinction   = False
 # If this evaluates to True, when all species simultaneously become 
 # extinct due to stagnation, a new random population will be created. 
 # If False, a CompleteExtinctionException will be thrown.
 
-no_fitness_termination = False
+no_fitness_termination = True
 # If this evaluates to True, then the fitness_criterion and 
 # fitness_threshold are ignored for termination
 
