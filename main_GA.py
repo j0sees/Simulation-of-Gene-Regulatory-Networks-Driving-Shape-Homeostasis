@@ -1,9 +1,7 @@
-#!/usr/bin/env python
 import sys
 import os
 import time
 from datetime import datetime as dt
-#from datetime import time
 import random
 import numpy as np
 ############
@@ -15,11 +13,8 @@ from tools_GA import *
 import multiprocessing as mp
 import ctypes
 import csv
-#import contextlib
-#import itertools
 from contextlib import contextmanager
 from functools import partial
-#from numba import jit
 
 #============================================================#
 #                                                            #
@@ -57,28 +52,14 @@ def sim(network, timeSteps, nLattice):
     t_matrix = GenerateTMatrix(nLattice)        # T matrix for LGF operations
     i_matrix = GenerateIMatrix(nLattice)        # I matrix for LGF operations
 
-    # timing variables!
-    #tmpListLoopAvg = 0
-    #chemicalsUpdateAvg = 0
-
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
     #       INITIALIZATION             #
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
     # create mother cell and update the grid with its initial location
     cellList.append(cell(iy,ix,network))
     cellGrid[ix][iy] = 1
-    #cellGrid[0,1,0] = 1
-    #print('Initial Grid:\n{}'.format(cellGrid[:,:,0]))
 
-    # DEBUG
-    #print('Time running...')
-    # Timing!
-    start_time_mainLoop = time.time()
-    #print('process: {} is running sim!!'.format(os.getpid()))
     while iTime < timeSteps:
-        # DEBUG
-        #print('\n######### time step #' + str(iTime))
-
         ## decay chemicals in spots where there is some but no cell
 
         # this matrixes must be updated everytime so that if there's no production in one spot that spot contains a zero
@@ -88,16 +69,11 @@ def sim(network, timeSteps, nLattice):
 
         tmpCellList = list(cellList)                        # a copy of the list of current cells is used to iterate over all the cells
 
-        # Timing!
-        start_time_tmpListLoop = time.time()
         tmpCellListLength = len(tmpCellList)
         quietCounter = 0
         while len(tmpCellList) > 0:                 # while the tmp list of cells is longer than 1
             # 1st step => choose a random cell from the list of existing cells
             rndCell = np.random.randint(len(tmpCellList))
-            # store lattice size
-            #tmpCellList[rndCell].border = nLattice          # TODO rethink this
-            #tmpCellList[rndCell].nNodes = nNodes           # WARNING hardcoded
 
             # 2nd step => read chemicals
             SGF_reading, LGF_reading = tmpCellList[rndCell].Sense(chemGrid)
@@ -110,8 +86,6 @@ def sim(network, timeSteps, nLattice):
             sigma_m[tmpCellList[rndCell].yPos,tmpCellList[rndCell].xPos] = tmpCellList[rndCell].sgfAmount
             lambda_m[tmpCellList[rndCell].yPos,tmpCellList[rndCell].xPos] = tmpCellList[rndCell].lgfAmount
 
-            # DEBUG
-            #print('\ncell number: ' + str(len(cellList)) + '\nCell status: ' + str(tmpCellList[rndCell].state))# + '\n')
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
             #        Cell Action            #
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -133,100 +107,42 @@ def sim(network, timeSteps, nLattice):
                 tmpCellList[rndCell].Die(cellGrid)              # Off the grid, method also changes the "amidead" switch to True
                 del tmpCellList[rndCell]
         # while
-        # Timing!
-        end_time_tmpListLoop = time.time()
-        secs = end_time_tmpListLoop - start_time_tmpListLoop
-        #print('time to loop through all cells: {:.3f} number of cells: {}'.format(secs, tmpCellListLength))
 
         # A list of cells that "died" is stored to later actually kill the cells...
         listLength = len(cellList) - 1
         for jCell in range(listLength,-1,-1):                   # checks every cell and if it was set to die then do, in reverse order
-            #print('len(cellList): ' + str(len(cellList)) + '. Current element: ' + str(jCell))
             if cellList[jCell].amidead:
                 del cellList[jCell]
 
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
         #    SGF/LGF diffusion and/or decay     #
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-        # Timing!
-        #start_time_chemicalsUpdate = time.time()
         chemGrid[:,:,0] = SGFDiffEq(chemGrid[:,:,0], sigma_m, deltaS, deltaT)
         chemGrid[:,:,1] = LGFDiffEq(i_matrix, t_matrix, chemGrid[:,:,1], lambda_m, deltaL, deltaT, deltaR, diffConst)
-        # Timing!
-        #end_time_chemicalsUpdate = time.time()
-        #secs = end_time_chemicalsUpdate - start_time_chemicalsUpdate
-        #print('time taken to update chemicals:' + str(secs))
 
-        ####################################################################
-        ##       IN-PLACE UPDATE
-        ####################################################################
-        #chemGrid[:,:,0] *=
-        #SGFDiffEq(s_matrix, sigma_matrix, deltaS, deltaT):
-        #updated_matrix = s_matrix + deltaT*(sigma_matrix - deltaS*s_matrix)
-        #return updated_matrix
-        ## sgfDiffEq
-
-        ## TODO use linalg solve to make it faster and numerically more stable
-        ## LGF dynamics with matrix approach
-        ##@jit # WARNING ON is good!!
-    #def LGFDiffEq(i_matrix, t_matrix, l_matrix, lambda_matrix, deltaL, deltaT, deltaR, D):
-        #alpha = D*deltaT/(deltaR**2)                            # constant
-        #f = (deltaT/2.)*(lambda_matrix - deltaL*l_matrix)       # term that takes into account LFG production for half time step
-        #g = linalg.inv(i_matrix - (alpha/2.)*t_matrix)          # inverse of some intermediate matrix
-        #h = i_matrix + (alpha/2.)*t_matrix                      # some intermediate matrix
-        ##l_halftStep = g@(l_matrix@h + f)                        # half time step calculation for LGF values
-        #l_halftStep = np.matmul(g,(np.matmul(l_matrix,h) + f))                        # half time step calculation for LGF values
-        ##print('grid after half time step...\n' + str(l_halftStep))
-        #f = (deltaT/2.)*(lambda_matrix - deltaL*l_halftStep)    # updated term...
-        #l_tStep = np.matmul((np.matmul(h,l_halftStep) + f),g)                         # final computation
-        #return l_tStep
-
-        ###################################################################
-        #       IN-PLACE UPDATE
-        ###################################################################
-
-        #print('grid after update...\n' + str(cellGrid[:,:,2]))
-        #print('################################LGF total = ' + str(chemsum))
-        #print('updated grid:\n' + str(cellGrid[:,:,0]))
-
-        if len(cellList) == 0 or quietCounter == len(cellList):       # if cells die during the simulation resturn two different structs
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+        #    Test grid to discard trivial cases #
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+        if len(cellList) == 0 or quietCounter == len(cellList):       # if cells die during the simulation return two different structs
             halfwayStruct = np.zeros([nLattice,nLattice])
             finalStruct = np.ones([nLattice,nLattice])
-            #print('zero cells!')
             break
         elif iTime == int(timeSteps/2) - 1:                           # special cases get tested halfway through the simulation
             if len(cellList) <= int((nLattice**2)*0.01) or len(cellList) >= int((nLattice**2)*0.9):        # If there are no cells 
                 halfwayStruct = np.zeros([nLattice,nLattice])       # return two completely different structure matrices to get 0 fitness
                 finalStruct = np.ones([nLattice,nLattice])
-                #print('too less cells! (halfway)')
                 break
             else:
-                #print('proc {} halfway'.format(os.getpid()))
                 halfwayStruct = np.array(cellGrid)
         elif iTime == timeSteps - 1:
             if len(cellList) >= int((nLattice**2)*0.9):                      # If cells fill space 
                 halfwayStruct = np.zeros([nLattice,nLattice])       # return two completely different structure matrices to get 0 fitness
                 finalStruct = np.ones([nLattice,nLattice])
-                #print('too many cells! (end of run)')
-                # break
             else:
-                #print('proc {} done!'.format(os.getpid()))
                 finalStruct = np.array(cellGrid)
-        # print('Grid:\n{}'.format(cellGrid[:,:,0]))
         iTime += 1
     # while
     
-    # Timing!
-    end_time_mainLoop = time.time()
-    secs = end_time_mainLoop - start_time_mainLoop
-    #print('\ntime taken in main loop: {:.3f}'.format(secs))
-
-    # DEBUG
-    # print(str(timeSteps)+' time steps complete')
-
-    # Timing!
-    #start_time_finalFunctions = time.time()
-
     halfwayStruct = GetStructure(halfwayStruct, nLattice)
     finalStruct = GetStructure(finalStruct, nLattice)
 
@@ -235,17 +151,6 @@ def sim(network, timeSteps, nLattice):
         for jk in range(nLattice):
             if halfwayStruct[ik,jk] != finalStruct[ik,jk]:
                 deltaMatrix[ik,jk] = 1
-    # Timing!
-    #end_time_finalFunctions = time.time()
-    #secs = end_time_finalFunctions - start_time_finalFunctions
-    #print('\ntime taken to get delta matrix:' + str(secs))
-
-
-    # DEBUG
-    #print('half way structure:\n' + str(halfwayStruct))
-    #print('final structure:\n' + str(finalStruct))
-    #print('delta matrix:\n' + str(deltaMatrix))
-    #print('Final count of cells: {}'.format(len(cellList)))
 
     return deltaMatrix
 ### sim
