@@ -295,8 +295,6 @@ if __name__ == '__main__':
         # timing variables!
         generationAvg = 0
 
-        #print('Parameters: \nnProcs = {}, Population size = {}, nNodes = {}, nLattice = {}, nGen = {}, Crossover Prob = {}, Mutation prob = {}\nFile name: {}'.format(nProcs, popSize, nNodes, nLattice, nOfGenerations, crossoverProb, mutationProb, fileName))
-
         # Multiprocessing implementation
         population_base = mp.Array(ctypes.c_float, popSize*nGenes, lock = False)# create mp shared 1D array
         #print('population_base length: {}'.format(len(population_base)))
@@ -313,12 +311,7 @@ if __name__ == '__main__':
         
         np.copyto(population, randPop)
         
-        #print('population shared array created successfully!')
-
-        #fitness_base = mp.Array(ctypes.c_float, popSize, lock = False)          # create mp shared 1D array
-        #fitness = np.frombuffer(fitness_base, dtype = ctypes.c_float)           # convert mp array to np.array
         fitness = np.zeros([popSize])
-        #print('fitness shared array created successfully!')
 
         for iGen in range(nOfGenerations):
             start_time_generation = time.time()
@@ -376,12 +369,9 @@ if __name__ == '__main__':
             # 1.2: get fittest infividual and mean fitness
             fitnessInfo[iGen, 0] = np.amax(fitness) #sorted_fitness[popSize - 1]                   # np.amax(fitness)
             fitnessInfo[iGen, 1] = np.average(fitness)
-            #print('Gen: {2}\t=>\tmax fit: {0:.3f},\tavg fit: {1:.3f}'.format(fitnessInfo[iGen, 0], fitnessInfo[iGen, 1], iGen + 1))
             print('Gen: {2}\t=>\tavg fit: {1:.3f}\tmax fit: {0}'.format(fitnessInfo[iGen, 0], fitnessInfo[iGen, 1], iGen + 1))
             string = [float('{:.3f}'.format(x)) for x in fitness]
             print('{}'.format(string))
-            # DEBUG
-            #print('sorted fitness array, before deleting:\n' + str(fitness))
 
             # 2nd step: Elitism => Save the best individuals for next generation
             iElit = 1                                               # Elite counter: individuals with the best fitness are kept untouched
@@ -405,14 +395,6 @@ if __name__ == '__main__':
                 #print('fitness array length: ' + str(len(fitness)))
                 selectedInd = np.random.choice(range(len(sorted_fitness)), tournamentSize, replace = False)
                 selectedInd.sort()                                  # select random contestants and sort them by index (i.e. by fitness))
-                # DEBUG
-                #print('selected contestants for tournament:\n' + str(selectedInd))
-
-                # General implementation
-                #winIndex = np.zeros([int(tournamentSize/2)])
-                #for ik in range(int(tournamentSize/2)):
-                    #winIndex[ik] = fitness[selectedInd[tournamentSize - 1 - ik]][1]   # the fittest ind are retrieved from the sorted fitness array
-                    #contestants[ik,:] = np.array(population[winIndex[ik],:])
 
                 # hardcoded for performance gain
                 winIndex1 = sorted_fitness[selectedInd[tournamentSize - 1]] # the fittest ind is retrieved from the sorted fitness array
@@ -431,17 +413,11 @@ if __name__ == '__main__':
                 iCounter = 0
                 for ix in selectedInd:
                     index = ix - iCounter
-                    # DEBUG
-                    #print('deleting ' + str(index) + ' entry:' + str(fitness[index]))
                     sorted_fitness = np.delete(sorted_fitness, index)      # WARNING does this really work?
                     iCounter += 1
-                # DEBUG
-                #print('sorted fitness array, after deleting:\n' + str(fitness))
-
                 # 3.3 => Save best individuals and offspring for new generation
                 for jk in range(tournamentSize):
                     index = eliteNum + (loopCounter*tournamentSize) + jk
-                    #print('=> elitNum: ' + str(eliteNum) + ', loopCounter: ' + str(loopCounter) + ', jk: ' + str(jk))
                     tempPopulation[index] = contestants[jk,:]
                 loopCounter += 1
             # loop over population
@@ -452,11 +428,8 @@ if __name__ == '__main__':
             end_time_generation = time.time()
             secs = end_time_generation - start_time_generation
             generationAvg += secs
-            #print('time to complete generation: {} m {:.3f} s'.format(int(secs/60), 60*((secs/60)-int(secs/60))))
             
         # Loop over generations
-
-        #print('avg time for generation: {} m {:.3f} s'.format(int(generationAvg/nOfGenerations/60), 60*((generationAvg/nOfGenerations/60)-int(generationAvg/nOfGenerations/60))))
 
         # Create filename: unique, related to current time
         popFileID = '{0:%Y%m%d_%H%M%S_%f}'.format(dt.now())

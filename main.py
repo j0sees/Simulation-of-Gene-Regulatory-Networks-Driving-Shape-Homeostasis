@@ -115,7 +115,6 @@ def sim(network, timeSteps, nLattice, mode, timeString, iGenome):
         # A list of cells that "died" is stored to later actually kill the cells...
         listLength = len(cellList) - 1
         for jCell in range(listLength,-1,-1):                       # checks every cell and if it was set to die then do, in reverse order
-            #print('len(cellList): ' + str(len(cellList)) + '. Current element: ' + str(jCell))
             if cellList[jCell].amidead:
                 del cellList[jCell]
 
