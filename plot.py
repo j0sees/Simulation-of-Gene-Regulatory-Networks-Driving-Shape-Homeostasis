@@ -172,7 +172,7 @@ def UpdatePlot( cellsFigure,
     #cellsFigure.canvas.flush_events()
     
     if mode == False:
-        plt.savefig('plots/{0}_{1}/cell_system-{2:03d}.png'.format(timeString, iGenome, tStep,), format='png', bbox_inches='tight')
+        plt.savefig('plots/{0}/best_unique_genome_{1}/cell_system-{2:03d}.png'.format(timeString, iGenome+1, tStep,), format='png', bbox_inches='tight')
 # UpdatePlot
 
 def FitvsNnodesPlot(statsFile):

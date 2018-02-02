@@ -86,7 +86,7 @@ def run(config_file, nWorkers, nGen, timedateStr, nUniqueGenomes):
 #    filename3 = 'genomes/{}_winner_genome2'.format(timedateStr)
     config.save('genomes/{}_config'.format(timedateStr))
     
-    # TEST Save best unique genomes 
+    # Save best unique genomes 
     unique_genomes = stats.best_unique_genomes(nUniqueGenomes)
 
 #    with open(filename, 'wb') as f:
@@ -100,13 +100,14 @@ def run(config_file, nWorkers, nGen, timedateStr, nUniqueGenomes):
 
     # Display the winning genome.
     #print('\nBest genome:\n{!s}'.format(winner))
-    print('=> Plots: no plots yet...')
-    #visualize.draw_net(config, winner, view=False)
-    #print('\tnetwork... DONE!')
-    #visualize.plot_stats(stats, ylog=False, view=False)
-    #print('\tstats... DONE!')
-    #visualize.plot_species(stats, view=False)
-    #print('\tspecies... DONE!')
+    #print('=> Plots: testing...')
+    for igen in range(len(unique_genomes)):
+        visualize.draw_net(config, unique_genomes[igen], view=False, filename='plots/{0}/{0}_best_unique_network_{1}'.format(timedateStr, igen+1))
+    print('\tnetworks... DONE!')
+    visualize.plot_stats(stats, ylog=False, view=False, filename='plots/{0}/{0}_avg-fitness.svg'.format(timedateStr))
+    print('\tstats... DONE!')
+    visualize.plot_species(stats, view=False, filename='plots/{0}/{0}_speciation.svg'.format(timedateStr))
+    print('\tspecies... DONE!')
     
     # rename stat files to particular names
     rename1 = 'mv fitness_history.csv stats/{}_fitness_history.csv'.format(timedateStr)
@@ -120,12 +121,12 @@ def run(config_file, nWorkers, nGen, timedateStr, nUniqueGenomes):
 
 if __name__ == '__main__':
     nWorkers = 10
-    nGen = 2000
+    nGen = 100
     current_time = '{0:%Y%m%d_%H%M%S_%f}'.format(dt.now())
     nUniqueGenomes = 5
     
-    #command = 'mkdir plots/{}'.format(time)
-    #subproc = sp.call(command, shell = True)
+    mkdir = 'mkdir plots/{0}'.format(current_time)
+    subproc = sp.call(mkdir, shell = True)
     
     # Determine path to configuration file. This path manipulation is
     # here so that the script will run successfully regardless of the

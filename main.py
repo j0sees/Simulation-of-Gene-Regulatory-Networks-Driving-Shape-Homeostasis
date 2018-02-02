@@ -145,7 +145,7 @@ def sim(network, timeSteps, nLattice, mode, timeString, iGenome):
     end_time_mainLoop = time.time()
     secs = end_time_mainLoop - start_time_mainLoop
     tmpListLoopAvg += secs
-    print('Avg time looping through cells: {:.3f}, total: {:.3f}'.format(tmpListLoopAvg/timeSteps, tmpListLoopAvg))
+    #print('Avg time looping through cells: {:.3f}, total: {:.3f}'.format(tmpListLoopAvg/timeSteps, tmpListLoopAvg))
 
 if __name__ == '__main__':
     # if executed as main module!
@@ -153,12 +153,13 @@ if __name__ == '__main__':
     timeSteps = 200
     nLattice = 50
     mode = False
+    timedateStr = sys.argv[1]
     # mode = True: cell_system as fitness function
     # mode = False: cell_system as display system
 
     #fileName = 'genomes/{}_winner_genome'.format(sys.argv[1])
-    fileName = 'genomes/{}_best_unique_genomes'.format(sys.argv[1])
-    config_file = 'genomes/{}_config'.format(sys.argv[1])
+    fileName = 'genomes/{}_best_unique_genomes'.format(timedateStr)
+    config_file = 'genomes/{}_config'.format(timedateStr)
     #config_file = '{}'.format(sys.argv[2])
     local_dir = os.path.dirname(__file__)
     config_path = os.path.join(local_dir, config_file)
@@ -181,12 +182,12 @@ if __name__ == '__main__':
         genomes = pickle.load(f)#, encoding = 'bytes')
 
     for iGenome in range(len(genomes)):
-        print('=> Running genome #{}'.format(iGenome))
-        mkdir = 'mkdir plots/{0}_{1}'.format(sys.argv[1], iGenome)
+        #print('=> Running genome #{}'.format(iGenome))
+        mkdir = 'mkdir plots/{0}/best_unique_genome_{1}'.format(timedateStr, iGenome+1)
         subproc = sp.call(mkdir, shell = True)
-        print('genome file: {0}\nconfig file: {1}'.format(fileName, config_file))
+        #print('genome file: {0}\nconfig file: {1}'.format(fileName, config_file))
         network = neat.nn.RecurrentNetwork.create(genomes[iGenome], config)
-        sim(network, timeSteps, nLattice, mode, sys.argv[1], iGenome)
+        sim(network, timeSteps, nLattice, mode, timedateStr, iGenome)
         plt.close()
 #else:
     # if called from another script
