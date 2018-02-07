@@ -27,6 +27,7 @@ import pickle
 #import json
 import visualize
 import subprocess as sp
+import numpy as np
 
 def EvaluateIndividual(genome, config):
     totSum = 0.
@@ -101,8 +102,9 @@ def run(config_file, nWorkers, nGen, timedateStr, nUniqueGenomes):
     # Display the winning genome.
     #print('\nBest genome:\n{!s}'.format(winner))
     #print('=> Plots: testing...')
+    node_names = {-1:'SGF', -2:'LGF', 0:'Proliferate', 1:'Migrate', 2:'Apoptosis', 3:'SGF Prod', 4:'LGF Prod', 5:'Polarisation'}
     for igen in range(len(unique_genomes)):
-        visualize.draw_net(config, unique_genomes[igen], view=False, filename='plots/{0}/{0}_best_unique_network_{1}'.format(timedateStr, igen+1))
+        visualize.draw_net(config, unique_genomes[igen], view=False, filename='plots/{0}/{0}_best_unique_network_{1}'.format(timedateStr, igen+1), node_names=node_names)
     print('\tnetworks... DONE!')
     visualize.plot_stats(stats, ylog=False, view=False, filename='plots/{0}/{0}_avg-fitness.svg'.format(timedateStr))
     print('\tstats... DONE!')
@@ -121,19 +123,38 @@ def run(config_file, nWorkers, nGen, timedateStr, nUniqueGenomes):
 
 if __name__ == '__main__':
     nWorkers = 10
-    nGen = 100
-    current_time = '{0:%Y%m%d_%H%M%S_%f}'.format(dt.now())
+    nGen = 10
     nUniqueGenomes = 5
-    
-    mkdir = 'mkdir plots/{0}'.format(current_time)
-    subproc = sp.call(mkdir, shell = True)
-    
-    # Determine path to configuration file. This path manipulation is
-    # here so that the script will run successfully regardless of the
-    # current working directory.
-    local_dir = os.path.dirname(__file__)
-    config_path = os.path.join(local_dir, 'config-ca')
-    
-    # Run NEAT algorithm
+    configFile = 'config-ca'
+
+    c_prob = np.linspace(0.1,1,10)
+    n_prob = np.linspace(0.01,0.1,10)
+
     print('=> Running NEAT...\n')
-    run(config_path, nWorkers, nGen, current_time, nUniqueGenomes)
+    
+    for iP in n_prob:
+        for iC in c_prob:            
+            current_time = '{0:%Y%m%d_%H%M%S_%f}'.format(dt.now())
+            mkdir = 'mkdir plots/{0}'.format(current_time)
+            cp = 'cp config.cfg {}'.format(configFile)
+
+            sp.call(mkdir, shell = True)
+            sp.call(cp, shell = True)
+
+            with open(configFile, 'a') as f:
+                f.write('node_add_prob           = {}\n'.format(iP))
+                f.write('initial_connection      = partial_nodirect {}\n'.format(iC))
+
+            # Determine path to configuration file. This path manipulation is
+            # here so that the script will run successfully regardless of the
+            # current working directory.
+            local_dir = os.path.dirname(__file__)
+            config_path = os.path.join(local_dir, configFile)
+            
+            # Run NEAT algorithm
+            print('=> Running for: connection_prob: {0},\tnode_add_prob: {1}...\n'.format(iC, iP))
+
+            run(config_path, nWorkers, nGen, current_time, nUniqueGenomes)
+
+            rm = 'rm {}'.format(configFile)
+            sp.call(rm, shell = True)
