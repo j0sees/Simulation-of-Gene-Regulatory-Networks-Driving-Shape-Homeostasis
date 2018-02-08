@@ -40,25 +40,42 @@ def FitnessMapPlot():
         
     print('=> Data stored...')
     print('=> Generating figures...')
-    plt.close()
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    #fig.suptitle('')
-    xticks = np.linspace(0.1,1,10)
-    yticks = np.linspace(0.01,0.1,10)
-
-    ax.set_xlabel('$P_{connection}$')
-    ax.set_ylabel('$P_{node}$')
-    #ax.set_xticks(xticks)
-    #ax.set_yticks(yticks)
-    #ax.set_xscale('log')
-    #ax.set_yscale('log')
-#    cbar1 = fig.colorbar(mapPlot, ax = ax, ticks = [], orientation='vertical')#, shrink=0.75)
-    ax.legend(loc = 'best')
 
     for ix in range(10):
+        plt.close()
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        #fig.suptitle('')
+        xticks = [ '{0}'.format(iy) for iy in np.linspace(0.1,1,10)]
+        yticks = [ '{0:.02f}'.format(iy) for iy in np.linspace(0.01,0.1,10)]
+        ticks = np.linspace(1,10,10)-1
+
+        #xticks = {0:'0.1', 1:'0.2', 2:'0.3', 3:'0.4', 4:'0.5', 5:'0.6', 6:'0.7', 7:'0.8', 8:'0.9', 9:'1.0'}
+        #yticks = {0:'0.01', 1:'0.02', 2:'0.03', 3:'0.04', 4:'0.05', 5:'0.06', 6:'0.07', 7:'0.08', 8:'0.09', 9:'0.10'}
+
+        fig.canvas.draw()
+
+        xlabels = [item.get_text() for item in ax.get_xticklabels()]
+        xlabels = xticks
+        
+        ylabels = [item.get_text() for item in ax.get_yticklabels()]
+        ylabels = yticks
+        
+        ax.set_yticks(ticks)
+        ax.set_xticks(ticks)
+        ax.set_xticklabels(xlabels)
+        ax.set_yticklabels(ylabels)
+        ax.set_xlabel('$P_{connection}$')
+        ax.set_ylabel('$P_{node}$')
+        #ax.set_xticks(xticks)
+        #ax.set_yticks(yticks)
+        #ax.set_xscale('log')
+        #ax.set_yscale('log')
+        ax.legend(loc = 'best')
+
         ax.set_title('Max fitness map for generation #{0}'.format(ix+1))
-        mapPlot = ax.imshow(statsArray[ix,:,:], origin = 'lower', interpolation = 'none', vmin = 0, vmax = 1)
+        mapPlot = ax.imshow(statsArray[ix,:,:], origin = 'lower', cmap = 'Blues', interpolation = 'none', vmin = 0, vmax = 1)
+        cbar1 = fig.colorbar(mapPlot, ax = ax, orientation='vertical')#, shrink=0.75)
         #print('current data array:\n{}'.format(statsArray[ix,:,:]))
         plt.savefig('max_fitness_map_gen_{0}.eps'.format(ix+1), format='eps', bbox_inches='tight')
     #plt.show()
