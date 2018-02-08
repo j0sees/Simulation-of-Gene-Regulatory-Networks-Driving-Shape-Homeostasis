@@ -56,7 +56,7 @@ def sim(network, timeSteps, nLattice, mode, timeString, iGenome):
 
     cellsFigure, cellsSubplot, sgfSubplot, lgfSubplot, cellPlot, sgfPlot, lgfPlot = CellsGridFigure(nLattice, mode)
 
-    print('Time running...')
+    #print('Time running...')
     #### Timing!
     start_time_mainLoop = time.time()
     while iTime < timeSteps:
@@ -168,16 +168,7 @@ if __name__ == '__main__':
     config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,neat.DefaultSpeciesSet, neat.DefaultStagnation, config_path)
 
     # load the winner
-
-    #enc = sys.getdefaultencoding()
-    #print('=> before encoding: {}'.format(enc))
-
-    #reload(sys)  
-    ##sys.setdefaultencoding('ascii')
-
-    #enc = sys.getdefaultencoding()
-    #print('=> after encoding: {}'.format(enc))
-
+    print('=> Working with file: {}...'.format(timedateStr))
     with open(fileName, 'rb') as f:
         genomes = pickle.load(f)#, encoding = 'bytes')
 
@@ -189,5 +180,3 @@ if __name__ == '__main__':
         network = neat.nn.RecurrentNetwork.create(genomes[iGenome], config)
         sim(network, timeSteps, nLattice, mode, timedateStr, iGenome)
         plt.close()
-#else:
-    # if called from another script
