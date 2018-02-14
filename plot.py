@@ -67,7 +67,7 @@ def CellsGridFigure(fieldSize, mode):
     cbar1.ax.get_yaxis().labelpad = 15
     cbar1.ax.set_ylabel('states', rotation = 270)
 
-    sgfPlot = sgfSubplot.imshow(sgfGrid, origin = 'lower', cmap = 'Reds', interpolation = 'none', vmin = 0, vmax = 0.05)
+    sgfPlot = sgfSubplot.imshow(sgfGrid, origin = 'lower', cmap = 'Reds', interpolation = 'none', vmin = 0, vmax = 1)
     cbar2 = cellsFigure.colorbar(sgfPlot, ax = sgfSubplot, orientation = 'horizontal')
 
     # hide ticks
@@ -76,7 +76,7 @@ def CellsGridFigure(fieldSize, mode):
     sgfPlot.axes.get_xaxis().set_visible(False)
     sgfPlot.axes.get_yaxis().set_visible(False)
 
-    lgfPlot = lgfSubplot.imshow(lgfGrid, origin = 'lower', cmap = 'Blues', interpolation = 'none', vmin = 0, vmax = 3)
+    lgfPlot = lgfSubplot.imshow(lgfGrid, origin = 'lower', cmap = 'Blues', interpolation = 'none', vmin = 0, vmax = 1)
     cbar3 = cellsFigure.colorbar(lgfPlot, ax = lgfSubplot, orientation = 'horizontal')
 
     # hide ticks
@@ -329,26 +329,6 @@ def ShowNetwork(dataFile):
     
     #ax.legend(loc='best')
     #plt.savefig('network.eps', format='eps', bbox_inches='tight')
-    plt.show()
-    
-def Histogram(fitArray):
-    with open(fitArray, 'r') as dataFile:
-        fitData = np.loadtxt(dataFile, delimiter = ',')
-    #-------------------------------#
-    #       Generate histogram      #
-    #-------------------------------#
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    #fig.suptitle('')
-    #ax.set_xlabel('number of generations')
-    ax.set_ylabel('Frequency')
-    ax.set_xlabel('Fitness')
-    ax.set_xticks(np.linspace(0,1,11))
-    ax.set_title('Fitness distibution')   
-    ax.hist(fitData[0], bins = 10, range = (0,1))#, align = 'left')
-    #ax.legend(loc = 'best')
-    #plt.savefig('test.png')
-    #print('{}'.format(fitData))
     plt.show()
     
 def MapPlot(mapFile):

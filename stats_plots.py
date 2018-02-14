@@ -9,21 +9,20 @@ import subprocess as sp
 
 def FitnessMapPlot():
     fileName = 'filesList'                                                  # name of the temporary file with names
-    createList = 'ls plots/ | egrep 2018020[6-7] > {}'.format(fileName)     # command to generate such file
+    createList = 'ls plots/ | egrep 20180209 > {}'.format(fileName)     # command to generate such file
     sp.call(createList, shell = True)                                       # create the list
     fileList = open(fileName).read().splitlines()                           # store names in a python list for later use
     sp.call('rm {}'.format(fileName), shell = True)                         # remove temporary file
     
     print('=> List created...')
-    statsArray = np.zeros([10,10,10])
+    statsArray = np.zeros([10,5,5])
     cCounter = 0
     for statsFile in fileList:
         with open('stats/{}_fitness_history.csv'.format(statsFile), 'r') as f:
             tempArray = np.loadtxt(f,delimiter=' ')
-        
+
         for ix in range(10):
-            statsArray[ix, cCounter//10, cCounter%10] = tempArray[ix,0]
-            #print('statsArray[{0},{1},{2}] = {3} =?= tempArray[{0},0] = {4}'.format(ix, cCounter//10, cCounter%10, statsArray[ix, cCounter//10, cCounter%10], tempArray[ix,0]))
+            statsArray[ix, cCounter//5, cCounter%5] = tempArray[ix,0]
             #statsArray[0,pCounter,cCounter] = tempArray[0,0]
             #statsArray[1,pCounter,cCounter] = tempArray[1,0]
             #statsArray[2,pCounter,cCounter] = tempArray[2,0]
@@ -67,10 +66,7 @@ def FitnessMapPlot():
         ax.set_yticklabels(ylabels)
         ax.set_xlabel('$P_{connection}$')
         ax.set_ylabel('$P_{node}$')
-        #ax.set_xticks(xticks)
-        #ax.set_yticks(yticks)
-        #ax.set_xscale('log')
-        #ax.set_yscale('log')
+
         ax.legend(loc = 'best')
 
         ax.set_title('Max fitness map for generation #{0}'.format(ix+1))
@@ -79,7 +75,56 @@ def FitnessMapPlot():
         #print('current data array:\n{}'.format(statsArray[ix,:,:]))
         plt.savefig('max_fitness_map_gen_{0}.eps'.format(ix+1), format='eps', bbox_inches='tight')
     #plt.show()
+    
+def Histogram():
+    fileName = 'filesList'                                                  # name of the temporary file with names
+    createList = 'ls plots/20180209_pConnection_20gen_run > {}'.format(fileName)     # command to generate such file
+    sp.call(createList, shell = True)                                       # create the list
+    fileList = open(fileName).read().splitlines()                           # store names in a python list for later use
+    sp.call('rm {}'.format(fileName), shell = True)                         # remove temporary file
+    
+    print('=> List created...')
+    statsArray = np.zeros([20,20])
+    cCounter = 0
+    for statsFile in fileList:
+        with open('stats/{}_fitness_history.csv'.format(statsFile), 'r') as f:
+            tempArray = np.loadtxt(f,delimiter=' ')
+        statsArray[:,cCounter] = tempArray[:,0]
+        cCounter += 1
+
+    print('=> Data stored...')
+    print('=> Generating map...')
+
+    #with open(fitArray, 'r') as dataFile:
+        #fitData = np.loadtxt(dataFile, delimiter = ',')
+    #-------------------------------#
+    #       Generate histogram      #
+    #-------------------------------#
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    #fig.suptitle('')
+    fig.canvas.draw()
+
+    xticks = [ '{0:.02f}'.format(iy) for iy in np.linspace(0.05,1,20)]
+    yticks = [ '{0}'.format(int(iy)) for iy in np.linspace(1,20,20)]
+    xlabels = [item.get_text() for item in ax.get_xticklabels()]
+    xlabels = xticks
+    ylabels = [item.get_text() for item in ax.get_yticklabels()]
+    ylabels = yticks
+    ticks = np.linspace(1,20,20)-1
+    ax.set_yticks(ticks)
+    ax.set_xticks(ticks)
+    ax.set_xticklabels(xlabels, rotation=-90)
+    ax.set_yticklabels(ylabels)
+    ax.set_ylabel('Generation')
+    ax.set_xlabel('$P_{connection}$')
+
+    ax.set_title('Max Fitness map per generation')   
+    mapPlot = ax.imshow(statsArray, origin = 'lower', cmap = 'Greens', interpolation = 'none', vmin = 0, vmax = 1)
+    cbar1 = fig.colorbar(mapPlot, ax = ax, orientation='vertical')#, shrink=0.75)
+    plt.savefig('max_fitness_map_per_gen.eps', format='eps', bbox_inches='tight')
 
 if __name__ == '__main__':
     #dataFile = sys.argv[1]
-    FitnessMapPlot()
+    #FitnessMapPlot()
+    Histogram()

@@ -68,18 +68,6 @@ def LGFDiffEq(i_matrix, t_matrix, l_matrix, lambda_matrix, deltaL, deltaT, delta
     return l_tStep
 # sgfDiffEq
 
-#def LGFDiffEq2(i_matrix, t_matrix, l_matrix, lambda_matrix, deltaL, deltaT, deltaR, D):
-    #alpha = D*deltaT/(deltaR**2)                            # constant
-    #f = (deltaT/2.)*(lambda_matrix - deltaL*l_matrix)       # term that takes into account LFG production for half time step
-    #g = linalg.inv(i_matrix - (alpha/2.)*t_matrix)          # inverse of some intermediate matrix
-    #h = i_matrix + (alpha/2.)*t_matrix                      # some intermediate matrix
-    #l_halftStep = (l_matrix@h + f)@g                        # half time step calculation for LGF values
-    #f = (deltaT/2.)*(lambda_matrix - deltaL*l_halftStep)    # updated term...
-    #l_tStep = g@(h@l_halftStep + f)                         # final computation
-    #return l_tStep
-# sgfDiffEq
-
-# T matrix, used in LGF dynamics
 #@jit
 def GenerateTMatrix(size):
     t_matrix = np.zeros([size,size])

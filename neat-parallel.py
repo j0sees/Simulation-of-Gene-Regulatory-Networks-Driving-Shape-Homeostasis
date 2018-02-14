@@ -105,11 +105,11 @@ def run(config_file, nWorkers, nGen, timedateStr, nUniqueGenomes):
     node_names = {-1:'SGF', -2:'LGF', 0:'Proliferate', 1:'Migrate', 2:'Apoptosis', 3:'SGF Prod', 4:'LGF Prod', 5:'Polarisation'}
     for igen in range(len(unique_genomes)):
         visualize.draw_net(config, unique_genomes[igen], view=False, filename='plots/{0}/{0}_best_unique_network_{1}'.format(timedateStr, igen+1), node_names=node_names)
-    print('\tnetworks... DONE!')
+    #print('\tnetworks... DONE!')
     visualize.plot_stats(stats, ylog=False, view=False, filename='plots/{0}/{0}_avg-fitness.svg'.format(timedateStr))
-    print('\tstats... DONE!')
+    #print('\tstats... DONE!')
     visualize.plot_species(stats, view=False, filename='plots/{0}/{0}_speciation.svg'.format(timedateStr))
-    print('\tspecies... DONE!')
+    print('\tplots... DONE!')
     
     # rename stat files to particular names
     rename1 = 'mv fitness_history.csv stats/{}_fitness_history.csv'.format(timedateStr)
@@ -119,16 +119,15 @@ def run(config_file, nWorkers, nGen, timedateStr, nUniqueGenomes):
     subproc = sp.call(rename2, shell = True)
     subproc = sp.call(rename3, shell = True)
 #    time.sleep(5)
-    print('Done.')
+    print('Finished.\n')
 
 if __name__ == '__main__':
-    nWorkers = 10
+    nWorkers = 20
     nGen = 10
-    nUniqueGenomes = 5
+    nUniqueGenomes = 10
     configFile = 'config-ca'
-
-    c_prob = np.linspace(0.1,1,10)
-    n_prob = np.linspace(0.01,0.1,10)
+    c_prob = [0.2, 0.3, 0.4] #np.linspace(0.05,1,20)
+    n_prob = [0.0] #np.linspace(0.01,0.1,10)
 
     print('=> Running NEAT...\n')
     
@@ -150,9 +149,9 @@ if __name__ == '__main__':
             # current working directory.
             local_dir = os.path.dirname(__file__)
             config_path = os.path.join(local_dir, configFile)
-            
+
             # Run NEAT algorithm
-            print('=> Running for: connection_prob: {0},\tnode_add_prob: {1}...\n'.format(iC, iP))
+            print('\n=> Running for: connection_prob: {0},\tnode_add_prob: {1}...'.format(iC, iP))
 
             run(config_path, nWorkers, nGen, current_time, nUniqueGenomes)
 
