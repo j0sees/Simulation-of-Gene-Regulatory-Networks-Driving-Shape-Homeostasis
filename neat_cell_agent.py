@@ -17,9 +17,10 @@ class cell:
         self.deathTime = 1                          # Time scale for dying
         self.amidead = False                        # Cell dead or alive
         self.quietCounter = 0                       # Quiet counter
-        self.sgfAmount = 0                          # Amount of "pheromone" to deposit in the grid
+        self.sgfAmount = 0                          # Amount of "growth factor" to deposit in the grid
         self.lgfAmount = 0
         self.network = network
+        self.network.reset()                        # reset network, only once, when the cell is initialised
 
     #   Values stored in grid according to state:
     #       0   =>  spot has been always empty i.e. available
@@ -38,7 +39,7 @@ class cell:
     def GenerateStatus(self, SGF_lecture, LGF_lecture):
         # neural network generates a status based on the reads
         inputs = [SGF_lecture, LGF_lecture]
-        self.network.reset()
+        # self.network.reset()
         outputs = self.network.activate(inputs)
         self.neighbourList = [[self.yPos - 1, self.xPos], [self.yPos + 1, self.xPos], [self.yPos, self.xPos - 1], [self.yPos, self.xPos + 1]]
         
@@ -59,7 +60,9 @@ class cell:
             #wBoundary = 1
             arrow = outputs[5]
             # oriented according to numpy order v>, not usual >^
-            if arrow < sBoundary:
+            if arrow == sBoundary:
+                self.orientation = [self.yPos,self.xPos]
+            elif arrow < sBoundary:
                 if arrow < nBoundary:
                     # orientation North
                     self.orientation = self.neighbourList[0]
@@ -67,7 +70,7 @@ class cell:
                     # orientation South
                     self.orientation = self.neighbourList[1]
             else: 
-                if arrow < eBoundary:
+                if arrow < eBoundary:   # and arrow > sBoundary:
                     # orientation East
                     self.orientation = self.neighbourList[3]
                 else:   #arrow < wBoundary:
