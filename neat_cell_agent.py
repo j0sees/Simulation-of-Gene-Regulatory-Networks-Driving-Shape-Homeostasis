@@ -51,6 +51,9 @@ class cell:
         self.sgfAmount = outputs[3]
         self.lgfAmount = outputs[4]
 
+        xThreshold = 0.5
+        yThreshold = 0.01
+
         # ORIENTATION:
         if self.compass:
             # boundaries for orientation
@@ -60,8 +63,8 @@ class cell:
             #wBoundary = 1
             arrow = outputs[5]
             # oriented according to numpy order v>, not usual >^
-            if arrow == sBoundary:
-                self.orientation = [self.yPos,self.xPos]
+            if abs(arrow - sBoundary) <= yThreshold:
+                self.orientation = [self.yPos, self.xPos]
             elif arrow < sBoundary:
                 if arrow < nBoundary:
                     # orientation North
@@ -81,9 +84,6 @@ class cell:
 
         # Generate state
         maxVal = 0.5
-        #tmpVal = 0
-        xThreshold = 0.5
-        yThreshold = 0.01
 
         # TODO is the order of this operations the ideal?
         if iStatus < xThreshold and jStatus < xThreshold and kStatus < xThreshold:

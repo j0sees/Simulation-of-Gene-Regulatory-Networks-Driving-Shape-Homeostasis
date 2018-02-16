@@ -126,7 +126,7 @@ def sim(network, timeSteps, nLattice, mode, timeString, iGenome):
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
         #         Plot               #
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-        AntGridPlot(    cellGrid,
+        CellGridPlot(    cellGrid,
                         chemGrid,
                         nLattice,
                         cellsFigure,
