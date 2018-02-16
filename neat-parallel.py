@@ -33,21 +33,15 @@ def EvaluateIndividual(genome, config):
     totSum = 0.
     nLattice = 50
     timeSteps = 200
-    #wMatrix = neat.nn.recurrent.RecurrentNetwork.create(genome, config)
-    #print('{}'.format(wMatrix))
-    #wMatrix = # Get matrix from genome. population[individual,:].reshape(nNodes,nNodes)
-    #nNodes = wMatrix.shape# int(np.sqrt(len(bestIndividuals[ind,:])))
 
     network = neat.nn.recurrent.RecurrentNetwork.create(genome, config)
     deltaMatrix = main_GA.sim(network, timeSteps, nLattice)
-#    deltaMatrix = deltaM
 
     for ix in range(nLattice):
         for jx in range(nLattice):
             totSum += deltaMatrix[ix,jx]
 
     fit = 1. - (1./(nLattice**2))*totSum
-    #print('Proc {} computed fitness: {}'.format(os.getpid(), fit))
     return fit
 # EvaluateIndividual
 
@@ -122,11 +116,11 @@ def run(config_file, nWorkers, nGen, timedateStr, nUniqueGenomes):
     print('Finished.\n')
 
 if __name__ == '__main__':
-    nWorkers = 20
-    nGen = 10
+    nWorkers = 10
+    nGen = 20
     nUniqueGenomes = 10
     configFile = 'config-ca'
-    c_prob = [0.2, 0.3, 0.4] #np.linspace(0.05,1,20)
+    c_prob = np.linspace(0.1,1,10)
     n_prob = [0.0] #np.linspace(0.01,0.1,10)
 
     print('=> Running NEAT...\n')
