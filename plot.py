@@ -97,7 +97,7 @@ def CellsGridFigure(fieldSize, mode):
     return cellsFigure, cellsSubplot, sgfSubplot, lgfSubplot, cellPlot, sgfPlot, lgfPlot
 # CellsGridFigure
 
-def AntGridPlot(cellGrid,
+def CellGridPlot(cellGrid,
                 chemGrid,
                 nLattice,
                 cellsFigure,
