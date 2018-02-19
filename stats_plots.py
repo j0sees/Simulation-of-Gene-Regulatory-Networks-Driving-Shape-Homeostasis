@@ -131,8 +131,9 @@ def FitnessperGenMap():
 
 def NetworkBehaviourMap(fileID):
     print('=> Map plot')
-    scale = 10
-    reps = 100
+    scale = 100
+    marker_size = 0.1
+    reps = 10
     nOutputs = 4
     SGF_range = np.linspace(0,1,scale + 1)
     LGF_range = np.linspace(0,1,scale + 1)
@@ -164,6 +165,8 @@ def NetworkBehaviourMap(fileID):
                 output = network.activate(inputs)
             GF_map[int(iy*scale), int(ix*scale),:] = GenerateStatus(output)
     
+    
+    
     #-------------------------------#
     #       Generate histogram      #
     #-------------------------------#
@@ -191,9 +194,17 @@ def NetworkBehaviourMap(fileID):
     ax.set_title('Max Fitness map per generation')   
     
     ax.imshow(GF_map[:,:,0], origin = 'lower', cmap = cMap, interpolation = 'none', vmin = 0, vmax = 3)
-    #for 
-    ax.scatter((SGF_range)*scale, (LGF_range)*scale, s = 8, marker ='>', c = 'w', label = 'test')
-
+    for ix in SGF_range:
+        for iy in LGF_range:
+            arrow = GF_map[int(ix*scale), int(iy*scale),1]
+            if arrow == 1:
+                ax.scatter(ix*scale, iy*scale, s = marker_size, marker ='4', c = 'w', label = 'test')
+            elif arrow == 2:
+                ax.scatter(ix*scale, iy*scale, s = marker_size, marker ='3', c = 'w', label = 'test')
+            elif arrow == 3:
+                ax.scatter(ix*scale, iy*scale, s = marker_size, marker ='2', c = 'w', label = 'test')
+            else:
+                ax.scatter(ix*scale, iy*scale, s = marker_size, marker ='1', c = 'w', label = 'test')
     #cbar1 = fig.colorbar(mapPlot, ax = ax, orientation='vertical')
     plt.savefig('behaviour_map.eps', format='eps', bbox_inches='tight')
     
