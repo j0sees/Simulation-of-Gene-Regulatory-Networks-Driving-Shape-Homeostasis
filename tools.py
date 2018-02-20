@@ -1,18 +1,12 @@
 import numpy as np
 from scipy import linalg
 import csv
+import neat
+import os
+import pickle
 #from numba import jit
 
 # Tools
-#@jit
-#def CheckInBorders(xCoord, yCoord, border):
-    #if xCoord < 0 or xCoord > border:     # Check if the neighbour is inbounds on x axis
-        #return False
-    #elif yCoord < 0 or yCoord > border:    # Check if the neighbour is inbounds on y axis
-        #return False
-    #else:
-        #return True
-# CheckInBorders
 
 # List without joint ends
 # https://stackoverflow.com/questions/29710249/python-force-list-index-out-of-range-exception
@@ -26,7 +20,7 @@ class flatList(list):
 def CheckifOccupied(xCoord, yCoord, grid):
     if grid[yCoord][xCoord] > 0:         # if value on grid is 1 (quiet), 2 (moved) or 3 (splitted) then spot is occupied
         return True
-    else:                                   # else, value is 0 (empty) or -1 (cell was there before but died) then spot is available
+    else:                                   # else, value is 0 (empty)
         return False
 # CheckifOccupied
 
@@ -37,13 +31,6 @@ def CheckifPreferred(xOri, yOri, xCoord, yCoord):
     else:
         return False
 # CheckifPreferred
-
-# SGF dynamics, single value update approach
-#@jit
-#def SGFDiffEq(s, sigma, deltaS, deltaT):
-    #updatedVal = s + deltaT*(sigma - deltaS*s)
-    #return updatedVal
-# sgfDiffEq
 
 # SGF dynamics with matrix approach
 #@jit #WARNING ON is good!!
@@ -89,25 +76,6 @@ def GenerateIMatrix(size):
     return I_matrix
 # GenerateIMatrix
 
-#def NeuralNetwork(inputs, WMatrix, wMatrix, phi, theta):
-    ##nNodes = 10  # number of nodes
-    #V = np.zeros([6])
-    #O = np.zeros([6])
-    #bj = wMatrix@inputs - theta
-    #for ix in range(len(bj)):
-        #V[ix] = TransferFunction(bj[ix],2)
-
-    #bi = WMatrix@V - phi
-    #for ix in range(len(bi)):
-        #O[ix] = TransferFunction(bi[ix],2)
-    #return O
-# NeuralNetwork
-
-#@jit
-#def TransferFunction(x,beta):
-    #return 1./(1 + np.exp(-beta*x))
-## TransferFunction
-
 #@jit #WARNING ON is good!
 def RecurrentNeuralNetwork(inputs, wMatrix, V):             # Recurrent Neural Network dynamics
     #beta = 2
@@ -145,3 +113,74 @@ def GetPop(csvFile):
         #reader = csv.reader(csvfile)
         networkContainer = np.loadtxt(csvfile, delimiter = ',')
     return networkContainer
+
+def GetNetwork(fileID, iGenome):
+    """
+    Script that quickly loads a rNN created by NEAT
+    """
+    config_file = 'genomes/{}_config'.format(fileID)
+    fileName = 'genomes/{}_best_unique_genomes'.format(fileID)
+    local_dir = os.path.dirname(__file__)
+    config_path = os.path.join(local_dir, config_file)
+
+    # Config
+    config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,neat.DefaultSpeciesSet, neat.DefaultStagnation, config_path)
+
+    # load the winner
+    with open(fileName, 'rb') as f:
+        genomes = pickle.load(f)#, encoding = 'bytes')
+
+    return neat.nn.RecurrentNetwork.create(genomes[iGenome], config)
+    
+def GenerateStatus(output):
+    #arrow_list = ['^', 'v', '>', '<', 'o']
+    #cMap = ListedColormap(['y', 'g', 'r', 'b', 'w'])
+    #color_list = ['red', 'blue', 'green', 'white']
+    status_data = np.zeros([4])     # [status, polarisation, sgf_amount, lgf_amount]
+    
+    # Cellular states
+    iStatus = output[0]             # Proliferate: Split
+    jStatus = output[1]             # Migrate:     Move
+    kStatus = output[2]             # Apoptosis:   Die
+    # Values for SGF and LGF
+    status_data[2] = output[3]      # SGF Prod
+    status_data[3] = output[4]      # LGF Prod
+    # Polarisation
+    compass = output[5]
+
+    xThreshold = 0.5
+    yThreshold = 0.01
+
+    # ORIENTATION:
+    nBoundary = 0.25
+    sBoundary = 0.5
+    eBoundary = 0.75
+
+    # oriented according to numpy order v>, not usual >^
+    # 
+    if compass < sBoundary:
+        if compass < nBoundary:
+            status_data[1] = 1      # orientation North
+        else:
+            status_data[1] = 2      # orientation South
+    else: 
+        if compass < eBoundary:
+            status_data[1] = 3      # orientation East
+        else:
+            status_data[1] = 4      # orientation West
+    
+    if iStatus < xThreshold and jStatus < xThreshold and kStatus < xThreshold:
+        status_data[0] = 0      # 'Quiet'
+    #    continue                    # value is already zero anyway
+    else:
+        for ix in iStatus, jStatus, kStatus:
+            if xThreshold < ix:
+                xThreshold = ix
+        if abs(xThreshold - iStatus) <= yThreshold:
+            status_data[0] = 1      # 'Split'
+        elif abs(xThreshold - jStatus) <= yThreshold:
+            status_data[0] = 2      # 'Move'
+        else:
+            status_data[0] = 3      # 'Die'
+    return status_data
+# Generate state

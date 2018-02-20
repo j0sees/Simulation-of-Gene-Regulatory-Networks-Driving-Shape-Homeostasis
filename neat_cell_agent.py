@@ -44,12 +44,12 @@ class cell:
         self.neighbourList = [[self.yPos - 1, self.xPos], [self.yPos + 1, self.xPos], [self.yPos, self.xPos - 1], [self.yPos, self.xPos + 1]]
         
         # Cellular states
-        iStatus = outputs[0] # Proliferate: Split
-        jStatus = outputs[1] # Migrate:     Move
-        kStatus = outputs[2] # Apoptosis:   Die
+        iStatus = outputs[0]            # Proliferate: Split
+        jStatus = outputs[1]            # Migrate:     Move
+        kStatus = outputs[2]            # Apoptosis:   Die
         # values for SGF and LGF
-        self.sgfAmount = outputs[3]
-        self.lgfAmount = outputs[4]
+        self.sgfAmount = outputs[3]     # SGF prod
+        self.lgfAmount = outputs[4]     # LGF prod
 
         xThreshold = 0.5
         yThreshold = 0.01
