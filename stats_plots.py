@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 import subprocess as sp
 import neat
-import pickle
+import tools
 
 def FitnessMapPlot():
     fileName = 'filesList'                                                  # name of the temporary file with names
@@ -40,7 +40,7 @@ def FitnessMapPlot():
         cCounter += 1
         #print('reading file: {}'.format(statsFile))
         #print('tempArray: \n{}'.format(tempArray))
-        
+
     print('=> Data stored...')
     print('=> Generating figures...')
 
@@ -78,7 +78,7 @@ def FitnessMapPlot():
         cbar1 = fig.colorbar(mapPlot, ax = ax, orientation='vertical')#, shrink=0.75)
         #print('current data array:\n{}'.format(statsArray[ix,:,:]))
         plt.savefig('max_fitness_map_gen_{0}.eps'.format(ix+1), format='eps', bbox_inches='tight')
-    #plt.show()
+        #plt.show()
     
 def FitnessperGenMap():
     fileName = 'filesList'                                                  # name of the temporary file with names
@@ -87,21 +87,20 @@ def FitnessperGenMap():
     sp.call(createList, shell = True)                                       # create the list
     fileList = open(fileName).read().splitlines()                           # store names in a python list for later use
     sp.call('rm {}'.format(fileName), shell = True)                         # remove temporary file
-    
-    print('=> List created...')
+
+    print('=> Fitness vs generations map')    
+    print('\tList created...')
     statsArray = np.zeros([20,10])
     cCounter = 0
     for statsFile in fileList:
         with open('stats/{}_fitness_history.csv'.format(statsFile), 'r') as f:
-            tempArray = np.loadtxt(f,delimiter=' ')
+            tempArray = np.loadtxt(f, delimiter = ' ')
         statsArray[:,cCounter] = tempArray[:,0]
         cCounter += 1
 
-    print('=> Data stored...')
-    print('=> Generating map...')
+    print('\tData stored...')
+    print('\tGenerating map...')
 
-    #with open(fitArray, 'r') as dataFile:
-        #fitData = np.loadtxt(dataFile, delimiter = ',')
     #-------------------------------#
     #       Generate histogram      #
     #-------------------------------#
@@ -110,16 +109,16 @@ def FitnessperGenMap():
     #fig.suptitle('')
     fig.canvas.draw()
 
-    xticks = [ '{0:.01f}'.format(iy) for iy in np.linspace(0.1,1,10)]
-    yticks = [ '{0}'.format(int(iy)) for iy in np.linspace(1,20,20)]
+    xticks = ['{0:.01f}'.format(iy) for iy in np.linspace(0.1,1,10)]
+    yticks = ['{0}'.format(int(iy)) for iy in np.linspace(1,20,20)]
     xlabels = [item.get_text() for item in ax.get_xticklabels()]
     xlabels = xticks
     ylabels = [item.get_text() for item in ax.get_yticklabels()]
     ylabels = yticks
-    ticks = np.linspace(1,20,20)-1
+    ticks = np.linspace(1,20,20) - 1
     ax.set_yticks(ticks)
     ax.set_xticks(ticks)
-    ax.set_xticklabels(xlabels, rotation=-90)
+    ax.set_xticklabels(xlabels, rotation = -90)
     ax.set_yticklabels(ylabels)
     ax.set_ylabel('Generation')
     ax.set_xlabel('$P_{connection}$')
@@ -127,143 +126,80 @@ def FitnessperGenMap():
     ax.set_title('Max Fitness map per generation')   
     mapPlot = ax.imshow(statsArray, origin = 'lower', cmap = 'Greens', interpolation = 'none', vmin = 0, vmax = 1)
     cbar1 = fig.colorbar(mapPlot, ax = ax, orientation='vertical')
-    plt.savefig('max_fitness_map_per_gen.eps', format='eps', bbox_inches='tight')
+    plt.savefig('max_fitness_map_per_gen.eps', format = 'eps', bbox_inches = 'tight')
 
-def NetworkBehaviourMap(fileID):
+def NetworkBehaviourMap(fileID, iGenome):
     print('=> Map plot')
     scale = 100
     marker_size = 0.1
-    reps = 10
+    reps = 100
     nOutputs = 4
     SGF_range = np.linspace(0,1,scale + 1)
     LGF_range = np.linspace(0,1,scale + 1)
     #network_output = np.zeros([len(SGF_range), len(LGF_range), nOutputs]) 
     GF_map = np.zeros([len(SGF_range), len(LGF_range), nOutputs])
     
-    #fileID = '20180214_...'.format(folder)
-    config_file = 'genomes/{}_config'.format(fileID)
-    fileName = 'genomes/{}_best_unique_genomes'.format(fileID)
-    local_dir = os.path.dirname(__file__)
-    config_path = os.path.join(local_dir, config_file)
-    iGenome = 1
+    network = tools.GetNetwork(fileID, iGenome)
 
-    # Config
-    config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,neat.DefaultSpeciesSet, neat.DefaultStagnation, config_path)
-
-    # load the winner
-    with open(fileName, 'rb') as f:
-        genomes = pickle.load(f)#, encoding = 'bytes')
-
-    network = neat.nn.RecurrentNetwork.create(genomes[iGenome], config)
     print('\tGetting & processing data...')
     # Get data and process it...
-    for ix in SGF_range:
-        for iy in LGF_range:
+    for ix in LGF_range:
+        for iy in SGF_range:
             network.reset()
-            inputs = [ix, iy]
+            inputs = [iy, ix]
             for _ in range(reps):
                 output = network.activate(inputs)
-            GF_map[int(iy*scale), int(ix*scale),:] = GenerateStatus(output)
-    
-    
+            GF_map[int(iy*scale), int(ix*scale),:] = tools.GenerateStatus(output)
+    #np.set_printoptions(threshold=np.inf)
+    #print('GF map:\n {}'.format(GF_map[:,1,:]))
     
     #-------------------------------#
     #       Generate histogram      #
     #-------------------------------#
     print('\tDrawing plot...')
-    cMap = ListedColormap(['w', 'g', 'b', 'r'])
+    cMap = ListedColormap(['g', 'r', 'b', 'w'])
     fig = plt.figure()
     ax = fig.add_subplot(111)
     #fig.suptitle('')
     fig.canvas.draw()
 
-    #xticks = [ '{0:.01f}'.format(iy) for iy in np.linspace(0.1,1,10)]
-    #yticks = [ '{0}'.format(int(iy)) for iy in np.linspace(1,20,20)]
-    #xlabels = [item.get_text() for item in ax.get_xticklabels()]
-    #xlabels = xticks
-    #ylabels = [item.get_text() for item in ax.get_yticklabels()]
-    #ylabels = yticks
-    #ticks = np.linspace(1,20,20)-1
-    #ax.set_yticks(ticks)
-    #ax.set_xticks(ticks)
-    #ax.set_xticklabels(xlabels, rotation=-90)
-    #ax.set_yticklabels(ylabels)
+    xticks = ['{0:.01f}'.format(iy) for iy in np.linspace(0,1,10 + 1)]
+    yticks = ['{0:.01f}'.format(iy) for iy in np.linspace(0,1,10 + 1)]
+    xlabels = [item.get_text() for item in ax.get_xticklabels()]
+    xlabels = xticks
+    ylabels = [item.get_text() for item in ax.get_yticklabels()]
+    ylabels = yticks
+    
+    ticks = np.linspace(0,scale,11)
+    #ticks = SGF_range
+    ax.set_yticks(ticks)
+    ax.set_xticks(ticks)
+    ax.set_xticklabels(xlabels)#, rotation=-90)
+    ax.set_yticklabels(ylabels)
 
     ax.set_ylabel('SGF')
     ax.set_xlabel('LGF')
     ax.set_title('Max Fitness map per generation')   
-    
+
     ax.imshow(GF_map[:,:,0], origin = 'lower', cmap = cMap, interpolation = 'none', vmin = 0, vmax = 3)
-    for ix in SGF_range:
-        for iy in LGF_range:
-            arrow = GF_map[int(ix*scale), int(iy*scale),1]
-            if arrow == 1:
-                ax.scatter(ix*scale, iy*scale, s = marker_size, marker ='4', c = 'w', label = 'test')
-            elif arrow == 2:
-                ax.scatter(ix*scale, iy*scale, s = marker_size, marker ='3', c = 'w', label = 'test')
-            elif arrow == 3:
-                ax.scatter(ix*scale, iy*scale, s = marker_size, marker ='2', c = 'w', label = 'test')
-            else:
-                ax.scatter(ix*scale, iy*scale, s = marker_size, marker ='1', c = 'w', label = 'test')
+
+    #for ix in SGF_range:
+        #for iy in LGF_range:
+            #arrow = GF_map[int(ix*scale), int(iy*scale),1]
+            #if arrow == 1:
+                #ax.scatter(ix*scale, iy*scale, s = marker_size, marker ='1', c = 'w', label = 'test')
+            #elif arrow == 2:
+                #ax.scatter(ix*scale, iy*scale, s = marker_size, marker ='2', c = 'w', label = 'test')
+            #elif arrow == 3:
+                #ax.scatter(ix*scale, iy*scale, s = marker_size, marker ='3', c = 'w', label = 'test')
+            #else:
+                #ax.scatter(ix*scale, iy*scale, s = marker_size, marker ='4', c = 'w', label = 'test')
     #cbar1 = fig.colorbar(mapPlot, ax = ax, orientation='vertical')
-    plt.savefig('behaviour_map.eps', format='eps', bbox_inches='tight')
-    
-
-def GenerateStatus(output):
-    #arrow_list = ['^', 'v', '>', '<', 'o']
-    #cMap = ListedColormap(['y', 'g', 'r', 'b', 'w'])
-    #color_list = ['red', 'blue', 'green', 'white']
-    status_data = np.zeros([4])     # [status, polarisation, sgf_amount, lgf_amount]
-    
-    # Cellular states
-    iStatus = output[0]            # Proliferate: Split
-    jStatus = output[1]            # Migrate:     Move
-    kStatus = output[2]            # Apoptosis:   Die
-    # Values for SGF and LGF
-    status_data[2] = output[3]
-    status_data[3] = output[4]
-    # Polarisation
-    compass = output[5]
-
-    xThreshold = 0.5
-    yThreshold = 0.01
-
-    # ORIENTATION:
-    nBoundary = 0.25
-    sBoundary = 0.5
-    eBoundary = 0.75
-
-    # oriented according to numpy order v>, not usual >^
-    #if abs(compass - sBoundary) <= yThreshold:
-    #    continue                    # value is already zero anyway
-    if compass < sBoundary:
-        if compass < nBoundary:
-            status_data[1] = 1      # orientation North
-        else:
-            status_data[1] = 2      # orientation South
-    else: 
-        if compass < eBoundary:
-            status_data[1] = 3      # orientation East
-        else:
-            status_data[1] = 4      # orientation West
-    
-    #if iStatus < xThreshold and jStatus < xThreshold and kStatus < xThreshold:
-    #    continue                    # value is already zero anyway
-    #else:
-    for ix in iStatus, jStatus, kStatus:
-        if xThreshold < ix:
-            xThreshold = ix
-    if abs(xThreshold - iStatus) <= yThreshold:
-        status_data[0] = 1      # 'Split'
-    elif abs(xThreshold - jStatus) <= yThreshold:
-        status_data[0] = 2      # 'Move'
-    else:
-        status_data[0] = 3      # 'Die'
-    return status_data
-    # Generate state
+    plt.savefig('plots/20180214_pconnection_20_gen/{0}/{0}_best_genome_{1}_behaviour_map.eps'.format(fileID, iGenome+1), format='eps', bbox_inches='tight')
 
 if __name__ == '__main__':
     dataFile = sys.argv[1]
+    iGenome = int(sys.argv[2])
     #FitnessMapPlot()
     #FitnessperGenMap()
-    NetworkBehaviourMap(dataFile)
+    NetworkBehaviourMap(dataFile, iGenome)
