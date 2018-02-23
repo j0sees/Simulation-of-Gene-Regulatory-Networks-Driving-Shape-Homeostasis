@@ -60,10 +60,10 @@ def FitnessMapPlot():
 
         xlabels = [item.get_text() for item in ax.get_xticklabels()]
         xlabels = xticks
-        
+
         ylabels = [item.get_text() for item in ax.get_yticklabels()]
         ylabels = yticks
-        
+
         ax.set_yticks(ticks)
         ax.set_xticks(ticks)
         ax.set_xticklabels(xlabels)
@@ -131,6 +131,7 @@ def FitnessperGenMap():
 def NetworkBehaviourMap(fileID):#, iGenome):
     #print('=> Map plot')
     print('\nPlotting map for file {}'.format(fileID))
+    location = 'plots/20182214_pconnection_20_gen'
     scale = 100                             # Seems to be enough
     scale2 = 100.
     marker_size = 0.1
@@ -203,7 +204,26 @@ def NetworkBehaviourMap(fileID):#, iGenome):
                 #else:
                     #ax.scatter(ix*scale, iy*scale, s = marker_size, marker ='4', c = 'w', label = 'test')
         #cbar1 = fig.colorbar(mapPlot, ax = ax, orientation='vertical')
-        plt.savefig('plots/20180223_pconnection_40_gen/{0}/{0}_best_genome_{1}_behaviour_map.eps'.format(fileID, iGenome+1), format='eps', bbox_inches='tight')
+        plt.savefig('{0}/{1}/{1}_best_genome_{2}_behaviour_map.eps'.format(location,fileID, iGenome+1), format='eps', bbox_inches='tight')
+
+def GF_AverageMap(GF_mean, GF_type, ):
+    location = 'plots/20182214_pconnection_20_gen'
+    GFmax = np.amax(GF_mean)
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+
+    ax.set_title('{} average distribution over time'.format(GF_type))
+    GF_dist = ax.imshow(GF_mean, origin = 'lower', cmap = 'Oranges', interpolation = 'none', vmin = 0, vmax = GFmax)
+    cbar = fig.colorbar(GF_dist, ax = ax, orientation = 'vertical')
+    
+    # hide ticks
+    GF_dist.axes.xaxis.set_ticklabels([])
+    GF_dist.axes.yaxis.set_ticklabels([])
+    GF_dist.axes.get_xaxis().set_visible(False)
+    GF_dist.axes.get_yaxis().set_visible(False)
+    
+    plt.savefig('{0}/{1}_test.eps'.format(location, GF_type), format='eps', bbox_inches='tight')
 
 if __name__ == '__main__':
     dataFile = sys.argv[1]

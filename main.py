@@ -6,7 +6,8 @@ import numpy as np
 # self made classes
 from neat_cell_agent import *                    # it is allowed to call from this class because there's an __init__.py file in this directory
 from tools import *
-from plot import *
+import plot
+import stats_plots
 import subprocess as sp
 
 
@@ -42,11 +43,10 @@ def sim(network, timeSteps, nLattice, mode, timeString, iGenome):
     t_matrix = GenerateTMatrix(nLattice)        # T matrix for LGF operations
     i_matrix = GenerateIMatrix(nLattice)        # I matrix for LGF operations
     
-    # timing variables!
-    tmpListLoopAvg = 0
-    chemicalsUpdateAvg = 0
-    plotUpdateAvg = 0
-    
+    # SGF/LGF statistics containers
+    SGF_history = np.zeros([nLattice, nLattice, timeSteps])
+    LGF_history = np.zeros([nLattice, nLattice, timeSteps])
+
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
     #       INITIALIZATION             #
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -54,14 +54,13 @@ def sim(network, timeSteps, nLattice, mode, timeString, iGenome):
     cellList.append(cell(iy,ix,network))
     cellGrid[iy][ix] = 1
 
-    cellsFigure, cellsSubplot, sgfSubplot, lgfSubplot, cellPlot, sgfPlot, lgfPlot = CellsGridFigure(nLattice, mode)
+    cellsFigure, cellsSubplot, sgfSubplot, lgfSubplot, cellPlot, sgfPlot, lgfPlot = plot.CellsGridFigure(nLattice, mode)
 
-    #print('Time running...')
-    #### Timing!
-    start_time_mainLoop = time.time()
     while iTime < timeSteps:
-        ## decay chemicals in spots where there is some but no cell
-
+        # Save SGF/LGF amount to get statistics
+        SGF_history[:,:,iTime] = chemGrid[:,:,0]
+        LGF_history[:,:,iTime] = chemGrid[:,:,1]
+        
         # this matrixes must be updated everytime so that if there's no production in one spot that spot contains a zero
         # but must not lose contained information, i.e. must use it before setting it to zero
         sigma_m = np.zeros([nLattice,nLattice])     # matrix representation of SGF production
@@ -69,9 +68,6 @@ def sim(network, timeSteps, nLattice, mode, timeString, iGenome):
 
         tmpCellList = list(cellList)                                # a copy of the list of current cells is used to iterate over all the cells
 
-        # Timing!
-        start_time_tmpListLoop = time.time()
-        tmpCellListLength = len(tmpCellList)
         while len(tmpCellList) > 0:                                 # while  the tmp list of cells is longer than 1
             # 1st step => choose a random cell from the list of existing cells
             rndCell = np.random.randint(len(tmpCellList))
@@ -107,10 +103,6 @@ def sim(network, timeSteps, nLattice, mode, timeString, iGenome):
                 tmpCellList[rndCell].Die(cellGrid)                  # Off the grid, method also changes the "amidead" switch to True
                 del tmpCellList[rndCell]
         # while
-        #### Timing!
-        end_time_tmpListLoop = time.time()
-        secs = end_time_tmpListLoop - start_time_tmpListLoop
-        tmpListLoopAvg += secs
 
         # A list of cells that "died" is stored to later actually kill the cells...
         listLength = len(cellList) - 1
@@ -126,31 +118,32 @@ def sim(network, timeSteps, nLattice, mode, timeString, iGenome):
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
         #         Plot               #
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-        CellGridPlot(    cellGrid,
-                        chemGrid,
-                        nLattice,
-                        cellsFigure,
-                        cellsSubplot,
-                        sgfSubplot,
-                        lgfSubplot,
-                        cellPlot,
-                        sgfPlot,
-                        lgfPlot,
-                        iTime,
-                        mode,
-                        timeString,
-                        iGenome)
+        #plot.CellGridPlot(  cellGrid,
+                            #chemGrid,
+                            #nLattice,
+                            #cellsFigure,
+                            #cellsSubplot,
+                            #sgfSubplot,
+                            #lgfSubplot,
+                            #cellPlot,
+                            #sgfPlot,
+                            #lgfPlot,
+                            #iTime,
+                            #mode,
+                            #timeString,
+                            #iGenome)
         iTime += 1
         # this script is used to see what comes up from the main_GA, doesn't have to check for any conditions on the system, just let it run
-    end_time_mainLoop = time.time()
-    secs = end_time_mainLoop - start_time_mainLoop
-    tmpListLoopAvg += secs
-    #print('Avg time looping through cells: {:.3f}, total: {:.3f}'.format(tmpListLoopAvg/timeSteps, tmpListLoopAvg))
+    # Get SGF/LGF statistics
+    SGF_mean = np.mean(SGF_history, axis=2, dtype=np.float64)
+    LGF_mean = np.mean(LGF_history, axis=2, dtype=np.float64)
+    
+    stats_plots.GF_AverageMap(SGF_mean, 'SGF')
+    stats_plots.GF_AverageMap(LGF_mean, 'LGF')
 
 if __name__ == '__main__':
-    # if executed as main module!
-    print('System visualization')
-    timeSteps = 200
+    #print('System visualization')
+    timeSteps = 20
     nLattice = 50
     mode = False
     timedateStr = sys.argv[1]
@@ -172,11 +165,11 @@ if __name__ == '__main__':
     with open(fileName, 'rb') as f:
         genomes = pickle.load(f)#, encoding = 'bytes')
 
-    for iGenome in range(len(genomes)):
+    for iGenome in [0]:#range(len(genomes)):
         #print('=> Running genome #{}'.format(iGenome))
-        mkdir = 'mkdir plots/{0}/best_unique_genome_{1}'.format(timedateStr, iGenome+1)
-        subproc = sp.call(mkdir, shell = True)
+        #mkdir = 'mkdir plots/20180222_pconnection_20_gen/{0}/best_unique_genome_{1}'.format(timedateStr, iGenome+1)
+        #subproc = sp.call(mkdir, shell = True)
         #print('genome file: {0}\nconfig file: {1}'.format(fileName, config_file))
         network = neat.nn.RecurrentNetwork.create(genomes[iGenome], config)
         sim(network, timeSteps, nLattice, mode, timedateStr, iGenome)
-        plt.close()
+        #plt.close()
