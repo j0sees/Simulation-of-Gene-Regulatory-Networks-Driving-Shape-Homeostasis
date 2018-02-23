@@ -114,7 +114,7 @@ def GetPop(csvFile):
         networkContainer = np.loadtxt(csvfile, delimiter = ',')
     return networkContainer
 
-def GetNetwork(fileID, iGenome):
+def GetNetwork(fileID):#, iGenome):
     """
     Script that quickly loads a rNN created by NEAT
     """
@@ -130,13 +130,14 @@ def GetNetwork(fileID, iGenome):
     with open(fileName, 'rb') as f:
         genomes = pickle.load(f)#, encoding = 'bytes')
 
-    return neat.nn.RecurrentNetwork.create(genomes[iGenome], config)
+    #return neat.nn.RecurrentNetwork.create(genomes[iGenome], config)
+    return genomes, config
     
 def GenerateStatus(output):
-    #arrow_list = ['^', 'v', '>', '<', 'o']
-    #cMap = ListedColormap(['y', 'g', 'r', 'b', 'w'])
-    #color_list = ['red', 'blue', 'green', 'white']
-    status_data = np.zeros([4])     # [status, polarisation, sgf_amount, lgf_amount]
+    """
+    Generate cell status out of the network output
+    """
+    status_data = np.zeros([4], dtype=int)     # [status, polarisation, sgf_amount, lgf_amount]
     
     # Cellular states
     iStatus = output[0]             # Proliferate: Split
@@ -149,7 +150,7 @@ def GenerateStatus(output):
     compass = output[5]
 
     xThreshold = 0.5
-    yThreshold = 0.01
+    yThreshold = 0.001
 
     # ORIENTATION:
     nBoundary = 0.25
@@ -157,7 +158,6 @@ def GenerateStatus(output):
     eBoundary = 0.75
 
     # oriented according to numpy order v>, not usual >^
-    # 
     if compass < sBoundary:
         if compass < nBoundary:
             status_data[1] = 1      # orientation North
@@ -170,17 +170,16 @@ def GenerateStatus(output):
             status_data[1] = 4      # orientation West
     
     if iStatus < xThreshold and jStatus < xThreshold and kStatus < xThreshold:
-        status_data[0] = 0      # 'Quiet'
-    #    continue                    # value is already zero anyway
+        status_data[0] = 1          # 'Quiet'
     else:
         for ix in iStatus, jStatus, kStatus:
             if xThreshold < ix:
                 xThreshold = ix
         if abs(xThreshold - iStatus) <= yThreshold:
-            status_data[0] = 1      # 'Split'
+            status_data[0] = 2      # 'Split'
         elif abs(xThreshold - jStatus) <= yThreshold:
-            status_data[0] = 2      # 'Move'
+            status_data[0] = 3      # 'Move'
         else:
-            status_data[0] = 3      # 'Die'
+            status_data[0] = 4      # 'Die'
     return status_data
 # Generate state
