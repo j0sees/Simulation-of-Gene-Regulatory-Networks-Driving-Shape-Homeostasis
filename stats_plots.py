@@ -27,19 +27,7 @@ def FitnessMapPlot():
 
         for ix in range(10):
             statsArray[ix, cCounter//5, cCounter%5] = tempArray[ix,0]
-            #statsArray[0,pCounter,cCounter] = tempArray[0,0]
-            #statsArray[1,pCounter,cCounter] = tempArray[1,0]
-            #statsArray[2,pCounter,cCounter] = tempArray[2,0]
-            #statsArray[3,pCounter,cCounter] = tempArray[3,0]
-            #statsArray[4,pCounter,cCounter] = tempArray[4,0]
-            #statsArray[5,pCounter,cCounter] = tempArray[5,0]
-            #statsArray[6,pCounter,cCounter] = tempArray[6,0]
-            #statsArray[7,pCounter,cCounter] = tempArray[7,0]
-            #statsArray[8,pCounter,cCounter] = tempArray[8,0]
-            #statsArray[9,pCounter,cCounter] = tempArray[9,0]
         cCounter += 1
-        #print('reading file: {}'.format(statsFile))
-        #print('tempArray: \n{}'.format(tempArray))
 
     print('=> Data stored...')
     print('=> Generating figures...')
@@ -52,9 +40,6 @@ def FitnessMapPlot():
         xticks = [ '{0}'.format(iy) for iy in np.linspace(0.1,1,10)]
         yticks = [ '{0:.02f}'.format(iy) for iy in np.linspace(0.01,0.1,10)]
         ticks = np.linspace(1,10,10)-1
-
-        #xticks = {0:'0.1', 1:'0.2', 2:'0.3', 3:'0.4', 4:'0.5', 5:'0.6', 6:'0.7', 7:'0.8', 8:'0.9', 9:'1.0'}
-        #yticks = {0:'0.01', 1:'0.02', 2:'0.03', 3:'0.04', 4:'0.05', 5:'0.06', 6:'0.07', 7:'0.08', 8:'0.09', 9:'0.10'}
 
         fig.canvas.draw()
 
@@ -128,38 +113,48 @@ def FitnessperGenMap():
     cbar1 = fig.colorbar(mapPlot, ax = ax, orientation='vertical')
     plt.savefig('max_fitness_map_per_gen.eps', format = 'eps', bbox_inches = 'tight')
 
-def NetworkBehaviourMap(fileID):#, iGenome):
+def NetworkBehaviourMap(location, fileID):#, iGenome):
+    """
+    Function that plots a map showing the fixed points for the network status
+    """
     #print('=> Map plot')
     print('\nPlotting map for file {}'.format(fileID))
-    location = 'plots/20182214_pconnection_20_gen'
-    scale = 100                             # Seems to be enough
-    scale2 = 100.
+    #location = 'plots/20182214_pconnection_20_gen'
+    scale = 100
+    SGF_size = 100*2                             # Seems to be enough
+    LGF_size = 100
     marker_size = 0.1
     reps = 200                              # Same number of time steps of the cellular system
     nOutputs = 4
-    SGF_range = np.linspace(0, 1, scale + 1)
-    LGF_range = np.linspace(0, 1, scale + 1)
-    #network_output = np.zeros([len(SGF_range), len(LGF_range), nOutputs]) 
-    #GF_map = np.zeros([len(SGF_range), len(LGF_range), nOutputs], dtype = int)
+    SGF_max = 0.2#1
+    LGF_max = 1
+    
+    #SGF_range = np.linspace(0, SGF_max, SGF_size + 1)
+    #LGF_range = np.linspace(0, LGF_max, LGF_size + 1)
+
+    SGF_range = np.arange(0, SGF_max + (1./scale), (1./scale))
+    LGF_range = np.arange(0, LGF_max + (1./scale), (1./scale))
+
+
     GF_map = np.full([len(SGF_range), len(LGF_range), nOutputs], -1)
     
     #network = tools.GetNetwork(fileID, iGenome)
     genomes, config = tools.GetNetwork(fileID)#, iGenome)
     
-    for iGenome in range(len(genomes)):
+    for iGenome in [3]:#range(len(genomes)):
         network = neat.nn.RecurrentNetwork.create(genomes[iGenome], config)
         #print('\tGetting & processing data...')
         # Get data and process it...
         #for ix in LGF_range:
-        for ix in range(0,scale+1):
+        for ix in range(len(LGF_range)):
             #for iy in SGF_range:
-            for iy in range(0,scale+1):
+            for iy in range(len(SGF_range)):
                 network.reset()
                 inputs = [iy/float(scale), ix/float(scale)]
                 #print('pos {}'.format(inputs))
                 for _ in range(reps):
                     output = network.activate(inputs)
-                GF_map[iy, ix,:] = tools.GenerateStatus(output)
+                GF_map[iy, ix, :] = tools.GenerateStatus(output)
         #np.set_printoptions(threshold=np.inf)
         #print('GF map:\n {}'.format(GF_map[:,1,:]))
 
@@ -167,24 +162,25 @@ def NetworkBehaviourMap(fileID):#, iGenome):
         #       Generate histogram      #
         #-------------------------------#
         #print('\tDrawing plot...')
+        plt.close()
         cMap = ListedColormap(['g', 'r', 'b', 'w'])
         fig = plt.figure()
         ax = fig.add_subplot(111)
         #fig.suptitle('')
         fig.canvas.draw()
 
-        xticks = ['{0:.01f}'.format(iy) for iy in np.linspace(0,1,10 + 1)]
-        yticks = ['{0:.01f}'.format(iy) for iy in np.linspace(0,1,10 + 1)]
-        xlabels = [item.get_text() for item in ax.get_xticklabels()]
-        xlabels = xticks
-        ylabels = [item.get_text() for item in ax.get_yticklabels()]
-        ylabels = yticks
+        #xticks = ['{0:.01f}'.format(iy) for iy in np.linspace(0,1,10 + 1)]
+        #yticks = ['{0:.01f}'.format(iy) for iy in np.linspace(0,1,10 + 1)]
+        #xlabels = [item.get_text() for item in ax.get_xticklabels()]
+        #xlabels = xticks
+        #ylabels = [item.get_text() for item in ax.get_yticklabels()]
+        #ylabels = yticks
 
-        ticks = np.linspace(0,scale,11)
-        ax.set_yticks(ticks)
-        ax.set_xticks(ticks)
-        ax.set_xticklabels(xlabels)#, rotation=-90)
-        ax.set_yticklabels(ylabels)
+        #ticks = np.linspace(0,scale,11)
+        #ax.set_yticks(ticks)
+        #ax.set_xticks(ticks)
+        #ax.set_xticklabels(xlabels)#, rotation=-90)
+        #ax.set_yticklabels(ylabels)
 
         ax.set_ylabel('SGF')
         ax.set_xlabel('LGF')
@@ -204,17 +200,20 @@ def NetworkBehaviourMap(fileID):#, iGenome):
                 #else:
                     #ax.scatter(ix*scale, iy*scale, s = marker_size, marker ='4', c = 'w', label = 'test')
         #cbar1 = fig.colorbar(mapPlot, ax = ax, orientation='vertical')
-        plt.savefig('{0}/{1}/{1}_best_genome_{2}_behaviour_map.eps'.format(location,fileID, iGenome+1), format='eps', bbox_inches='tight')
+        plt.savefig('{0}/{1}/{1}_best_genome_{2}_behaviour_map.eps'.format(location, fileID, iGenome+1), format='eps', bbox_inches='tight')
 
-def GF_AverageMap(GF_mean, GF_type, ):
-    location = 'plots/20182214_pconnection_20_gen'
+def GF_AverageMap(GF_mean, GF_type, location, iGenome):
+    """
+    Function that plots the average distribution of GF in the grid
+    """
     GFmax = np.amax(GF_mean)
 
+    plt.close()
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
     ax.set_title('{} average distribution over time'.format(GF_type))
-    GF_dist = ax.imshow(GF_mean, origin = 'lower', cmap = 'Oranges', interpolation = 'none', vmin = 0, vmax = GFmax)
+    GF_dist = ax.imshow(GF_mean, origin = 'lower', cmap = 'Oranges', interpolation = 'none', vmin = 0.0, vmax = GFmax)
     cbar = fig.colorbar(GF_dist, ax = ax, orientation = 'vertical')
     
     # hide ticks
@@ -223,11 +222,11 @@ def GF_AverageMap(GF_mean, GF_type, ):
     GF_dist.axes.get_xaxis().set_visible(False)
     GF_dist.axes.get_yaxis().set_visible(False)
     
-    plt.savefig('{0}/{1}_test.eps'.format(location, GF_type), format='eps', bbox_inches='tight')
+    plt.savefig('{0}/{1}_average_dist_best_genome_{2}.eps'.format(location, GF_type, iGenome + 1), format='eps', bbox_inches='tight')
 
 if __name__ == '__main__':
     dataFile = sys.argv[1]
     #iGenome = int(sys.argv[2])
     #FitnessMapPlot()
     #FitnessperGenMap()
-    NetworkBehaviourMap(dataFile)#, iGenome)
+    NetworkBehaviourMap(location, dataFile)#, iGenome)

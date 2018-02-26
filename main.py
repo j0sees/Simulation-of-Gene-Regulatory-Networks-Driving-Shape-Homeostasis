@@ -12,7 +12,7 @@ import subprocess as sp
 
 
 #@jit
-def sim(network, timeSteps, nLattice, mode, timeString, iGenome):
+def sim(network, timeSteps, nLattice, mode, location, iGenome):
     """
     Parameters: sim(wMatrix, numberOfTimeSteps, NumberOfGeneration, nNodes, individual, nLattice, mode)
     # mode = True: cell_system as fitness function
@@ -130,23 +130,25 @@ def sim(network, timeSteps, nLattice, mode, timeString, iGenome):
                             #lgfPlot,
                             #iTime,
                             #mode,
-                            #timeString,
+                            #location,
                             #iGenome)
         iTime += 1
         # this script is used to see what comes up from the main_GA, doesn't have to check for any conditions on the system, just let it run
     # Get SGF/LGF statistics
-    SGF_mean = np.mean(SGF_history, axis=2, dtype=np.float64)
-    LGF_mean = np.mean(LGF_history, axis=2, dtype=np.float64)
+    SGF_mean = np.mean(SGF_history, axis = 2, dtype = np.float64)
+    LGF_mean = np.mean(LGF_history, axis = 2, dtype = np.float64)
     
-    stats_plots.GF_AverageMap(SGF_mean, 'SGF')
-    stats_plots.GF_AverageMap(LGF_mean, 'LGF')
+    stats_plots.GF_AverageMap(SGF_mean, 'SGF', location, iGenome)
+    stats_plots.GF_AverageMap(LGF_mean, 'LGF', location, iGenome)
 
 if __name__ == '__main__':
     #print('System visualization')
-    timeSteps = 20
+    timeSteps = 200
     nLattice = 50
     mode = False
-    timedateStr = sys.argv[1]
+    loc = sys.argv[1]
+    timedateStr = sys.argv[2]
+    location = '{}/{}'.format(loc, timedateStr)
     # mode = True: cell_system as fitness function
     # mode = False: cell_system as display system
 
@@ -161,15 +163,15 @@ if __name__ == '__main__':
     config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,neat.DefaultSpeciesSet, neat.DefaultStagnation, config_path)
 
     # load the winner
-    print('=> Working with file: {}...'.format(timedateStr))
+    print('=> Working with folder: {}...'.format(timedateStr))
     with open(fileName, 'rb') as f:
         genomes = pickle.load(f)#, encoding = 'bytes')
 
-    for iGenome in [0]:#range(len(genomes)):
+    for iGenome in range(len(genomes)):
         #print('=> Running genome #{}'.format(iGenome))
         #mkdir = 'mkdir plots/20180222_pconnection_20_gen/{0}/best_unique_genome_{1}'.format(timedateStr, iGenome+1)
         #subproc = sp.call(mkdir, shell = True)
         #print('genome file: {0}\nconfig file: {1}'.format(fileName, config_file))
         network = neat.nn.RecurrentNetwork.create(genomes[iGenome], config)
-        sim(network, timeSteps, nLattice, mode, timedateStr, iGenome)
+        sim(network, timeSteps, nLattice, mode, location, iGenome)
         #plt.close()

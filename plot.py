@@ -109,7 +109,7 @@ def CellGridPlot(cellGrid,
                 lgfPlot,
                 tStep,
                 mode,
-                timeString,
+                location,
                 iGenome):
 
     cell_data = cellGrid         # slice the grid to get the layer with the cell positions
@@ -140,7 +140,7 @@ def CellGridPlot(cellGrid,
                 lgf_data,
                 tStep,
                 mode,
-                timeString,
+                location,
                 iGenome)
 
 def UpdatePlot( cellsFigure,
@@ -155,7 +155,7 @@ def UpdatePlot( cellsFigure,
                 lgf_data,
                 tStep,
                 mode,
-                timeString,
+                location,
                 iGenome):
     #
     cellPlot.set_data(cell_data)
@@ -172,7 +172,7 @@ def UpdatePlot( cellsFigure,
     #cellsFigure.canvas.flush_events()
     
     if mode == False:
-        plt.savefig('plots/{0}/best_unique_genome_{1}/cell_system-{2:03d}.png'.format(timeString, iGenome+1, tStep,), format='png', bbox_inches='tight')
+        plt.savefig('{0}/best_unique_genome_{1}/cell_system-{2:03d}.png'.format(location, iGenome+1, tStep,), format='png', bbox_inches='tight')
 # UpdatePlot
 
 def FitvsNnodesPlot(statsFile):
