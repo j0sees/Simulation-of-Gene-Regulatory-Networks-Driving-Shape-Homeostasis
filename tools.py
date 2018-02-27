@@ -137,7 +137,7 @@ def GenerateStatus(output):
     """
     Generate cell status out of the network output
     """
-    status_data = np.zeros([4], dtype=int)     # [status, polarisation, sgf_amount, lgf_amount]
+    status_data = np.zeros([4], dtype = int)     # [status, polarisation, sgf_amount, lgf_amount]
     
     # Cellular states
     iStatus = output[0]             # Proliferate: Split
@@ -152,22 +152,29 @@ def GenerateStatus(output):
     xThreshold = 0.5
     yThreshold = 0.001
 
-    # ORIENTATION:
+    # Orientation boundaries:
     nBoundary = 0.25
     sBoundary = 0.5
     eBoundary = 0.75
 
     # oriented according to numpy order v>, not usual >^
-    if compass < sBoundary:
-        if compass < nBoundary:
-            status_data[1] = 1      # orientation North
-        else:
-            status_data[1] = 2      # orientation South
+    if abs(compass - sBoundary) <= yThreshold:  # compass == 0.5
+        status_data[1] = 0                      # no orientation
+        #print('no orientation')
+    elif compass < sBoundary:                   # compass != 0.5
+        if compass < nBoundary:                 # 0 <= compass < 0.25
+            status_data[1] = 1                  # orientation West
+            #print('orientation west')
+        else:                                   # 0.25 <= compass < 0.5
+            status_data[1] = 2                  # orientation North
+            #print('orientation north')
     else: 
-        if compass < eBoundary:
-            status_data[1] = 3      # orientation East
-        else:
-            status_data[1] = 4      # orientation West
+        if compass <= eBoundary:               # 0.5 < compass <= 0.75
+            status_data[1] = 3                  # orientation East
+            #print('orientation east')            
+        else:                                   # 0.75 < compass <= 1
+            status_data[1] = 4                  # orientation South
+            #print('orientation south')
     
     if iStatus < xThreshold and jStatus < xThreshold and kStatus < xThreshold:
         status_data[0] = 1          # 'Quiet'

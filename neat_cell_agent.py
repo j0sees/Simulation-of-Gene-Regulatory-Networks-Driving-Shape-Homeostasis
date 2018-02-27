@@ -41,8 +41,9 @@ class cell:
         inputs = [SGF_lecture, LGF_lecture]
         # self.network.reset()
         outputs = self.network.activate(inputs)
-        self.neighbourList = [[self.yPos - 1, self.xPos], [self.yPos + 1, self.xPos], [self.yPos, self.xPos - 1], [self.yPos, self.xPos + 1]]
-        
+                            #   West                            North                       East                        South
+        self.neighbourList = [[self.yPos, self.xPos - 1], [self.yPos - 1, self.xPos], [self.yPos, self.xPos + 1], [self.yPos + 1, self.xPos]]
+
         # Cellular states
         iStatus = outputs[0]            # Proliferate: Split
         jStatus = outputs[1]            # Migrate:     Move
@@ -67,18 +68,18 @@ class cell:
                 self.orientation = [self.yPos, self.xPos]
             elif arrow < sBoundary:
                 if arrow < nBoundary:
-                    # orientation North
+                    # orientation West
                     self.orientation = self.neighbourList[0]
                 else:
-                    # orientation South
+                    # orientation North
                     self.orientation = self.neighbourList[1]
             else: 
-                if arrow < eBoundary:   # and arrow > sBoundary:
+                if arrow <= eBoundary:   # and arrow > sBoundary:
                     # orientation East
-                    self.orientation = self.neighbourList[3]
-                else:   #arrow < wBoundary:
-                    # orientation West
                     self.orientation = self.neighbourList[2]
+                else:   #arrow < wBoundary:
+                    # orientation South
+                    self.orientation = self.neighbourList[3]
         else:   # update orientation as current position if compass False
             self.orientation = [self.yPos, self.xPos]
 
