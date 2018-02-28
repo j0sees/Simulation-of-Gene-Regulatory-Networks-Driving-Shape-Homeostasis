@@ -115,18 +115,18 @@ def FitnessperGenMap():
 
 def NetworkBehaviourMap(location, fileID):#, iGenome):
     """
-    Function that plots a map showing the fixed points for the network status
+    Function that plots a map showing the fixed points for the network status, GF production and polarisation
     """
     #print('=> Map plot')
     print('\nPlotting map for file {}'.format(fileID))
     #location = 'plots/20182214_pconnection_20_gen'
     scale = 100
-    SGF_size = 100*2                             # Seems to be enough
+    SGF_size = 100                             # Seems to be enough
     LGF_size = 100
     marker_size = 0.1
     reps = 200                              # Same number of time steps of the cellular system
     nOutputs = 4
-    SGF_max = 0.2#1
+    SGF_max = 1#1
     LGF_max = 1
     
     #SGF_range = np.linspace(0, SGF_max, SGF_size + 1)
@@ -141,7 +141,7 @@ def NetworkBehaviourMap(location, fileID):#, iGenome):
     #network = tools.GetNetwork(fileID, iGenome)
     genomes, config = tools.GetNetwork(fileID)#, iGenome)
     
-    for iGenome in [3]:#range(len(genomes)):
+    for iGenome in range(len(genomes)):
         network = neat.nn.RecurrentNetwork.create(genomes[iGenome], config)
         #print('\tGetting & processing data...')
         # Get data and process it...
@@ -155,52 +155,87 @@ def NetworkBehaviourMap(location, fileID):#, iGenome):
                 for _ in range(reps):
                     output = network.activate(inputs)
                 GF_map[iy, ix, :] = tools.GenerateStatus(output)
-        #np.set_printoptions(threshold=np.inf)
-        #print('GF map:\n {}'.format(GF_map[:,1,:]))
 
-        #-------------------------------#
-        #       Generate histogram      #
-        #-------------------------------#
+        #fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize = (15,5))
+
+        #-----------------------------------#
+        #       Generate Behaviuor map      #
+        #-----------------------------------#
         #print('\tDrawing plot...')
         plt.close()
-        cMap = ListedColormap(['g', 'r', 'b', 'w'])
+
+        cBehavMap = ListedColormap(['g', 'r', 'b', 'w'])
+
         fig = plt.figure()
         ax = fig.add_subplot(111)
         #fig.suptitle('')
         fig.canvas.draw()
 
-        #xticks = ['{0:.01f}'.format(iy) for iy in np.linspace(0,1,10 + 1)]
-        #yticks = ['{0:.01f}'.format(iy) for iy in np.linspace(0,1,10 + 1)]
-        #xlabels = [item.get_text() for item in ax.get_xticklabels()]
-        #xlabels = xticks
-        #ylabels = [item.get_text() for item in ax.get_yticklabels()]
-        #ylabels = yticks
+        xticks = ['{0:.01f}'.format(iy) for iy in np.linspace(0,1,10 + 1)]
+        yticks = ['{0:.01f}'.format(iy) for iy in np.linspace(0,1,10 + 1)]
+        xlabels = [item.get_text() for item in ax.get_xticklabels()]
+        xlabels = xticks
+        ylabels = [item.get_text() for item in ax.get_yticklabels()]
+        ylabels = yticks
 
-        #ticks = np.linspace(0,scale,11)
-        #ax.set_yticks(ticks)
-        #ax.set_xticks(ticks)
-        #ax.set_xticklabels(xlabels)#, rotation=-90)
-        #ax.set_yticklabels(ylabels)
+        ticks = np.linspace(0,scale,11)
+        ax.set_yticks(ticks)
+        ax.set_xticks(ticks)
+        ax.set_xticklabels(xlabels)#, rotation=-90)
+        ax.set_yticklabels(ylabels)
 
         ax.set_ylabel('SGF')
         ax.set_xlabel('LGF')
         ax.set_title('Behaviour map')
 
-        ax.imshow(GF_map[:,:,0], origin = 'lower', cmap = cMap, interpolation = 'none', vmin = 1, vmax = 4)
+        behaviourMap = ax.imshow(GF_map[:,:,0], origin = 'lower', cmap = cBehavMap, interpolation = 'none', vmin = 1, vmax = 4)
+        cbar1 = fig.colorbar(behaviourMap, ax = ax, ticks = [], orientation='vertical')
+        cbar1.ax.get_yaxis().set_ticks([])
+        for j, lab in enumerate(['$quiescent$', '$proliferation$', '$migration$', '$apoptosis$']):
+            cbar1.ax.text(0.5, (2 * j + 1) / 8.0, lab, ha = 'center', va = 'center', rotation=270)
+        cbar1.ax.get_yaxis().labelpad = 15
+        cbar1.ax.set_ylabel('states', rotation = 270)
 
-        #for ix in SGF_range:
-            #for iy in LGF_range:
-                #arrow = GF_map[int(ix*scale), int(iy*scale),1]
-                #if arrow == 1:
-                    #ax.scatter(ix*scale, iy*scale, s = marker_size, marker ='1', c = 'w', label = 'test')
-                #elif arrow == 2:
-                    #ax.scatter(ix*scale, iy*scale, s = marker_size, marker ='2', c = 'w', label = 'test')
-                #elif arrow == 3:
-                    #ax.scatter(ix*scale, iy*scale, s = marker_size, marker ='3', c = 'w', label = 'test')
-                #else:
-                    #ax.scatter(ix*scale, iy*scale, s = marker_size, marker ='4', c = 'w', label = 'test')
-        #cbar1 = fig.colorbar(mapPlot, ax = ax, orientation='vertical')
         plt.savefig('{0}/{1}/{1}_best_genome_{2}_behaviour_map.eps'.format(location, fileID, iGenome+1), format='eps', bbox_inches='tight')
+
+        #--------------------------------------#
+        #       Generate polarisation map      #
+        #--------------------------------------#
+
+        plt.close()
+        #fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize = (15,5))
+        cPolMap = ListedColormap(['w', 'r', 'c', 'm', 'y'])
+
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        #fig.suptitle('')
+        fig.canvas.draw()
+
+        xticks = ['{0:.01f}'.format(iy) for iy in np.linspace(0,1,10 + 1)]
+        yticks = ['{0:.01f}'.format(iy) for iy in np.linspace(0,1,10 + 1)]
+        xlabels = [item.get_text() for item in ax.get_xticklabels()]
+        xlabels = xticks
+        ylabels = [item.get_text() for item in ax.get_yticklabels()]
+        ylabels = yticks
+
+        ticks = np.linspace(0,scale,11)
+        ax.set_yticks(ticks)
+        ax.set_xticks(ticks)
+        ax.set_xticklabels(xlabels)#, rotation=-90)
+        ax.set_yticklabels(ylabels)
+
+        ax.set_ylabel('SGF')
+        ax.set_xlabel('LGF')
+        ax.set_title('Polarisation map')
+
+        polMap = ax.imshow(GF_map[:,:,1], origin = 'lower', cmap = cPolMap, interpolation = 'none', vmin = 0, vmax = 4)
+        cbar1 = fig.colorbar(polMap, ax = ax, ticks = [], orientation='vertical')
+        for j, lab in enumerate(['$none$', '$west$','$north$','$east$','$south$']):
+            cbar1.ax.text(0.5, (2 * j + 1) / 10.0, lab, ha = 'center', va = 'center', rotation=270)
+        cbar1.ax.get_yaxis().labelpad = 15
+        cbar1.ax.set_ylabel('polarisation', rotation = 270)
+
+        plt.savefig('{0}/{1}/{1}_best_genome_{2}_polarisation_map.eps'.format(location, fileID, iGenome+1), format='eps', bbox_inches='tight')
 
 def GF_AverageMap(GF_mean, GF_type, location, iGenome):
     """
