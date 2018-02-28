@@ -137,15 +137,15 @@ def GenerateStatus(output):
     """
     Generate cell status out of the network output
     """
-    status_data = np.zeros([4], dtype = int)     # [status, polarisation, sgf_amount, lgf_amount]
+    status_data = np.zeros([2], dtype = int)     # [status, polarisation]
     
     # Cellular states
     iStatus = output[0]             # Proliferate: Split
     jStatus = output[1]             # Migrate:     Move
     kStatus = output[2]             # Apoptosis:   Die
     # Values for SGF and LGF
-    status_data[2] = output[3]      # SGF Prod
-    status_data[3] = output[4]      # LGF Prod
+    #status_data[2] = output[3]      # SGF Prod
+    #status_data[3] = output[4]      # LGF Prod
     # Polarisation
     compass = output[5]
 

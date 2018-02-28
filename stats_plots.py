@@ -125,7 +125,7 @@ def NetworkBehaviourMap(location, fileID):#, iGenome):
     LGF_size = 100
     marker_size = 0.1
     reps = 200                              # Same number of time steps of the cellular system
-    nOutputs = 4
+    nOutputs = 2
     SGF_max = 1#1
     LGF_max = 1
     
@@ -137,11 +137,12 @@ def NetworkBehaviourMap(location, fileID):#, iGenome):
 
 
     GF_map = np.full([len(SGF_range), len(LGF_range), nOutputs], -1)
+    GF_prod_map = np.zeros([len(SGF_range), len(LGF_range), 2], dtype = np.float64)
     
     #network = tools.GetNetwork(fileID, iGenome)
     genomes, config = tools.GetNetwork(fileID)#, iGenome)
     
-    for iGenome in range(len(genomes)):
+    for iGenome in [0]:#range(len(genomes)):
         network = neat.nn.RecurrentNetwork.create(genomes[iGenome], config)
         #print('\tGetting & processing data...')
         # Get data and process it...
@@ -155,87 +156,117 @@ def NetworkBehaviourMap(location, fileID):#, iGenome):
                 for _ in range(reps):
                     output = network.activate(inputs)
                 GF_map[iy, ix, :] = tools.GenerateStatus(output)
-
-        #fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize = (15,5))
+                GF_prod_map[iy, ix, 0] = output[3]
+                GF_prod_map[iy, ix, 1] = output[4]
 
         #-----------------------------------#
         #       Generate Behaviuor map      #
         #-----------------------------------#
-        #print('\tDrawing plot...')
         plt.close()
-
-        cBehavMap = ListedColormap(['g', 'r', 'b', 'w'])
-
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        #fig.suptitle('')
-        fig.canvas.draw()
+        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, sharex=True, sharey=True)
+        #fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, sharex='col', sharey='row')
+        fig.tight_layout()
+        
+        pad_dist = 0.02
+        title_font_size = 8
+        label_font_size = 5
+        text_font_size = 4
 
         xticks = ['{0:.01f}'.format(iy) for iy in np.linspace(0,1,10 + 1)]
         yticks = ['{0:.01f}'.format(iy) for iy in np.linspace(0,1,10 + 1)]
-        xlabels = [item.get_text() for item in ax.get_xticklabels()]
-        xlabels = xticks
-        ylabels = [item.get_text() for item in ax.get_yticklabels()]
-        ylabels = yticks
-
         ticks = np.linspace(0,scale,11)
-        ax.set_yticks(ticks)
-        ax.set_xticks(ticks)
-        ax.set_xticklabels(xlabels)#, rotation=-90)
-        ax.set_yticklabels(ylabels)
+        
+        cBehavMap = ListedColormap(['g', 'r', 'b', 'w'])
 
-        ax.set_ylabel('SGF')
-        ax.set_xlabel('LGF')
-        ax.set_title('Behaviour map')
+        #xlabels = [item.get_text() for item in ax1.get_xticklabels()]
+        #xlabels = xticks
+        #ylabels = [item.get_text() for item in ax1.get_yticklabels()]
+        #ylabels = yticks
 
-        behaviourMap = ax.imshow(GF_map[:,:,0], origin = 'lower', cmap = cBehavMap, interpolation = 'none', vmin = 1, vmax = 4)
-        cbar1 = fig.colorbar(behaviourMap, ax = ax, ticks = [], orientation='vertical')
+        #ax1.set_yticks(ticks)
+        #ax1.set_xticks(ticks)
+        #ax1.set_xticklabels(xlabels, fontsize=0.8)#, rotation=-90)
+        #ax1.set_yticklabels(ylabels, fontsize=label_font_size)
+
+        ax1.set_ylabel('SGF', fontsize=label_font_size)
+#        ax1.set_xlabel('LGF', fontsize=label_font_size)
+        ax1.set_title('Status map', fontsize=title_font_size)
+
+        behaviourMap = ax1.imshow(GF_map[:,:,0], origin = 'lower', cmap = cBehavMap, interpolation = 'none', vmin = 1, vmax = 4)
+        cbar1 = fig.colorbar(behaviourMap, ax = ax1, ticks = [], orientation='vertical', pad=pad_dist)
         cbar1.ax.get_yaxis().set_ticks([])
         for j, lab in enumerate(['$quiescent$', '$proliferation$', '$migration$', '$apoptosis$']):
-            cbar1.ax.text(0.5, (2 * j + 1) / 8.0, lab, ha = 'center', va = 'center', rotation=270)
-        cbar1.ax.get_yaxis().labelpad = 15
-        cbar1.ax.set_ylabel('states', rotation = 270)
-
-        plt.savefig('{0}/{1}/{1}_best_genome_{2}_behaviour_map.eps'.format(location, fileID, iGenome+1), format='eps', bbox_inches='tight')
+            cbar1.ax.text(0.5, (2 * j + 1) / 8.0, lab, ha = 'center', va = 'center', rotation=270, fontsize=text_font_size)
+        cbar1.ax.get_yaxis().labelpad = 8
+        cbar1.ax.set_ylabel('states', rotation = 270, fontsize=label_font_size)
 
         #--------------------------------------#
         #       Generate polarisation map      #
         #--------------------------------------#
-
-        plt.close()
-        #fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize = (15,5))
         cPolMap = ListedColormap(['w', 'r', 'c', 'm', 'y'])
 
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        #fig.suptitle('')
-        fig.canvas.draw()
+        #xlabels = [item.get_text() for item in ax.get_xticklabels()]
+        #xlabels = xticks
+        #ylabels = [item.get_text() for item in ax.get_yticklabels()]
+        #ylabels = yticks
 
-        xticks = ['{0:.01f}'.format(iy) for iy in np.linspace(0,1,10 + 1)]
-        yticks = ['{0:.01f}'.format(iy) for iy in np.linspace(0,1,10 + 1)]
-        xlabels = [item.get_text() for item in ax.get_xticklabels()]
-        xlabels = xticks
-        ylabels = [item.get_text() for item in ax.get_yticklabels()]
-        ylabels = yticks
+        #ax.set_yticks(ticks)
+        #ax.set_xticks(ticks)
+        #ax.set_xticklabels(xlabels)#, rotation=-90)
+        #ax.set_yticklabels(ylabels)
 
-        ticks = np.linspace(0,scale,11)
-        ax.set_yticks(ticks)
-        ax.set_xticks(ticks)
-        ax.set_xticklabels(xlabels)#, rotation=-90)
-        ax.set_yticklabels(ylabels)
-
-        ax.set_ylabel('SGF')
-        ax.set_xlabel('LGF')
-        ax.set_title('Polarisation map')
-
-        polMap = ax.imshow(GF_map[:,:,1], origin = 'lower', cmap = cPolMap, interpolation = 'none', vmin = 0, vmax = 4)
-        cbar1 = fig.colorbar(polMap, ax = ax, ticks = [], orientation='vertical')
+        ax2.set_title('Polarisation map', fontsize=title_font_size)
+        
+        polMap = ax2.imshow(GF_map[:,:,1], origin = 'lower', cmap = cPolMap, interpolation = 'none', vmin = 0, vmax = 4)
+        cbar2 = fig.colorbar(polMap, ax = ax2, ticks = [], orientation='vertical', pad=pad_dist)
         for j, lab in enumerate(['$none$', '$west$','$north$','$east$','$south$']):
-            cbar1.ax.text(0.5, (2 * j + 1) / 10.0, lab, ha = 'center', va = 'center', rotation=270)
-        cbar1.ax.get_yaxis().labelpad = 15
-        cbar1.ax.set_ylabel('polarisation', rotation = 270)
+            cbar2.ax.text(0.5, (2 * j + 1) / 10.0, lab, ha = 'center', va = 'center', rotation=270, fontsize=text_font_size)
+        cbar2.ax.get_yaxis().labelpad = 8
+        cbar2.ax.set_ylabel('polarisation', rotation = 270, fontsize=label_font_size)
 
-        plt.savefig('{0}/{1}/{1}_best_genome_{2}_polarisation_map.eps'.format(location, fileID, iGenome+1), format='eps', bbox_inches='tight')
+        #----------------------------------------#
+        #       Generate SGF production map      #
+        #----------------------------------------#
+        #xlabels = [item.get_text() for item in ax.get_xticklabels()]
+        #xlabels = xticks
+        #ylabels = [item.get_text() for item in ax.get_yticklabels()]
+        #ylabels = yticks
+
+        #ax.set_yticks(ticks)
+        #ax.set_xticks(ticks)
+        #ax.set_xticklabels(xlabels)#, rotation=-90)
+        #ax.set_yticklabels(ylabels)
+
+        ax3.set_ylabel('SGF', fontsize=label_font_size)
+        ax3.set_xlabel('LGF', fontsize=label_font_size)
+        ax3.set_title('SGF production map', fontsize=title_font_size)
+        
+        SGFmax = np.amax(GF_prod_map[:,:,0])
+        sgfProdMap = ax3.imshow(GF_prod_map[:,:,0], origin = 'lower', cmap = 'Reds', interpolation = 'none', vmin = 0, vmax = SGFmax)
+        cbar3 = fig.colorbar(sgfProdMap, ax = ax3, orientation='vertical', pad=pad_dist)
+ 
+        #----------------------------------------#
+        #       Generate LGF production map      #
+        #----------------------------------------#
+        #xlabels = [item.get_text() for item in ax.get_xticklabels()]
+        #xlabels = xticks
+        #ylabels = [item.get_text() for item in ax.get_yticklabels()]
+        #ylabels = yticks
+
+        #ax.set_yticks(ticks)
+        #ax.set_xticks(ticks)
+        #ax.set_xticklabels(xlabels)#, rotation=-90)
+        #ax.set_yticklabels(ylabels)
+
+        ax4.set_xlabel('LGF', fontsize=label_font_size)
+        ax4.set_title('LGF production map', fontsize=title_font_size)
+        
+        LGFmax = np.amax(GF_prod_map[:,:,1])
+        lgfProdMap = ax4.imshow(GF_prod_map[:,:,1], origin = 'lower', cmap = 'Blues', interpolation = 'none', vmin = 0, vmax = LGFmax)
+        cbar4 = fig.colorbar(lgfProdMap, ax = ax4, orientation='vertical', pad=pad_dist)
+        
+        # Save figure with four subplots
+        plt.savefig('{0}/{1}/{1}_best_genome_{2}_test_map.eps'.format(location, fileID, iGenome+1), format='eps', bbox_inches='tight')
 
 def GF_AverageMap(GF_mean, GF_type, location, iGenome):
     """
