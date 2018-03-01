@@ -267,8 +267,8 @@ def NetworkBehaviourMap(location, fileID):#, iGenome):
         
         LGFmax = np.amax(GF_prod_map[:,:,1])
         lgfProdMap = ax4.imshow(GF_prod_map[:,:,1], origin = 'lower', cmap = 'Blues', interpolation = 'none', vmin = 0, vmax = LGFmax)
-        ax4.set_aspect(aspect='equal', adjustable='box-forced')
-        cbar4 = fig.colorbar(lgfProdMap, ax = ax4, orientation='vertical', pad=pad_dist)
+        ax4.set_aspect(aspect = 'equal', adjustable = 'box-forced')
+        cbar4 = fig.colorbar(lgfProdMap, ax = ax4, orientation = 'vertical', pad = pad_dist)
         cbar4.ax.tick_params(labelsize=label_font_size)
 
         fig.tight_layout(w_pad=-5)
@@ -276,27 +276,41 @@ def NetworkBehaviourMap(location, fileID):#, iGenome):
         # Save figure with four subplots
         plt.savefig('{0}/{1}/{1}_best_genome_{2}_maps.eps'.format(location, fileID, iGenome+1), format='eps', bbox_inches='tight')
 
-def GF_AverageMap(GF_mean, GF_type, location, iGenome):
+def GF_AverageMap(SGF_mean, LGF_mean, location, iGenome):
     """
     Function that plots the average distribution of GF in the grid
     """
-    GFmax = np.amax(GF_mean)
-
     plt.close()
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize = (10,5))
 
-    ax.set_title('{} average distribution over time'.format(GF_type))
-    GF_dist = ax.imshow(GF_mean, origin = 'lower', cmap = 'Oranges', interpolation = 'none', vmin = 0.0, vmax = GFmax)
-    cbar = fig.colorbar(GF_dist, ax = ax, orientation = 'vertical')
+    pad_dist = 0.02
+
+    SGF_max = np.amax(SGF_mean)
+    LGF_max = np.amax(LGF_mean)
+    
+    ax1.set_title('SGF average distribution over time')
+    ax2.set_title('LGF average distribution over time')
+
+    SGF_dist = ax1.imshow(SGF_mean, origin = 'lower', cmap = 'Oranges', interpolation = 'none', vmin = 0.0, vmax = SGF_max)
+    ax1.set_aspect(aspect = 'equal')
+    LGF_dist = ax2.imshow(LGF_mean, origin = 'lower', cmap = 'Oranges', interpolation = 'none', vmin = 0.0, vmax = LGF_max)
+    ax2.set_aspect(aspect = 'equal')
+    
+    cbar1 = fig.colorbar(SGF_dist, ax = ax1, orientation = 'vertical', shrink = 0.76, pad = pad_dist)
+    cbar2 = fig.colorbar(LGF_dist, ax = ax2, orientation = 'vertical', shrink = 0.76, pad = pad_dist)    
     
     # hide ticks
-    GF_dist.axes.xaxis.set_ticklabels([])
-    GF_dist.axes.yaxis.set_ticklabels([])
-    GF_dist.axes.get_xaxis().set_visible(False)
-    GF_dist.axes.get_yaxis().set_visible(False)
+    SGF_dist.axes.xaxis.set_ticklabels([])
+    SGF_dist.axes.yaxis.set_ticklabels([])
+    SGF_dist.axes.get_xaxis().set_visible(False)
+    SGF_dist.axes.get_yaxis().set_visible(False)
     
-    plt.savefig('{0}/{1}_average_dist_best_genome_{2}.eps'.format(location, GF_type, iGenome + 1), format='eps', bbox_inches='tight')
+    LGF_dist.axes.xaxis.set_ticklabels([])
+    LGF_dist.axes.yaxis.set_ticklabels([])
+    LGF_dist.axes.get_xaxis().set_visible(False)
+    LGF_dist.axes.get_yaxis().set_visible(False)
+    
+    plt.savefig('{0}/GF_average_dist_best_genome_{1}.eps'.format(location, iGenome + 1), format='eps', bbox_inches='tight')
 
 if __name__ == '__main__':
     location = sys.argv[1]
