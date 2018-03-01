@@ -142,7 +142,7 @@ def NetworkBehaviourMap(location, fileID):#, iGenome):
     #network = tools.GetNetwork(fileID, iGenome)
     genomes, config = tools.GetNetwork(fileID)#, iGenome)
     
-    for iGenome in [0]:#range(len(genomes)):
+    for iGenome in range(len(genomes)):
         network = neat.nn.RecurrentNetwork.create(genomes[iGenome], config)
         #print('\tGetting & processing data...')
         # Get data and process it...
@@ -165,12 +165,13 @@ def NetworkBehaviourMap(location, fileID):#, iGenome):
         plt.close()
         fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, sharex=True, sharey=True)
         #fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, sharex='col', sharey='row')
-        fig.tight_layout()
+        #fig.subplots_adjust(wspace=0.03)
         
         pad_dist = 0.02
         title_font_size = 8
         label_font_size = 5
-        text_font_size = 4
+        text_font_size = 5
+        aspect = 1
 
         xticks = ['{0:.01f}'.format(iy) for iy in np.linspace(0,1,10 + 1)]
         yticks = ['{0:.01f}'.format(iy) for iy in np.linspace(0,1,10 + 1)]
@@ -180,19 +181,20 @@ def NetworkBehaviourMap(location, fileID):#, iGenome):
 
         #xlabels = [item.get_text() for item in ax1.get_xticklabels()]
         #xlabels = xticks
-        #ylabels = [item.get_text() for item in ax1.get_yticklabels()]
-        #ylabels = yticks
+        ylabels = [item.get_text() for item in ax1.get_yticklabels()]
+        ylabels = yticks
 
-        #ax1.set_yticks(ticks)
+        ax1.set_yticks(ticks)
+        ax1.set_yticklabels(ylabels, fontsize=label_font_size)
         #ax1.set_xticks(ticks)
         #ax1.set_xticklabels(xlabels, fontsize=0.8)#, rotation=-90)
-        #ax1.set_yticklabels(ylabels, fontsize=label_font_size)
 
         ax1.set_ylabel('SGF', fontsize=label_font_size)
 #        ax1.set_xlabel('LGF', fontsize=label_font_size)
         ax1.set_title('Status map', fontsize=title_font_size)
 
         behaviourMap = ax1.imshow(GF_map[:,:,0], origin = 'lower', cmap = cBehavMap, interpolation = 'none', vmin = 1, vmax = 4)
+        ax1.set_aspect(aspect='equal', adjustable='box-forced')
         cbar1 = fig.colorbar(behaviourMap, ax = ax1, ticks = [], orientation='vertical', pad=pad_dist)
         cbar1.ax.get_yaxis().set_ticks([])
         for j, lab in enumerate(['$quiescent$', '$proliferation$', '$migration$', '$apoptosis$']):
@@ -218,6 +220,7 @@ def NetworkBehaviourMap(location, fileID):#, iGenome):
         ax2.set_title('Polarisation map', fontsize=title_font_size)
         
         polMap = ax2.imshow(GF_map[:,:,1], origin = 'lower', cmap = cPolMap, interpolation = 'none', vmin = 0, vmax = 4)
+        ax2.set_aspect(aspect='equal', adjustable='box-forced')
         cbar2 = fig.colorbar(polMap, ax = ax2, ticks = [], orientation='vertical', pad=pad_dist)
         for j, lab in enumerate(['$none$', '$west$','$north$','$east$','$south$']):
             cbar2.ax.text(0.5, (2 * j + 1) / 10.0, lab, ha = 'center', va = 'center', rotation=270, fontsize=text_font_size)
@@ -227,15 +230,15 @@ def NetworkBehaviourMap(location, fileID):#, iGenome):
         #----------------------------------------#
         #       Generate SGF production map      #
         #----------------------------------------#
-        #xlabels = [item.get_text() for item in ax.get_xticklabels()]
-        #xlabels = xticks
-        #ylabels = [item.get_text() for item in ax.get_yticklabels()]
-        #ylabels = yticks
+        xlabels = [item.get_text() for item in ax3.get_xticklabels()]
+        xlabels = xticks
+        ylabels = [item.get_text() for item in ax3.get_yticklabels()]
+        ylabels = yticks
 
-        #ax.set_yticks(ticks)
-        #ax.set_xticks(ticks)
-        #ax.set_xticklabels(xlabels)#, rotation=-90)
-        #ax.set_yticklabels(ylabels)
+        ax3.set_yticks(ticks)
+        ax3.set_xticks(ticks)
+        ax3.set_xticklabels(xlabels, fontsize=label_font_size)#, rotation=-90)
+        ax3.set_yticklabels(ylabels, fontsize=label_font_size)
 
         ax3.set_ylabel('SGF', fontsize=label_font_size)
         ax3.set_xlabel('LGF', fontsize=label_font_size)
@@ -243,19 +246,20 @@ def NetworkBehaviourMap(location, fileID):#, iGenome):
         
         SGFmax = np.amax(GF_prod_map[:,:,0])
         sgfProdMap = ax3.imshow(GF_prod_map[:,:,0], origin = 'lower', cmap = 'Reds', interpolation = 'none', vmin = 0, vmax = SGFmax)
+        ax3.set_aspect(aspect='equal', adjustable='box-forced')
         cbar3 = fig.colorbar(sgfProdMap, ax = ax3, orientation='vertical', pad=pad_dist)
- 
+        cbar3.ax.tick_params(labelsize=label_font_size)
         #----------------------------------------#
         #       Generate LGF production map      #
         #----------------------------------------#
-        #xlabels = [item.get_text() for item in ax.get_xticklabels()]
-        #xlabels = xticks
+        xlabels = [item.get_text() for item in ax4.get_xticklabels()]
+        xlabels = xticks
         #ylabels = [item.get_text() for item in ax.get_yticklabels()]
         #ylabels = yticks
 
         #ax.set_yticks(ticks)
-        #ax.set_xticks(ticks)
-        #ax.set_xticklabels(xlabels)#, rotation=-90)
+        ax4.set_xticks(ticks)
+        ax4.set_xticklabels(xlabels, fontsize=label_font_size)#, rotation=-90)
         #ax.set_yticklabels(ylabels)
 
         ax4.set_xlabel('LGF', fontsize=label_font_size)
@@ -263,10 +267,14 @@ def NetworkBehaviourMap(location, fileID):#, iGenome):
         
         LGFmax = np.amax(GF_prod_map[:,:,1])
         lgfProdMap = ax4.imshow(GF_prod_map[:,:,1], origin = 'lower', cmap = 'Blues', interpolation = 'none', vmin = 0, vmax = LGFmax)
+        ax4.set_aspect(aspect='equal', adjustable='box-forced')
         cbar4 = fig.colorbar(lgfProdMap, ax = ax4, orientation='vertical', pad=pad_dist)
-        
+        cbar4.ax.tick_params(labelsize=label_font_size)
+
+        fig.tight_layout(w_pad=-5)
+
         # Save figure with four subplots
-        plt.savefig('{0}/{1}/{1}_best_genome_{2}_test_map.eps'.format(location, fileID, iGenome+1), format='eps', bbox_inches='tight')
+        plt.savefig('{0}/{1}/{1}_best_genome_{2}_maps.eps'.format(location, fileID, iGenome+1), format='eps', bbox_inches='tight')
 
 def GF_AverageMap(GF_mean, GF_type, location, iGenome):
     """
@@ -291,7 +299,8 @@ def GF_AverageMap(GF_mean, GF_type, location, iGenome):
     plt.savefig('{0}/{1}_average_dist_best_genome_{2}.eps'.format(location, GF_type, iGenome + 1), format='eps', bbox_inches='tight')
 
 if __name__ == '__main__':
-    dataFile = sys.argv[1]
+    location = sys.argv[1]
+    dataFile = sys.argv[2]
     #iGenome = int(sys.argv[2])
     #FitnessMapPlot()
     #FitnessperGenMap()
