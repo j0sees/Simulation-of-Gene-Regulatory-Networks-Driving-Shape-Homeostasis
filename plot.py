@@ -20,6 +20,9 @@ def CellsGridFigure(fieldSize, mode):
     # mode = True: cell_system as fitness function
     # mode = False: cell_system as display system
     plt.close()
+    
+    pad_dist = 0.01
+    shrink_pct = 0.78
 
     #discrete color scheme
     cMap = ListedColormap(['w', 'g', 'b', 'r'])
@@ -31,24 +34,24 @@ def CellsGridFigure(fieldSize, mode):
     sgfSubplot.set_aspect('equal')
     lgfSubplot.set_aspect('equal')
 
-    cellsFigure.suptitle('Cell System')
+    cellsFigure.suptitle('Cellular System Visualisation', fontweight='bold')
 
     cellGrid = np.zeros([fieldSize, fieldSize])             # may need a new name, same as in main...
     sgfGrid = np.zeros([fieldSize, fieldSize])
     lgfGrid = np.zeros([fieldSize, fieldSize])
 
-    cellsSubplot.set_title('Cells')
+    cellsSubplot.set_title('Cellular Grid')
 
 #        cellsSubplot.axis('off')
 
-    sgfSubplot.set_title('SGF')
+    sgfSubplot.set_title('SGF spatial distribution')
 #        sgfSubplot.axis('off')
 
-    lgfSubplot.set_title('LGF')
+    lgfSubplot.set_title('LGF spatial distribution')
 #       lgfSubplot.axis('off')
 
     cellPlot = cellsSubplot.imshow(cellGrid, origin = 'lower', cmap = cMap, interpolation = 'none', vmin = 0, vmax = 3)
-    cbar1 = cellsFigure.colorbar(cellPlot, ax = cellsSubplot, ticks = [], orientation='horizontal')#, shrink=0.75)
+    cbar1 = cellsFigure.colorbar(cellPlot, ax = cellsSubplot, ticks = [], orientation='horizontal', pad = pad_dist, shrink = shrink_pct)
     #cbar1.ax.set_yticklabels(['dead', 'quiet', 'moving', 'splitting'])
     ##legend
     #cbar = plt.colorbar(cellPlot)
@@ -62,13 +65,14 @@ def CellsGridFigure(fieldSize, mode):
     #cellPlot.axes.yaxis.set_ticklabels([])
     
     cbar1.ax.get_yaxis().set_ticks([])
-    for j, lab in enumerate(['$empty$','$quiet$','$moving$','$divided$']):
+    for j, lab in enumerate(['$empty$','$quiescent$','$migrate$','$proliferate$']):
         cbar1.ax.text((2 * j + 1) / 8.0, .5, lab, ha = 'center', va = 'center')#, rotation=270)
-    cbar1.ax.get_yaxis().labelpad = 15
-    cbar1.ax.set_ylabel('states', rotation = 270)
+    #cbar1.ax.get_yaxis().labelpad = -25
+    #cbar1.ax.get_xaxis().labelpad = -5
+    cbar1.ax.set_xlabel('state')#, rotation = 90)
 
     sgfPlot = sgfSubplot.imshow(sgfGrid, origin = 'lower', cmap = 'Reds', interpolation = 'none', vmin = 0, vmax = 1)
-    cbar2 = cellsFigure.colorbar(sgfPlot, ax = sgfSubplot, orientation = 'horizontal')
+    cbar2 = cellsFigure.colorbar(sgfPlot, ax = sgfSubplot, orientation = 'horizontal', pad = pad_dist, shrink = shrink_pct)
 
     # hide ticks
     sgfPlot.axes.xaxis.set_ticklabels([])
@@ -77,7 +81,7 @@ def CellsGridFigure(fieldSize, mode):
     sgfPlot.axes.get_yaxis().set_visible(False)
 
     lgfPlot = lgfSubplot.imshow(lgfGrid, origin = 'lower', cmap = 'Blues', interpolation = 'none', vmin = 0, vmax = 1)
-    cbar3 = cellsFigure.colorbar(lgfPlot, ax = lgfSubplot, orientation = 'horizontal')
+    cbar3 = cellsFigure.colorbar(lgfPlot, ax = lgfSubplot, orientation = 'horizontal', pad = pad_dist, shrink = shrink_pct)
 
     # hide ticks
     lgfPlot.axes.xaxis.set_ticklabels([])
@@ -92,6 +96,9 @@ def CellsGridFigure(fieldSize, mode):
     #plt.pause(0.001)
     cellsFigure.canvas.draw()
     plt.ioff()
+    
+    plt.subplots_adjust(wspace=-0.1)
+    #cellsFigure.tight_layout(w_pad=-5)
 
     # function returns the figure, subplots and plots
     return cellsFigure, cellsSubplot, sgfSubplot, lgfSubplot, cellPlot, sgfPlot, lgfPlot
