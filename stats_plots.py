@@ -164,8 +164,6 @@ def NetworkBehaviourMap(location, fileID):#, iGenome):
         #-----------------------------------#
         plt.close()
         fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, sharex=True, sharey=True)
-        #fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, sharex='col', sharey='row')
-        #fig.subplots_adjust(wspace=0.03)
         
         pad_dist = 0.02
         title_font_size = 8
@@ -179,18 +177,12 @@ def NetworkBehaviourMap(location, fileID):#, iGenome):
         
         cBehavMap = ListedColormap(['g', 'r', 'b', 'w'])
 
-        #xlabels = [item.get_text() for item in ax1.get_xticklabels()]
-        #xlabels = xticks
         ylabels = [item.get_text() for item in ax1.get_yticklabels()]
         ylabels = yticks
 
         ax1.set_yticks(ticks)
         ax1.set_yticklabels(ylabels, fontsize=label_font_size)
-        #ax1.set_xticks(ticks)
-        #ax1.set_xticklabels(xlabels, fontsize=0.8)#, rotation=-90)
-
         ax1.set_ylabel('SGF', fontsize=label_font_size)
-#        ax1.set_xlabel('LGF', fontsize=label_font_size)
         ax1.set_title('Status map', fontsize=title_font_size)
 
         behaviourMap = ax1.imshow(GF_map[:,:,0], origin = 'lower', cmap = cBehavMap, interpolation = 'none', vmin = 1, vmax = 4)
@@ -206,16 +198,6 @@ def NetworkBehaviourMap(location, fileID):#, iGenome):
         #       Generate polarisation map      #
         #--------------------------------------#
         cPolMap = ListedColormap(['w', 'r', 'c', 'm', 'y'])
-
-        #xlabels = [item.get_text() for item in ax.get_xticklabels()]
-        #xlabels = xticks
-        #ylabels = [item.get_text() for item in ax.get_yticklabels()]
-        #ylabels = yticks
-
-        #ax.set_yticks(ticks)
-        #ax.set_xticks(ticks)
-        #ax.set_xticklabels(xlabels)#, rotation=-90)
-        #ax.set_yticklabels(ylabels)
 
         ax2.set_title('Polarisation map', fontsize=title_font_size)
         
@@ -249,22 +231,18 @@ def NetworkBehaviourMap(location, fileID):#, iGenome):
         ax3.set_aspect(aspect='equal', adjustable='box-forced')
         cbar3 = fig.colorbar(sgfProdMap, ax = ax3, orientation='vertical', pad=pad_dist)
         cbar3.ax.tick_params(labelsize=label_font_size)
+
         #----------------------------------------#
         #       Generate LGF production map      #
         #----------------------------------------#
         xlabels = [item.get_text() for item in ax4.get_xticklabels()]
         xlabels = xticks
-        #ylabels = [item.get_text() for item in ax.get_yticklabels()]
-        #ylabels = yticks
 
-        #ax.set_yticks(ticks)
         ax4.set_xticks(ticks)
         ax4.set_xticklabels(xlabels, fontsize=label_font_size)#, rotation=-90)
-        #ax.set_yticklabels(ylabels)
-
         ax4.set_xlabel('LGF', fontsize=label_font_size)
         ax4.set_title('LGF production map', fontsize=title_font_size)
-        
+
         LGFmax = np.amax(GF_prod_map[:,:,1])
         lgfProdMap = ax4.imshow(GF_prod_map[:,:,1], origin = 'lower', cmap = 'Blues', interpolation = 'none', vmin = 0, vmax = LGFmax)
         ax4.set_aspect(aspect = 'equal', adjustable = 'box-forced')
@@ -287,7 +265,7 @@ def GF_AverageMap(SGF_mean, LGF_mean, location, iGenome):
 
     SGF_max = np.amax(SGF_mean)
     LGF_max = np.amax(LGF_mean)
-    
+
     ax1.set_title('SGF average distribution over time')
     ax2.set_title('LGF average distribution over time')
 
@@ -295,10 +273,10 @@ def GF_AverageMap(SGF_mean, LGF_mean, location, iGenome):
     ax1.set_aspect(aspect = 'equal')
     LGF_dist = ax2.imshow(LGF_mean, origin = 'lower', cmap = 'Oranges', interpolation = 'none', vmin = 0.0, vmax = LGF_max)
     ax2.set_aspect(aspect = 'equal')
-    
+
     cbar1 = fig.colorbar(SGF_dist, ax = ax1, orientation = 'vertical', shrink = 0.76, pad = pad_dist)
     cbar2 = fig.colorbar(LGF_dist, ax = ax2, orientation = 'vertical', shrink = 0.76, pad = pad_dist)    
-    
+
     # hide ticks
     SGF_dist.axes.xaxis.set_ticklabels([])
     SGF_dist.axes.yaxis.set_ticklabels([])
@@ -309,7 +287,7 @@ def GF_AverageMap(SGF_mean, LGF_mean, location, iGenome):
     LGF_dist.axes.yaxis.set_ticklabels([])
     LGF_dist.axes.get_xaxis().set_visible(False)
     LGF_dist.axes.get_yaxis().set_visible(False)
-    
+
     plt.savefig('{0}/GF_average_dist_best_genome_{1}.eps'.format(location, iGenome + 1), format='eps', bbox_inches='tight')
 
 if __name__ == '__main__':
