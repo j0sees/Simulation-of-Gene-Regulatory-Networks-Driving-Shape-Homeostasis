@@ -118,7 +118,7 @@ def NetworkBehaviourMap(location, fileID):#, iGenome):
     Function that plots a map showing the fixed points for the network status, GF production and polarisation
     """
     #print('=> Map plot')
-    print('\nPlotting map for file {}'.format(fileID))
+    print('\nPlotting maps for networks in folder {}'.format(fileID))
     #location = 'plots/20182214_pconnection_20_gen'
     scale = 100
     SGF_size = 100                             # Seems to be enough
@@ -225,10 +225,11 @@ def NetworkBehaviourMap(location, fileID):#, iGenome):
         ax3.set_ylabel('SGF', fontsize=label_font_size)
         ax3.set_xlabel('LGF', fontsize=label_font_size)
         ax3.set_title('SGF production map', fontsize=title_font_size)
-        
+
         SGFmax = np.amax(GF_prod_map[:,:,0])
         sgfProdMap = ax3.imshow(GF_prod_map[:,:,0], origin = 'lower', cmap = 'Reds', interpolation = 'none', vmin = 0, vmax = SGFmax)
         ax3.set_aspect(aspect='equal', adjustable='box-forced')
+        ax3.text(5, 95, 'Max SGF value = {0:.02f}'.format(SGFmax), bbox={'facecolor': 'white', 'pad': 0.4, 'boxstyle':'round'}, fontsize=label_font_size)
         cbar3 = fig.colorbar(sgfProdMap, ax = ax3, orientation='vertical', pad=pad_dist)
         cbar3.ax.tick_params(labelsize=label_font_size)
 
@@ -246,7 +247,8 @@ def NetworkBehaviourMap(location, fileID):#, iGenome):
         LGFmax = np.amax(GF_prod_map[:,:,1])
         lgfProdMap = ax4.imshow(GF_prod_map[:,:,1], origin = 'lower', cmap = 'Blues', interpolation = 'none', vmin = 0, vmax = LGFmax)
         ax4.set_aspect(aspect = 'equal', adjustable = 'box-forced')
-        cbar4 = fig.colorbar(lgfProdMap, ax = ax4, orientation = 'vertical', pad = pad_dist)
+        ax4.text(5, 95, 'Max LGF value = {0:.02f}'.format(LGFmax), bbox={'facecolor': 'white', 'pad': 0.4, 'boxstyle':'round'}, fontsize=label_font_size)        
+        cbar4 = fig.colorbar(lgfProdMap, ax = ax4, orientation = 'vertical', pad=pad_dist)
         cbar4.ax.tick_params(labelsize=label_font_size)
 
         fig.tight_layout(w_pad=-5)
@@ -289,6 +291,88 @@ def GF_AverageMap(SGF_mean, LGF_mean, location, iGenome):
     LGF_dist.axes.get_yaxis().set_visible(False)
 
     plt.savefig('{0}/GF_average_dist_best_genome_{1}.eps'.format(location, iGenome + 1), format='eps', bbox_inches='tight')
+
+def NetworkClustering(run_folder):
+    from sklearn.cluster import DBSCAN
+    from sklearn.cluster import AffinityPropagation
+    from sklearn import metrics
+    #from sklearn.datasets.samples_generator import make_blobs
+    #from sklearn.preprocessing import StandardScaler
+
+    DistanceMatrix = tools.GenomicDistanceMatrix(run_folder)
+    
+    #---------------------------#
+    #   DBScan Implementation   #
+    #---------------------------#
+    #eps_val = 0.5
+    #cluster_instance = DBSCAN(eps=eps_val, metric='precomputed', n_jobs=2)
+    #db = cluster_instance.fit(DistanceMatrix)
+    #labels_true = cluster_instance.fit_predict(DistanceMatrix)
+    #core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
+    #core_samples_mask[db.core_sample_indices_] = True
+    #labels = db.labels_
+    ## Number of clusters in labels, ignoring noise if present.
+    #n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
+
+    #---------------------------#
+    #   Affinity Propagation    #
+    #---------------------------#
+    max_val = 0
+
+    for ix in np.linspace(-1,1,41):
+        af = AffinityPropagation(affinity='precomputed', preference=ix).fit(DistanceMatrix)
+        cluster_centers_indices = af.cluster_centers_indices_
+        labels = af.labels_
+        n_clusters_ = len(cluster_centers_indices)
+        curr_val = metrics.silhouette_score(DistanceMatrix, labels)
+        print('current value: {}'.format(curr_val))
+        if curr_val > max_val:
+            max_val = curr_val
+    print('max Silhouette Coefficient: {}'.format(max_val))
+
+    ## Clustering measures
+    #print('Estimated number of clusters: {}'.format(n_clusters_))
+    ## This measures only work if the true labels (clusters) are known...
+    ##print('Homogeneity: {0:.3f}'.format(metrics.homogeneity_score(labels_true, labels)))
+    ##print('Completeness: {0:.3f}'.format(metrics.completeness_score(labels_true, labels)))
+    ##print('V-measure: {0:.3f}'.format(metrics.v_measure_score(labels_true, labels)))
+    ##print('Adjusted Rand Index: {0:.3f}'.format(metrics.adjusted_rand_score(labels_true, labels)))
+    ##print('Adjusted Mutual Information: {0:.3f}'.format(metrics.adjusted_mutual_info_score(labels_true, labels)))
+    #print('Silhouette Coefficient: {0:.3f}'.format(metrics.silhouette_score(DistanceMatrix, labels)))
+    #print('Calinski-Harabaz Coefficient: {0:.3f}'.format(metrics.calinski_harabaz_score(DistanceMatrix, labels)))
+    #print('Labels:\n{}'.format(labels))
+    
+    ## DBScan plot
+    #unique_labels = set(labels)
+    #colors = [plt.cm.Spectral(each)
+            #for each in np.linspace(0, 1, len(unique_labels))]
+    #for k, col in zip(unique_labels, colors):
+        #if k == -1:
+            ## Black used for noise.
+            #col = [0, 0, 0, 1]
+        #class_member_mask = (labels == k)
+        #xy = DistanceMatrix[class_member_mask & core_samples_mask]
+        #plt.plot(xy[:, 0], xy[:, 1], 'o', markerfacecolor=tuple(col),
+                #markeredgecolor='k', markersize=14)
+        #xy = DistanceMatrix[class_member_mask & ~core_samples_mask]
+        #plt.plot(xy[:, 0], xy[:, 1], 'o', markerfacecolor=tuple(col),
+                #markeredgecolor='k', markersize=6)
+
+    ## Affinity Propagation plot
+    #from itertools import cycle
+    #colors = cycle('bgrcmykbgrcmykbgrcmykbgrcmyk')
+    #for k, col in zip(range(n_clusters_), colors):
+        #class_members = labels == k
+        #cluster_center = DistanceMatrix[cluster_centers_indices[k]]
+        #plt.plot(DistanceMatrix[class_members, 0], DistanceMatrix[class_members, 1], col + '.')
+        #plt.plot(cluster_center[0], cluster_center[1], 'o', markerfacecolor=col, markeredgecolor='k', markersize=14)
+        #for x in DistanceMatrix[class_members]:
+            #plt.plot([cluster_center[0], x[0]], [cluster_center[1], x[1]], col)
+
+    #plt.title('Estimated number of clusters: {}'.format(n_clusters_))
+    #plt.savefig('test.eps', format='eps', bbox_inches='tight')
+    #print('Done!')
+# 
 
 if __name__ == '__main__':
     location = sys.argv[1]

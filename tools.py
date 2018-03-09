@@ -195,6 +195,10 @@ def GenerateStatus(output):
 def GenomicDistanceMatrix(run_file):
     #nIDFiles_command = 'ls plots/{} | egrep -c 2018'.format(run_file)                   # command to geet number of folders in run_file
     #nIDFiles = int(sp.check_output(nIDFiles_command, shell = True))                     # create the list
+
+    #-------------------------------#
+    #       Generate histogram      #
+    #-------------------------------#
     listName = 'files_list'                                                             # name of list 
     IDFilesList_command = 'ls plots/{} | egrep 2018 > {}'.format(run_file, listName)    # command to generate such file
     sp.call(IDFilesList_command, shell = True)
@@ -204,7 +208,7 @@ def GenomicDistanceMatrix(run_file):
     genomeList = []
     configList = []
     
-    for iFile in fileList:                              # Iterate over file names
+    for iFile in fileList:#[fileList[7]]:#                              # Iterate over file names
         genomes, config = GetNetwork(iFile)             # get genomes and config files for a specific folder in the run folder
         #print('getting genomes from file {}, number of genomes = {}'.format(iFile, len(genomes)))
         for iGenome in genomes:                         # iterate over genomes
@@ -219,4 +223,6 @@ def GenomicDistanceMatrix(run_file):
     for iy in range(nGenomes):
         for ix in range(nGenomes):
             GDMatrix[iy,ix] = genomeList[iy].distance(genomeList[ix], configList[ix].genome_config)
-    print('genomic distance matrix:\n{}'.format(GDMatrix))
+    #print('genomic distance matrix:\n{}'.format(GDMatrix))
+    return GDMatrix
+    
