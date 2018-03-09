@@ -4,6 +4,7 @@ import csv
 import neat
 import os
 import pickle
+import subprocess as sp
 #from numba import jit
 
 # Tools
@@ -190,3 +191,32 @@ def GenerateStatus(output):
             status_data[0] = 4      # 'Die'
     return status_data
 # Generate state
+
+def GenomicDistanceMatrix(run_file):
+    #nIDFiles_command = 'ls plots/{} | egrep -c 2018'.format(run_file)                   # command to geet number of folders in run_file
+    #nIDFiles = int(sp.check_output(nIDFiles_command, shell = True))                     # create the list
+    listName = 'files_list'                                                             # name of list 
+    IDFilesList_command = 'ls plots/{} | egrep 2018 > {}'.format(run_file, listName)    # command to generate such file
+    sp.call(IDFilesList_command, shell = True)
+    fileList = open(listName).read().splitlines()                                       # store names in a python list for later use
+    sp.call('rm {}'.format(listName), shell = True)                                     # remove temporary file    
+
+    genomeList = []
+    configList = []
+    
+    for iFile in fileList:                              # Iterate over file names
+        genomes, config = GetNetwork(iFile)             # get genomes and config files for a specific folder in the run folder
+        #print('getting genomes from file {}, number of genomes = {}'.format(iFile, len(genomes)))
+        for iGenome in genomes:                         # iterate over genomes
+            genomeList.append(iGenome)                  # save genomes in a single list
+            configList.append(config)                   # save config files as well
+    print('total length of genomes list: {}'.format(len(genomeList)))
+    
+    nGenomes = len(genomeList)
+    
+    GDMatrix = np.zeros([nGenomes, nGenomes], dtype=np.float64)
+
+    for iy in range(nGenomes):
+        for ix in range(nGenomes):
+            GDMatrix[iy,ix] = genomeList[iy].distance(genomeList[ix], configList[ix].genome_config)
+    print('genomic distance matrix:\n{}'.format(GDMatrix))
