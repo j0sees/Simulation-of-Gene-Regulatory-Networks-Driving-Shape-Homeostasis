@@ -53,7 +53,7 @@ class cell:
         self.lgfAmount = outputs[4]     # LGF prod
 
         xThreshold = 0.5
-        yThreshold = 0.01
+        yThreshold = 0.001
 
         # ORIENTATION:
         if self.compass:
@@ -73,7 +73,7 @@ class cell:
                 else:
                     # orientation North
                     self.orientation = self.neighbourList[1]
-            else: 
+            else:
                 if arrow <= eBoundary:   # and arrow > sBoundary:
                     # orientation East
                     self.orientation = self.neighbourList[2]
