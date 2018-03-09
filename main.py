@@ -118,20 +118,20 @@ def sim(network, timeSteps, nLattice, mode, location, iGenome):
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
         #         Plot               #
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-        #plot.CellGridPlot(  cellGrid,
-                            #chemGrid,
-                            #nLattice,
-                            #cellsFigure,
-                            #cellsSubplot,
-                            #sgfSubplot,
-                            #lgfSubplot,
-                            #cellPlot,
-                            #sgfPlot,
-                            #lgfPlot,
-                            #iTime,
-                            #mode,
-                            #location,
-                            #iGenome)
+        plot.CellGridPlot(  cellGrid,
+                            chemGrid,
+                            nLattice,
+                            cellsFigure,
+                            cellsSubplot,
+                            sgfSubplot,
+                            lgfSubplot,
+                            cellPlot,
+                            sgfPlot,
+                            lgfPlot,
+                            iTime,
+                            mode,
+                            location,
+                            iGenome)
         iTime += 1
         # this script is used to see what comes up from the main_GA, doesn't have to check for any conditions on the system, just let it run
 
@@ -167,11 +167,11 @@ if __name__ == '__main__':
     with open(fileName, 'rb') as f:
         genomes = pickle.load(f)#, encoding = 'bytes')
 
-    for iGenome in [0]:#range(len(genomes)):
-        ##print('=> Running genome #{}'.format(iGenome))
-        #mkdir = 'mkdir {0}/best_unique_genome_{1}'.format(location, iGenome+1)
-        #subproc = sp.call(mkdir, shell = True)
-        ##print('genome file: {0}\nconfig file: {1}'.format(fileName, config_file))
+    for iGenome in range(len(genomes)):
+        #print('=> Running genome #{}'.format(iGenome))
+        mkdir = 'mkdir {0}/best_unique_genome_{1}'.format(location, iGenome+1)
+        subproc = sp.call(mkdir, shell = True)
+        #print('genome file: {0}\nconfig file: {1}'.format(fileName, config_file))
         network = neat.nn.RecurrentNetwork.create(genomes[iGenome], config)
         sim(network, timeSteps, nLattice, mode, location, iGenome)
         #plt.close()
