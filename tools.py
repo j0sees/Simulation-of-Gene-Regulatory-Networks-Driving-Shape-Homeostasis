@@ -225,4 +225,37 @@ def GenomicDistanceMatrix(run_file):
             GDMatrix[iy,ix] = genomeList[iy].distance(genomeList[ix], configList[ix].genome_config)
     #print('genomic distance matrix:\n{}'.format(GDMatrix))
     return GDMatrix
+
+def ReadDigraph(DiGraphFile):
+    fileList = open(DiGraphFile).read().splitlines()    # load file as list of strings for each line
+    del fileList [-1]                                   # delete last item: '}'
+    fileList.reverse()                                  # reverse list to delete items
+    for _ in range(10):                                 # iterate and delete
+        del fileList [-1]
+    fileList.reverse()                                  # turn list to original state
+    #print('final list:')
     
+    fileList = [string.split('[')[0].strip() for string in fileList]
+    
+#    lines = fileList.split("\n")
+    all_edges = []
+    pairs = []
+    for line in fileList:
+        edge = line.replace(";", "").replace(" ", "").split("->")
+        if len(edge) == 2:
+            all_edges.append(edge[0])
+            all_edges.append(edge[1])
+            pairs.append(edge)
+
+    unique_edges = set(all_edges)
+
+    matrix = {origin: {dest: 0 for dest in all_edges} for origin in all_edges}
+    for p in pairs:
+        matrix[p[0]][p[1]] += 1
+    
+    #order = {0:'SGF', 1:'LGF', 2:'Proliferate', 3:'Migrate', 4:'Apoptosis', 5:'"SGF Prod"', 6:'"LGF Prod"', 7:'Polarisation'}
+    #sorted(matrix, key = order.__getitem__)
+    
+    import pandas as pd
+    a = pd.DataFrame(matrix)
+    print('{}'.format(a.to_string(na_rep='0')))
