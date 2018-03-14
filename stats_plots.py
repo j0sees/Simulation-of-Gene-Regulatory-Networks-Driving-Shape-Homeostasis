@@ -303,7 +303,7 @@ def NetworkClustering(run_folder):
     HammingDMatrix, h_distance = tools.HammingDistanceMatrix(run_folder)
     
     #fig = plt.figure()
-    list_ = [g_distance]#, h_distance]
+    list_ = [h_distance]#, h_distance]
     
     for dist in list_:
         if dist == 'genomic':
@@ -320,24 +320,24 @@ def NetworkClustering(run_folder):
         #   DBScan Implementation   #
         #---------------------------#
         print('\nRunning clustering algorithms using {}'.format(distance_used))
-        for eps_val in np.arange(0.05,1,0.05):
-            print('\teps val {}:'.format(eps_val))
-            cluster_instance = DBSCAN(eps = eps_val, metric = 'precomputed', n_jobs = 2)
-            db = cluster_instance.fit(iMatrix)
-            labels_true = cluster_instance.fit_predict(iMatrix)
-            core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
-            core_samples_mask[db.core_sample_indices_] = True
-            labels = db.labels_
-            # Number of clusters in labels, ignoring noise if present.
-            n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
-            try:
-                print('\t\t=> [DBScan] Silhouette Coefficient: {0:.3f}'.format(metrics.silhouette_score(iMatrix, labels)))
-                print('\t\t=> Number of clusters: {}'.format(n_clusters_))
-            except ValueError:
-                print('\t\tSilhouette coefficient error! only 1 cluster!'.format(eps_val))
-                continue
-            #finally:
-                #print('\t\t=> [DBScan] Calinski-Harabaz Coefficient: {0:.3f}'.format(metrics.calinski_harabaz_score(iMatrix, labels)))
+        #for eps_val in np.arange(0.05,1,0.05):
+            #print('\teps val {}:'.format(eps_val))
+            #cluster_instance = DBSCAN(eps = eps_val, metric = 'precomputed', n_jobs = 2)
+            #db = cluster_instance.fit(iMatrix)
+            #labels_true = cluster_instance.fit_predict(iMatrix)
+            #core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
+            #core_samples_mask[db.core_sample_indices_] = True
+            #labels = db.labels_
+            ## Number of clusters in labels, ignoring noise if present.
+            #n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
+            #try:
+                #print('\t\t=> [DBScan] Silhouette Coefficient: {0:.3f}'.format(metrics.silhouette_score(iMatrix, labels)))
+                ##print('\t\t=> [DBScan] Calinski-Harabaz Coefficient: {0:.03f}'.format(metrics.calinski_harabaz_score(iMatrix, labels)))
+                #print('\t\t=> Number of clusters: {}'.format(n_clusters_))
+            #except ValueError:
+                #print('\t\tSilhouette coefficient error! only {} cluster(s)!'.format(n_clusters_))
+                ##print('\t\tCalinski-Harabaz coefficient error! only {} cluster(s)!'.format(n_clusters_))
+                #continue
 
         ## DBScan plot
         #plt.clf()
@@ -361,17 +361,27 @@ def NetworkClustering(run_folder):
         #---------------------------#
         #   Affinity Propagation    #
         #---------------------------#
-        #max_val = 0
-        #af = AffinityPropagation(affinity = 'precomputed', preference = preference_val).fit(iMatrix)
-        #cluster_centers_indices = af.cluster_centers_indices_
-        #labels = af.labels_
-        #n_clusters_ = len(cluster_centers_indices)
-        #curr_val = metrics.silhouette_score(iMatrix, labels)
-        ##print('current value: {}'.format(curr_val))
-        ##if curr_val > max_val:
-            ##max_val = curr_val
-        #print('\t=> [Affinity Propagation] Silhouette Coefficient: {}'.format(curr_val))
-        #print('\t=> [Affinity Propagation] Calinski-Harabaz Coefficient: {0:.3f}'.format(metrics.calinski_harabaz_score(iMatrix, labels)))
+        for preference_val in np.arange(0.05,1,0.05):
+            print('\tpreference val {}:'.format(preference_val))
+            #max_val = 0
+            af = AffinityPropagation(affinity = 'precomputed', preference = preference_val).fit(iMatrix)
+            cluster_centers_indices = af.cluster_centers_indices_
+            labels = af.labels_
+            n_clusters_ = len(cluster_centers_indices)
+            curr_val = metrics.silhouette_score(iMatrix, labels)
+            #print('current value: {}'.format(curr_val))
+            #if curr_val > max_val:
+                #max_val = curr_val
+            #print('\t=> [Affinity Propagation] Silhouette Coefficient: {}'.format(curr_val))
+            #print('\t=> [Affinity Propagation] Calinski-Harabaz Coefficient: {0:.3f}'.format(metrics.calinski_harabaz_score(iMatrix, labels)))
+            try:
+                print('\t\t=> [AP] Calinski-Harabaz Coefficient: {0:.03f}'.format(metrics.calinski_harabaz_score(iMatrix, labels)))
+                #print('\t\t=> [AP] Silhouette Coefficient: {0:.3f}'.format(metrics.silhouette_score(iMatrix, labels)))
+                print('\t\t=> Number of clusters: {}'.format(n_clusters_))
+            except ValueError:
+                print('\t\tCalinski-Harabaz coefficient error! only {} cluster!'.format(n_clusters_))
+                #print('\t\tSilhouette coefficient error! only {} cluster!'.format(n_clusters_))
+                continue
 
         ## Affinity Propagation plot
         #plt.clf()
