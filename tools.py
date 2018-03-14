@@ -193,14 +193,11 @@ def GenerateStatus(output):
 # Generate state
 
 def GenomicDistanceMatrix(run_file):
-    #nIDFiles_command = 'ls plots/{} | egrep -c 2018'.format(run_file)                   # command to geet number of folders in run_file
-    #nIDFiles = int(sp.check_output(nIDFiles_command, shell = True))                     # create the list
-
     #-------------------------------#
     #       Generate histogram      #
     #-------------------------------#
     listName = 'files_list'                                                             # name of list 
-    IDFilesList_command = 'ls plots/{} | egrep 2018 > {}'.format(run_file, listName)    # command to generate such file
+    IDFilesList_command = 'ls plots/{0} | egrep 2018 > {1}'.format(run_file, listName)    # command to generate such file
     sp.call(IDFilesList_command, shell = True)
     fileList = open(listName).read().splitlines()                                       # store names in a python list for later use
     sp.call('rm {}'.format(listName), shell = True)                                     # remove temporary file    
@@ -208,23 +205,21 @@ def GenomicDistanceMatrix(run_file):
     genomeList = []
     configList = []
     
-    for iFile in fileList:#[fileList[7]]:#                              # Iterate over file names
+    for iFile in fileList:                              # Iterate over file names
         genomes, config = GetNetwork(iFile)             # get genomes and config files for a specific folder in the run folder
-        #print('getting genomes from file {}, number of genomes = {}'.format(iFile, len(genomes)))
         for iGenome in genomes:                         # iterate over genomes
             genomeList.append(iGenome)                  # save genomes in a single list
             configList.append(config)                   # save config files as well
-    print('total length of genomes list: {}'.format(len(genomeList)))
+    #print('total length of genomes list: {}'.format(len(genomeList)))
     
     nGenomes = len(genomeList)
-    
-    GDMatrix = np.zeros([nGenomes, nGenomes], dtype=np.float64)
+    GDMatrix = np.zeros([nGenomes, nGenomes], dtype = np.float64)
 
     for iy in range(nGenomes):
         for ix in range(nGenomes):
             GDMatrix[iy,ix] = genomeList[iy].distance(genomeList[ix], configList[ix].genome_config)
     #print('genomic distance matrix:\n{}'.format(GDMatrix))
-    return GDMatrix
+    return GDMatrix, 'genomic'
 
 def ReadDigraph(DiGraphFile):
     fileList = open(DiGraphFile).read().splitlines()    # load file as list of strings for each line
@@ -236,26 +231,75 @@ def ReadDigraph(DiGraphFile):
     #print('final list:')
     
     fileList = [string.split('[')[0].strip() for string in fileList]
-    
-#    lines = fileList.split("\n")
-    all_edges = []
-    pairs = []
-    for line in fileList:
-        edge = line.replace(";", "").replace(" ", "").split("->")
-        if len(edge) == 2:
-            all_edges.append(edge[0])
-            all_edges.append(edge[1])
-            pairs.append(edge)
 
-    unique_edges = set(all_edges)
+    # code snippet taken from:
+    #https://stackoverflow.com/questions/46458128/generate-adjacency-matrix-in-graphviz
 
-    matrix = {origin: {dest: 0 for dest in all_edges} for origin in all_edges}
-    for p in pairs:
-        matrix[p[0]][p[1]] += 1
+    pairs = [line.replace(" ", "").split("->") for line in fileList]
+
+    keys_inputs = {'SGF':0, 'LGF':1}
+    keys_outputs = {'Proliferate':2, 'Migrate':3, 'Apoptosis':4, '"SGFProd"':5, '"LGFProd"':6, 'Polarisation':7}
+
+    adjacency_matrix = np.zeros([8,8], dtype = np.int)
+
+    for iKey, iPos in keys_inputs.iteritems():
+        for jKey, jPos in keys_outputs.iteritems():
+            for ip in pairs:
+                if ip[0] == iKey and ip[1] == jKey:
+                    adjacency_matrix[iPos,jPos] = 1
+                    adjacency_matrix[jPos,iPos] = 1
+                elif ip[0] == jKey:
+                    adjacency_matrix[jPos,jPos] = 1
+
+    return adjacency_matrix
+    #print('{}'.format(adjacency_matrix))
+    #keys_list = ['SGF', 'LGF', 'Proliferate', 'Migrate', 'Apoptosis', '"SGFProd"', '"LGFProd"', 'Polarisation']
+    #unique_edges = set(all_edges)
+    #matrix = {origin: {dest: 0 for dest in all_edges} for origin in all_edges}
+    #for p in pairs:
+        #matrix[p[0]][p[1]] += 1
+    #import pprint
+    #pprint.pprint(matrix)
+    ##for ix in range(len(matrix)):
+    ##print('{}'.format(matrix))
+    #import pandas as pd
+    #a = pd.DataFrame(matrix)
+    ##print('{}'.format(a.to_string(na_rep='0')))
+
+def GetHammingDistance(matrix_a, matrix_b):
+    dim_a, dim_b = np.shape(matrix_a)
+    distance = 0.
+    scale = 1.#3*(dim_a - 2)
     
-    #order = {0:'SGF', 1:'LGF', 2:'Proliferate', 3:'Migrate', 4:'Apoptosis', 5:'"SGF Prod"', 6:'"LGF Prod"', 7:'Polarisation'}
-    #sorted(matrix, key = order.__getitem__)
+    for ix in range(2,dim_a):
+        for iy in range(dim_a):
+            if matrix_a[iy,ix] != matrix_b[iy,ix]:
+                distance += 1
+    return distance/scale
+
+def HammingDistanceMatrix(run_file):
+    listName = 'files_list'                                                             # name of list 
+    IDFilesList_command = 'ls plots/{0} | egrep 2018 > {1}'.format(run_file, listName)    # command to generate such file
+    sp.call(IDFilesList_command, shell = True)
+    fileList = open(listName).read().splitlines()                                       # store names in a python list for later use
+    sp.call('rm {}'.format(listName), shell = True)                                     # remove temporary file    
+
+    adjacencyMatrixList = []
     
-    import pandas as pd
-    a = pd.DataFrame(matrix)
-    print('{}'.format(a.to_string(na_rep='0')))
+    for iFile in fileList:                                  # Iterate over file names
+        genomes, _ = GetNetwork(iFile)                      # get genomes and config files for a specific folder in the run folder
+        nNetworks = len(genomes)
+        for iNet in range(nNetworks):                       # iterate over genomes
+            path = 'plots/{0}/{1}/{1}_best_unique_network_{2}'.format(run_file, iFile, iNet + 1)
+            adjacencyMatrixList.append(ReadDigraph(path))                        # save genomes in a single list
+
+    #print('total length of genomes list: {}'.format(len(adjacencyMatrixList)))
+    
+    nMatrices = len(adjacencyMatrixList)
+    HDMatrix = np.zeros([nMatrices, nMatrices], dtype = np.float64)
+
+    for iy in range(nMatrices):
+        for ix in range(nMatrices):
+            HDMatrix[iy,ix] = GetHammingDistance(adjacencyMatrixList[iy], adjacencyMatrixList[ix])
+    #print('genomic distance matrix:\n{}'.format(GDMatrix))
+    return HDMatrix, 'hamming'
