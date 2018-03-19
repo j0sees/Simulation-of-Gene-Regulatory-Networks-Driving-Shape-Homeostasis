@@ -296,107 +296,109 @@ def NetworkClustering(run_folder):
     from sklearn.cluster import DBSCAN
     from sklearn.cluster import AffinityPropagation
     from sklearn import metrics
+    import pandas as pd
     #from sklearn.datasets.samples_generator import make_blobs
     #from sklearn.preprocessing import StandardScaler
 
-    GenomicDMatrix, g_distance = tools.GenomicDistanceMatrix(run_folder)
-    HammingDMatrix, h_distance = tools.HammingDistanceMatrix(run_folder)
+    GenomicDMatrix, g_distance, g_path = tools.GenomicDistanceMatrix(run_folder)
+    HammingDMatrix, h_distance, h_path = tools.HammingDistanceMatrix(run_folder)
+    
+    plt.close()
+    
+    #g_path.append('lala8')
+    assert (g_path == h_path), 'path lists are different!'
     
     #fig = plt.figure()
-    list_ = [h_distance]#, h_distance]
+    
+    #labels_matrix = np.zeros([len(g_path), 5])                   # matrix to save labels
+    #labels_matrix[:,0] = h_path                                 # first column contains paths for networks
+    list_ = [g_distance, h_distance]
     
     for dist in list_:
         if dist == 'genomic':
             iMatrix = GenomicDMatrix
             eps_val = 0.5
-            preference_val = 0.5
+            preference_val = 0.35
             distance_used = 'Genomic_distance'
         else:
             iMatrix = HammingDMatrix
-            eps_val = 0.6
+            eps_val = 0.5
             preference_val = 0.5
             distance_used = 'Hamming_distance'
         #---------------------------#
         #   DBScan Implementation   #
         #---------------------------#
         print('\nRunning clustering algorithms using {}'.format(distance_used))
-        #for eps_val in np.arange(0.05,1,0.05):
-            #print('\teps val {}:'.format(eps_val))
-            #cluster_instance = DBSCAN(eps = eps_val, metric = 'precomputed', n_jobs = 2)
-            #db = cluster_instance.fit(iMatrix)
-            #labels_true = cluster_instance.fit_predict(iMatrix)
-            #core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
-            #core_samples_mask[db.core_sample_indices_] = True
-            #labels = db.labels_
-            ## Number of clusters in labels, ignoring noise if present.
-            #n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
-            #try:
-                #print('\t\t=> [DBScan] Silhouette Coefficient: {0:.3f}'.format(metrics.silhouette_score(iMatrix, labels)))
-                ##print('\t\t=> [DBScan] Calinski-Harabaz Coefficient: {0:.03f}'.format(metrics.calinski_harabaz_score(iMatrix, labels)))
-                #print('\t\t=> Number of clusters: {}'.format(n_clusters_))
-            #except ValueError:
-                #print('\t\tSilhouette coefficient error! only {} cluster(s)!'.format(n_clusters_))
-                ##print('\t\tCalinski-Harabaz coefficient error! only {} cluster(s)!'.format(n_clusters_))
-                #continue
+#        for eps_val in np.arange(0.05,1,0.05):
+#            print('\teps val {}:'.format(eps_val))
+        cluster_instance = DBSCAN(eps = eps_val, metric = 'precomputed', n_jobs = 2)
+        db = cluster_instance.fit(iMatrix)
+        labels_true = cluster_instance.fit_predict(iMatrix)
+        core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
+        core_samples_mask[db.core_sample_indices_] = True
+        DB_labels = db.labels_
+        # Number of clusters in labels, ignoring noise if present.
+        n_clusters_ = len(set(DB_labels)) - (1 if -1 in DB_labels else 0)
+        try:
+            print('\t\t=> [DBScan] Silhouette Coefficient: {0:.3f}'.format(metrics.silhouette_score(iMatrix, DB_labels)))
+            print('\t\t=> [DBScan] Calinski-Harabaz Coefficient: {0:.03f}'.format(metrics.calinski_harabaz_score(iMatrix, DB_labels)))
+            print('\t\t=> [DBScan] Number of clusters: {}'.format(n_clusters_))
+        except ValueError:
+            print('\t\tSilhouette coefficient error! only {} cluster(s)!'.format(n_clusters_))
+            #print('\t\tCalinski-Harabaz coefficient error! only {} cluster(s)!'.format(n_clusters_))
+            continue
 
-        ## DBScan plot
-        #plt.clf()
-        #unique_labels = set(labels)
-        #colors = [plt.cm.Spectral(each)
-                #for each in np.linspace(0, 1, len(unique_labels))]
-        #for k, col in zip(unique_labels, colors):
-            #if k == -1:
-                ## Black used for noise.
-                #col = [0, 0, 0, 1]
-            #class_member_mask = (labels == k)
-            #xy = iMatrix[class_member_mask & core_samples_mask]
-            #plt.plot(xy[:, 0], xy[:, 1], 'o', markerfacecolor=tuple(col),
-                    #markeredgecolor='k', markersize=14)
-            #xy = iMatrix[class_member_mask & ~core_samples_mask]
-            #plt.plot(xy[:, 0], xy[:, 1], 'o', markerfacecolor=tuple(col),
-                    #markeredgecolor = 'k', markersize = 6)
-        #plt.title('DBScan Clustering using {0}\nEstimated number of clusters: {1}'.format(distance_used, n_clusters_))
-        #plt.savefig('plots/{0}/{1}_DBScan_clustering.eps'.format(run_folder, distance_used), format='eps', bbox_inches='tight')
+        # DBScan plot
+        plt.clf()
+        unique_labels = set(DB_labels)
+        colors = [plt.cm.Spectral(each)
+                for each in np.linspace(0, 1, len(unique_labels))]
+        for k, col in zip(unique_labels, colors):
+            if k == -1:
+                # Black used for noise.
+                col = [0, 0, 0, 1]
+            class_member_mask = (DB_labels == k)
+            xy = iMatrix[class_member_mask & core_samples_mask]
+            plt.plot(xy[:, 0], xy[:, 1], 'o', markerfacecolor=tuple(col),
+                    markeredgecolor='k', markersize=14)
+            xy = iMatrix[class_member_mask & ~core_samples_mask]
+            plt.plot(xy[:, 0], xy[:, 1], 'o', markerfacecolor=tuple(col),
+                    markeredgecolor = 'k', markersize = 6)
+        plt.title('DBScan Clustering using {0}\nEstimated number of clusters: {1}'.format(distance_used, n_clusters_))
+        plt.savefig('plots/{0}/{1}_DBScan_clustering.eps'.format(run_folder, distance_used), format='eps', bbox_inches='tight')
 
         #---------------------------#
         #   Affinity Propagation    #
         #---------------------------#
-        for preference_val in np.arange(0.05,1,0.05):
-            print('\tpreference val {}:'.format(preference_val))
-            #max_val = 0
-            af = AffinityPropagation(affinity = 'precomputed', preference = preference_val).fit(iMatrix)
-            cluster_centers_indices = af.cluster_centers_indices_
-            labels = af.labels_
-            n_clusters_ = len(cluster_centers_indices)
-            curr_val = metrics.silhouette_score(iMatrix, labels)
-            #print('current value: {}'.format(curr_val))
-            #if curr_val > max_val:
-                #max_val = curr_val
-            #print('\t=> [Affinity Propagation] Silhouette Coefficient: {}'.format(curr_val))
-            #print('\t=> [Affinity Propagation] Calinski-Harabaz Coefficient: {0:.3f}'.format(metrics.calinski_harabaz_score(iMatrix, labels)))
-            try:
-                print('\t\t=> [AP] Calinski-Harabaz Coefficient: {0:.03f}'.format(metrics.calinski_harabaz_score(iMatrix, labels)))
-                #print('\t\t=> [AP] Silhouette Coefficient: {0:.3f}'.format(metrics.silhouette_score(iMatrix, labels)))
-                print('\t\t=> Number of clusters: {}'.format(n_clusters_))
-            except ValueError:
-                print('\t\tCalinski-Harabaz coefficient error! only {} cluster!'.format(n_clusters_))
-                #print('\t\tSilhouette coefficient error! only {} cluster!'.format(n_clusters_))
-                continue
+        #for preference_val in np.arange(0.05,1,0.05):
+        #print('\tpreference val {}:'.format(preference_val))
+        #max_val = 0
+        af = AffinityPropagation(affinity = 'precomputed', preference = preference_val).fit(iMatrix)
+        cluster_centers_indices = af.cluster_centers_indices_
+        AP_labels = af.labels_
+        n_clusters_ = len(cluster_centers_indices)
+        try:
+            print('\t\t=> [AP] Silhouette Coefficient: {0:.3f}'.format(metrics.silhouette_score(iMatrix, AP_labels)))
+            print('\t\t=> [AP] Calinski-Harabaz Coefficient: {0:.03f}'.format(metrics.calinski_harabaz_score(iMatrix, AP_labels)))
+            print('\t\t=> [AP] Number of clusters: {}'.format(n_clusters_))
+        except ValueError:
+            print('\t\tCalinski-Harabaz coefficient error! only {} cluster!'.format(n_clusters_))
+            #print('\t\tSilhouette coefficient error! only {} cluster!'.format(n_clusters_))
+            continue
 
-        ## Affinity Propagation plot
-        #plt.clf()
-        #from itertools import cycle
-        #colors = cycle('bgrcmykbgrcmykbgrcmykbgrcmyk')
-        #for k, col in zip(range(n_clusters_), colors):
-            #class_members = labels == k
-            #cluster_center = iMatrix[cluster_centers_indices[k]]
-            #plt.plot(iMatrix[class_members, 0], iMatrix[class_members, 1], col + '.')
-            #plt.plot(cluster_center[0], cluster_center[1], 'o', markerfacecolor=col, markeredgecolor='k', markersize=14)
-            #for x in iMatrix[class_members]:
-                #plt.plot([cluster_center[0], x[0]], [cluster_center[1], x[1]], col)
-        #plt.title('Affinity Propagation Clustering using {0}\nEstimated number of clusters: {1}'.format(distance_used, n_clusters_))
-        #plt.savefig('plots/{0}/{1}_AF_clustering.eps'.format(run_folder, distance_used), format='eps', bbox_inches='tight')
-
+        # Affinity Propagation plot
+        plt.clf()
+        from itertools import cycle
+        colors = cycle('bgrcmykbgrcmykbgrcmykbgrcmyk')
+        for k, col in zip(range(n_clusters_), colors):
+            class_members = AP_labels == k
+            cluster_center = iMatrix[cluster_centers_indices[k]]
+            plt.plot(iMatrix[class_members, 0], iMatrix[class_members, 1], col + '.')
+            plt.plot(cluster_center[0], cluster_center[1], 'o', markerfacecolor=col, markeredgecolor='k', markersize=14)
+            for x in iMatrix[class_members]:
+                plt.plot([cluster_center[0], x[0]], [cluster_center[1], x[1]], col)
+        plt.title('Affinity Propagation Clustering using {0}\nEstimated number of clusters: {1}'.format(distance_used, n_clusters_))
+        plt.savefig('plots/{0}/{1}_AF_clustering.eps'.format(run_folder, distance_used), format='eps', bbox_inches='tight')
 
         ## Clustering measures
         #print('Estimated number of clusters: {}'.format(n_clusters_))
@@ -409,6 +411,21 @@ def NetworkClustering(run_folder):
         #print('Silhouette Coefficient: {0:.3f}'.format(metrics.silhouette_score(iMatrix, labels)))
         #print('Calinski-Harabaz Coefficient: {0:.3f}'.format(metrics.calinski_harabaz_score(iMatrix, labels)))
         #print('Labels:\n{}'.format(labels))
+
+        if dist == 'genomic':
+            g_DB_labels = DB_labels  # Second column DBScan labels for genomic distance
+            g_AP_labels = AP_labels  # Third column Affinity Propagation labels for genomic distance
+        else:
+            h_DB_labels = DB_labels  # Fourth column DBScan labels for hamming distance
+            h_AP_labels = AP_labels  # Fifth column Affinity Propagation labels for hamming distance
+
+    ## load the winner
+    #with open(fileName, 'rb') as f:
+        #genomes = pickle.load(f)
+    datafile = {'network':h_path, 'DB_gDist':g_DB_labels, 'AP_gDist':g_AP_labels, 'DB_hDist':h_DB_labels, 'AP_hDist':h_AP_labels}
+    df = pd.DataFrame(datafile, columns = ['network', 'DB_gDist', 'AP_gDist', 'DB_hDist', 'AP_hDist'])
+#    print('{}'.format(df))
+    df.to_csv('test.txt', sep='\t')
 
     #print('Done!')
 # 
