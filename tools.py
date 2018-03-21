@@ -196,12 +196,12 @@ def GenomicDistanceMatrix(run_file):
     #-------------------------------#
     #       Generate histogram      #
     #-------------------------------#
-    listName = 'files_list'                                                             # name of list 
-    IDFilesList_command = 'ls plots/{0} | egrep 2018 > {1}'.format(run_file, listName)    # command to generate such file
-    sp.call(IDFilesList_command, shell = True)
-    fileList = open(listName).read().splitlines()                                       # store names in a python list for later use
-    sp.call('rm {}'.format(listName), shell = True)                                     # remove temporary file    
-
+    #listName = 'files_list'                                                             # name of list 
+    #IDFilesList_command = 'ls plots/{0} | egrep 2018 > {1}'.format(run_file, listName)    # command to generate such file
+    #sp.call(IDFilesList_command, shell = True)
+    #fileList = open(listName).read().splitlines()                                       # store names in a python list for later use
+    #sp.call('rm {}'.format(listName), shell = True)                                     # remove temporary file    
+    fileList = [run_file]
     genomeList = []
     configList = []
     names_List = []
@@ -214,7 +214,8 @@ def GenomicDistanceMatrix(run_file):
             nGen += 1
             genomeList.append(iGenome)                  # save genomes in a single list
             configList.append(config)                   # save config files as well
-            path = 'plots/{0}/{1}/{1}_best_unique_network_{2}'.format(run_file, iFile, nGen)
+            #path = 'plots/{0}/{1}/{1}_best_unique_network_{2}'.format(run_file, iFile, nGen)
+            path = 'plots/{0}/{0}_best_unique_network_{2}'.format(run_file, iFile, nGen)
             names_List.append(path.split('/')[-1])
 
     #print('total length of genomes list: {}'.format(len(genomeList)))
@@ -286,12 +287,13 @@ def GetHammingDistance(matrix_a, matrix_b):
     return distance/scale
 
 def HammingDistanceMatrix(run_file):
-    listName = 'files_list'                                                             # name of list 
-    IDFilesList_command = 'ls plots/{0} | egrep 2018 > {1}'.format(run_file, listName)  # command to generate such file
-    sp.call(IDFilesList_command, shell = True)
-    fileList = open(listName).read().splitlines()                                       # store names in a python list for later use
-    sp.call('rm {}'.format(listName), shell = True)                                     # remove temporary file    
-
+    #listName = 'files_list'                                                             # name of list 
+    #IDFilesList_command = 'ls plots/{0} | egrep 2018 > {1}'.format(run_file, listName)  # command to generate such file
+    #sp.call(IDFilesList_command, shell = True)
+    #fileList = open(listName).read().splitlines()                                       # store names in a python list for later use
+    #sp.call('rm {}'.format(listName), shell = True)                                     # remove temporary file    
+    fileList = [run_file]
+    
     adjacencyMatrixList = []
     names_List = []
     
@@ -299,7 +301,8 @@ def HammingDistanceMatrix(run_file):
         genomes, _ = GetNetwork(iFile)                      # get genomes and config files for a specific folder in the run folder
         nNetworks = len(genomes)
         for iNet in range(nNetworks):                       # iterate over genomes
-            path = 'plots/{0}/{1}/{1}_best_unique_network_{2}'.format(run_file, iFile, iNet + 1)
+            #path = 'plots/{0}/{1}/{1}_best_unique_network_{2}'.format(run_file, iFile, iNet + 1)
+            path = 'plots/{0}/{0}_best_unique_network_{2}'.format(run_file, iFile, iNet + 1)
             adjacencyMatrixList.append(ReadDigraph(path))   # save genomes in a single list
             names_List.append(path.split('/')[-1])
 
