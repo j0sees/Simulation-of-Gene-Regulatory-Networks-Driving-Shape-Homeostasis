@@ -316,3 +316,54 @@ def HammingDistanceMatrix(run_file):
             HDMatrix[iy,ix] = GetHammingDistance(adjacencyMatrixList[iy], adjacencyMatrixList[ix])
     #print('genomic distance matrix:\n{}'.format(GDMatrix))
     return HDMatrix, 'hamming', names_List
+
+def PrintGenomicDistMatrix(run_folder):
+    GenomicDMatrix, g_distance, g_path = tools.GenomicDistanceMatrix(run_folder)
+    print('{}'.format(GenomicDMatrix))
+
+def Speciate(run_folder, comp_threshold):
+    iRepr = 0               # First member of the list is the representative of the species, could be chosen randomly
+    
+    #listName = 'files_list'                                                             # name of list 
+    #IDFilesList_command = 'ls plots/{0} | egrep 2018 > {1}'.format(run_file, listName)  # command to generate such file
+    #sp.call(IDFilesList_command, shell = True)
+    #fileList = open(listName).read().splitlines()                                       # store names in a python list for later use
+    #sp.call('rm {}'.format(listName), shell = True)                                     # remove temporary file    
+    fileList = [run_folder]
+    
+    names_List = []
+    genomes_List = []
+    config_List = []
+    
+    # Get and organise genomes info 
+    for iFile in fileList:                                  # Iterate over file names
+        genomes, config = GetNetwork(iFile)                 # get genomes and config files for a specific folder in the run folder
+        nNetworks = len(genomes)
+        for iNet in range(nNetworks):                       # iterate over genomes
+            #path = 'plots/{0}/{1}/{1}_best_unique_network_{2}'.format(run_file, iFile, iNet + 1)
+            path = 'plots/{0}/{0}_best_unique_network_{2}'.format(run_folder, iFile, iNet + 1)
+            names_List.append(path.split('/')[-1])
+            genomes_List.append(genomes[iNet])
+            config_List.append(config)
+
+    # Get ready to "speciate"
+    nGenomes = len(genomes_List)
+    species_list = [[]]                                     # list containing species
+    species_list[0].append(0)                               # first individual belongs to the first species
+
+    for ix in range(1, nGenomes):
+        new_species = True
+        for iy in range(len(species_list)):
+            repr_index = species_list[iy][iRepr] 
+            dist = genomes_List[ix].distance(genomes_List[repr_index], config_List[repr_index].genome_config)
+            #print('genomic distance between {} and {}: {}'.format())
+            if dist <= comp_threshold:
+                species_list[iy].append(ix)
+                new_species = False
+                break
+        if new_species:
+            species_list.append([ix])
+    for ix in range(len(species_list)):
+        print('Species #{}:'.format(ix + 1))
+        for iy in range(len(species_list[ix])):
+            print('\tInd #{0}: {1}'.format(iy + 1, names_List[species_list[ix][iy]]))

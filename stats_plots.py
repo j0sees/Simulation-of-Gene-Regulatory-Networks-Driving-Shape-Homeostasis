@@ -312,7 +312,7 @@ def NetworkClustering(run_folder):
     
     #labels_matrix = np.zeros([len(g_path), 5])                   # matrix to save labels
     #labels_matrix[:,0] = h_path                                 # first column contains paths for networks
-    list_ = [g_distance, h_distance]
+    list_ = [h_distance]#, h_distance]
     
     for dist in list_:
         if dist == 'genomic':
@@ -332,24 +332,24 @@ def NetworkClustering(run_folder):
         #---------------------------#
         #   DBScan Implementation   #
         #---------------------------#
-        #for eps_val in np.arange(0.05,5,0.05):
-            #print('\teps val {}:'.format(eps_val))
-            #cluster_instance = DBSCAN(metric = 'precomputed', n_jobs = 2, eps = eps_val)
-            #db = cluster_instance.fit(iMatrix)
-            #labels_true = cluster_instance.fit_predict(iMatrix)
-            #core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
-            #core_samples_mask[db.core_sample_indices_] = True
-            #DB_labels = db.labels_
-            ## Number of clusters in labels, ignoring noise if present.
-            #n_clusters_ = len(set(DB_labels)) - (1 if -1 in DB_labels else 0)
-            #try:
-                #print('\t\t=> [DBScan] Calinski-Harabaz Coefficient: {0:.03f}'.format(metrics.calinski_harabaz_score(iMatrix, DB_labels)))
-                #print('\t\t=> [DBScan] Silhouette Coefficient: {0:.3f}'.format(metrics.silhouette_score(iMatrix, DB_labels)))
-                #print('\t\t=> [DBScan] Number of clusters: {}'.format(n_clusters_))
-            #except ValueError:
-                ##DB_labels = [0 for _ in range(len(g_path))]
-                #print('\t\t[DBScan] Error! Only {} cluster(s)!'.format(n_clusters_))
-                #continue
+        for eps_val in np.arange(0.05,1,0.05):
+            print('\teps val {}:'.format(eps_val))
+            cluster_instance = DBSCAN(metric = 'precomputed', n_jobs = 2, eps = eps_val)
+            db = cluster_instance.fit(iMatrix)
+            labels_true = cluster_instance.fit_predict(iMatrix)
+            core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
+            core_samples_mask[db.core_sample_indices_] = True
+            DB_labels = db.labels_
+            # Number of clusters in labels, ignoring noise if present.
+            n_clusters_ = len(set(DB_labels)) - (1 if -1 in DB_labels else 0)
+            try:
+                print('\t\t=> [DBScan] Calinski-Harabaz Coefficient: {0:.03f}'.format(metrics.calinski_harabaz_score(iMatrix, DB_labels)))
+                print('\t\t=> [DBScan] Silhouette Coefficient: {0:.3f}'.format(metrics.silhouette_score(iMatrix, DB_labels)))
+                print('\t\t=> [DBScan] Number of clusters: {}'.format(n_clusters_))
+            except ValueError:
+                #DB_labels = [0 for _ in range(len(g_path))]
+                print('\t\t[DBScan] Error! Only {} cluster(s)!'.format(n_clusters_))
+                continue
 
         ## DBScan plot
         #plt.clf()
@@ -373,7 +373,7 @@ def NetworkClustering(run_folder):
         #---------------------------#
         #   Affinity Propagation    #
         #---------------------------#
-        for preference_val in np.arange(0.05,5,0.05):
+        for preference_val in np.arange(0.05,1,0.05):
             print('\tpreference val: {}'.format(preference_val))
             af = AffinityPropagation(affinity = 'precomputed', preference = preference_val).fit(iMatrix)
             af = AffinityPropagation(affinity = 'precomputed').fit(iMatrix)#, preference = preference_val
@@ -424,7 +424,8 @@ def NetworkClustering(run_folder):
     #datafile = {'network':h_path, 'DB_gDist':g_DB_labels, 'AP_gDist':g_AP_labels, 'DB_hDist':h_DB_labels, 'AP_hDist':h_AP_labels}
     #df = pd.DataFrame(datafile, columns = ['network', 'DB_gDist', 'AP_gDist', 'DB_hDist', 'AP_hDist'])
     #df.to_csv('plots/{}/clustering_labels.txt'.format(run_folder), sep='\t')
-    #print('\nData file created!')
+    #print('\nData file created!')    
+
 #
 
 if __name__ == '__main__':
