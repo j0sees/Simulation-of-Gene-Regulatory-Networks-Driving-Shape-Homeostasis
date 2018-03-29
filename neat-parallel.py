@@ -114,40 +114,50 @@ def run(config_file, nWorkers, nGen, timedateStr, nUniqueGenomes):
     subproc = sp.call(rename3, shell = True)
 #    time.sleep(5)
     print('Finished.\n')
+    
+def SetupConfigFile(configFile, comp_thres, weight_coeff, disj_coeff, p_conn):
+
+    #c_prob = [0.7]#,0.5,0.7]#np.linspace(0.1,1,10)
+    #n_prob = [0.0] #np.linspace(0.01,0.1,10)
+
+    current_time = '{0:%Y%m%d_%H%M%S_%f}'.format(dt.now())
+
+    mkdir = 'mkdir plots/{0}'.format(current_time)
+    cp = 'cp config.cfg {0}'.format(configFile)
+    threshold = 'sed -i "s/compatibility_threshold = NaN/compatibility_threshold = {0}/" {1}'.format(comp_thres, configFile)
+    weight = 'sed -i "s/compatibility_weight_coefficient   = NaN/compatibility_weight_coefficient   = {0}/" {1}'.format(weight_coeff, configFile)
+    disjoint = 'sed -i "s/compatibility_disjoint_coefficient = NaN/compatibility_disjoint_coefficient = {0}/" {1}'.format(disj_coeff, configFile)
+    conn = 'sed -i "s/partial_nodirect NaN/partial_nodirect {0}/" {1}'.format(p_conn, configFile)
+
+    for ix in mkdir, cp, threshold, weight, disjoint, conn:
+        sp.call(ix, shell = True)
+
+    # Determine path to configuration file. This path manipulation is
+    # here so that the script will run successfully regardless of the
+    # current working directory.
+    local_dir = os.path.dirname(__file__)
+    config_path = os.path.join(local_dir, configFile)
+    
+    return config_path
+
 
 if __name__ == '__main__':
     nWorkers = 10
-    nGen = 20
-    nUniqueGenomes = 10
+    nGen = 10
+    nUniqueGenomes = 20
     configFile = 'config-ca'
-    c_prob = np.linspace(0.1,1,10)
-    n_prob = [0.0] #np.linspace(0.01,0.1,10)
+    comp_thres = 101
+    weight_coeff = 101
+    disj_coeff = 101
+    p_conn = 101
 
     print('=> Running NEAT...\n')
     
-    for iP in n_prob:
-        for iC in c_prob:            
-            current_time = '{0:%Y%m%d_%H%M%S_%f}'.format(dt.now())
-            mkdir = 'mkdir plots/{0}'.format(current_time)
-            cp = 'cp config.cfg {}'.format(configFile)
+    # Run NEAT algorithm
+    config_path = SetupConfigFile(configFile, comp_thres, weight_coeff, disj_coeff, p_conn)
+    run(config_path, nWorkers, nGen, current_time, nUniqueGenomes)
 
-            sp.call(mkdir, shell = True)
-            sp.call(cp, shell = True)
+    rm = 'rm {0}'.format(configFile)
+    sp.call(rm, shell = True)
 
-            with open(configFile, 'a') as f:
-                f.write('node_add_prob           = {}\n'.format(iP))
-                f.write('initial_connection      = partial_nodirect {}\n'.format(iC))
-
-            # Determine path to configuration file. This path manipulation is
-            # here so that the script will run successfully regardless of the
-            # current working directory.
-            local_dir = os.path.dirname(__file__)
-            config_path = os.path.join(local_dir, configFile)
-
-            # Run NEAT algorithm
-            print('\n=> Running for: connection_prob: {0},\tnode_add_prob: {1}...'.format(iC, iP))
-
-            run(config_path, nWorkers, nGen, current_time, nUniqueGenomes)
-
-            rm = 'rm {}'.format(configFile)
-            sp.call(rm, shell = True)
+    print('Finished.\n')
