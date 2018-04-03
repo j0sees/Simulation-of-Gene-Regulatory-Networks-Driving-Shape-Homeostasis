@@ -46,6 +46,9 @@ def sim(network, timeSteps, nLattice, mode, location, iGenome):
     # SGF/LGF statistics containers
     SGF_history = np.zeros([nLattice, nLattice, timeSteps], dtype = np.float64)
     LGF_history = np.zeros([nLattice, nLattice, timeSteps], dtype = np.float64)
+    
+    # Cell count container
+    CellCounter = np.zeros([4, timeSteps])      # Number of states x number of generations
 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
     #       INITIALIZATION             #
@@ -60,6 +63,12 @@ def sim(network, timeSteps, nLattice, mode, location, iGenome):
         # Save SGF/LGF amount to get statistics
         SGF_history[:,:,iTime] = chemGrid[:,:,0]
         LGF_history[:,:,iTime] = chemGrid[:,:,1]
+        
+        # Cell counters
+        migr_counter = 0
+        prolif_counter = 0
+        quiet_counter = 0
+        apopt_counter = 0
         
         # this matrixes must be updated everytime so that if there's no production in one spot that spot contains a zero
         # but must not lose contained information, i.e. must use it before setting it to zero
@@ -89,18 +98,22 @@ def sim(network, timeSteps, nLattice, mode, location, iGenome):
             # according to cell status perform action: split or stay quiet
             if tmpCellList[rndCell].state == 'Quiet':               # Check the state
                 tmpCellList[rndCell].Quiet(cellGrid)                # call method that performs selected action
+                #quiet_counter += 1
                 del tmpCellList[rndCell]                            # delete cell from temporal list
 
             elif tmpCellList[rndCell].state == 'Split':
                 tmpCellList[rndCell].Split(cellGrid,cellList)
+                #prolif_counter += 1
                 del tmpCellList[rndCell]
 
             elif tmpCellList[rndCell].state == 'Move':
                 tmpCellList[rndCell].Move(cellGrid)
+                #migr_counter += 1
                 del tmpCellList[rndCell]
 
             else: # Die
                 tmpCellList[rndCell].Die(cellGrid)                  # Off the grid, method also changes the "amidead" switch to True
+                apopt_counter += 1
                 del tmpCellList[rndCell]
         # while
 
@@ -110,6 +123,9 @@ def sim(network, timeSteps, nLattice, mode, location, iGenome):
             if cellList[jCell].amidead:
                 del cellList[jCell]
 
+        # Count stats are saved for current time steop:
+        CellCounter[:, iTime] = np.array([migr_counter, prolif_counter, quiet_counter, apopt_counter])
+
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
         #    SGF/LGF diffusion and/or decay     #
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -118,33 +134,36 @@ def sim(network, timeSteps, nLattice, mode, location, iGenome):
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
         #         Plot               #
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-        plot.CellGridPlot(  cellGrid,
-                            chemGrid,
-                            nLattice,
-                            cellsFigure,
-                            cellsSubplot,
-                            sgfSubplot,
-                            lgfSubplot,
-                            cellPlot,
-                            sgfPlot,
-                            lgfPlot,
-                            iTime,
-                            mode,
-                            location,
-                            iGenome)
+        #plot.CellGridPlot(  cellGrid,
+                            #chemGrid,
+                            #nLattice,
+                            #cellsFigure,
+                            #cellsSubplot,
+                            #sgfSubplot,
+                            #lgfSubplot,
+                            #cellPlot,
+                            #sgfPlot,
+                            #lgfPlot,
+                            #iTime,
+                            #mode,
+                            #location,
+                            #iGenome)
         iTime += 1
         # this script is used to see what comes up from the main_GA, doesn't have to check for any conditions on the system, just let it run
 
-    # Get SGF/LGF statistics
-    SGF_mean = np.mean(SGF_history, axis = 2, dtype = np.float64)
-    LGF_mean = np.mean(LGF_history, axis = 2, dtype = np.float64)
+    # Plot counter stats:
+    stats_plots.CounterPlots(CellCounter, location, iGenome)
     
-    stats_plots.GF_AverageMap(SGF_mean, LGF_mean, location, iGenome)
+    # Get SGF/LGF statistics
+    #SGF_mean = np.mean(SGF_history, axis = 2, dtype = np.float64)
+    #LGF_mean = np.mean(LGF_history, axis = 2, dtype = np.float64)
+    
+    #stats_plots.GF_AverageMap(SGF_mean, LGF_mean, location, iGenome)
 
 if __name__ == '__main__':
     #print('System visualization')
-    timeSteps = 200
-    nLattice = 50
+    timeSteps = 500
+    nLattice = 60
     mode = False
     loc = sys.argv[1]
     timedateStr = sys.argv[2]
@@ -160,7 +179,7 @@ if __name__ == '__main__':
     config_path = os.path.join(local_dir, config_file)
 
     # Config
-    config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,neat.DefaultSpeciesSet, neat.DefaultStagnation, config_path)
+    config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction, neat.DefaultSpeciesSet, neat.DefaultStagnation, config_path)
 
     # load the winner
     print('=> Working with folder: {}...'.format(timedateStr))
