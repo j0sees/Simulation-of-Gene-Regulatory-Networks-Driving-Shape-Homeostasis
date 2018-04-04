@@ -179,4 +179,101 @@ class cell:
                 else:
                     grid[self.yPos][self.xPos] = 1                          # if splitting fails then cell is marked as quiet
     # Split
+
+    def PeriodicMove(self, grid):
+        availableSpots = []
+        needOtherNeighbours = True
+        for neighbr in self.neighbourList:                                  # for each possible neighbour:
+            try:                                                            # IndexError exception will determine if the neighbour is inbounds
+                if CheckifOccupied(neighbr[1], neighbr[0], grid):           # if its occupied
+                    continue
+                else:                                                       # if neighbour is not occupied
+                    xOri = self.orientation[1]
+                    yOri = self.orientation[0]
+                    if CheckifPreferred(xOri, yOri, neighbr[1], neighbr[0]):# Check if is preferred
+                        grid[yOri][xOri] = 2                                # new position gets a 2 value to mark as moving cell
+                        grid[self.yPos][self.xPos] = 0                      # old position gets a 0 as it is empty
+                        self.xPos = xOri                                    # update position
+                        self.yPos = yOri
+                        needOtherNeighbours = False
+                        break
+                    else:
+                        availableSpots.append(neighbr)                      # list with other available neighbours
+            except IndexError:
+                lattice_size = len(grid)
+                neighbr[0], neighbr[1] = PeriodicBoundaries(lattice_size, neighbr[0], neighbr[1])
+                if CheckifOccupied(neighbr[1], neighbr[0], grid):           # if its occupied
+                    continue
+                else:                                                       # if neighbour is not occupied
+                    #xOri = self.orientation[1]
+                    #yOri = self.orientation[0]
+                    yOri, xOri = PeriodicBoundaries(lattice_size, neighbr[0], neighbr[1])
+                    if CheckifPreferred(xOri, yOri, neighbr[1], neighbr[0]):# Check if is preferred
+                        grid[yOri][xOri] = 2                                # new position gets a 2 value to mark as moving cell
+                        grid[self.yPos][self.xPos] = 0                      # old position gets a 0 as it is empty
+                        self.xPos = xOri                                    # update position
+                        self.yPos = yOri
+                        needOtherNeighbours = False
+                        break
+                    else:
+                        availableSpots.append(neighbr)                      # list with other available neighbours
+        if needOtherNeighbours:
+            if len(availableSpots) > 0:
+                r = np.random.randint(len(availableSpots))
+                grid[availableSpots[r][0]][availableSpots[r][1]] = 2        # new position gets a 2 value to mark as moving cell
+                grid[self.yPos][self.xPos] = 0                              # old position gets a 0 as it is empty
+                self.yPos = availableSpots[r][0]                            # update position
+                self.xPos = availableSpots[r][1]
+            else:
+                grid[self.yPos][self.xPos] = 1                              # if moving fails then cell is marked as quiet
+    # PeriodicMove
+
+    def PeriodicSplit(self, grid, cellList):
+        self.splitCounter += 1
+        if self.splitCounter == self.splitTime:
+            self.splitCounter = 0
+            availableSpots = []
+            needOtherNeighbours = True
+            for neighbr in self.neighbourList:                              # for each possible neighbour:
+                try:                                                        # IndexError exception will determine if the neighbour is inbounds
+                    if CheckifOccupied(neighbr[1], neighbr[0], grid):       # if its occupied
+                        continue
+                    else:                                                   # if neighbour is not occupied
+                        yOri = self.orientation[0]
+                        xOri = self.orientation[1]
+                        if CheckifPreferred(xOri, yOri, neighbr[1], neighbr[0]):    # Check if is preferred
+                            grid[yOri][xOri] = 1                                    # new position gets a 1 value to mark as new quiet cell
+                            grid[self.yPos][self.xPos] = 3                          # mark as splitting cell
+                            cellList.append(cell(yOri, xOri, self.network))
+                            needOtherNeighbours = False
+                            break
+                        else:
+                            availableSpots.append(neighbr)                  # list with other available neighbours
+                # if periodic boundary conditions are used, the exception is used to determine if the values have to be reassigned accordingly
+                except IndexError:
+                    lattice_size = len(grid)
+                    neighbr[0], neighbr[1] = PeriodicBoundaries(lattice_size, neighbr[0], neighbr[1])
+                    if CheckifOccupied(neighbr[1], neighbr[0], grid):       # if its occupied
+                        continue
+                    else:                                                   # if neighbour is not occupied
+                        #yOri = self.orientation[0]
+                        #xOri = self.orientation[1]
+                        yOri, xOri = PeriodicBoundaries(lattice_size, self.orientation[0], self.orientation[1])
+                        if CheckifPreferred(xOri, yOri, neighbr[1], neighbr[0]):    # Check if is preferred
+                            grid[yOri][xOri] = 1                                    # new position gets a 1 value to mark as new quiet cell
+                            grid[self.yPos][self.xPos] = 3                          # mark as splitting cell
+                            cellList.append(cell(yOri, xOri, self.network))
+                            needOtherNeighbours = False
+                            break
+                        else:
+                            availableSpots.append(neighbr)                  # list with other available neighbours
+            if needOtherNeighbours:
+                if len(availableSpots) > 0:
+                    r = np.random.randint(len(availableSpots))
+                    grid[availableSpots[r][0]][availableSpots[r][1]] = 1    # new position gets a 1 value to mark as new quiet cell
+                    grid[self.yPos][self.xPos] = 3                          # mark as splitting cell
+                    cellList.append(cell(availableSpots[r][0], availableSpots[r][1],  self.network))
+                else:
+                    grid[self.yPos][self.xPos] = 1                          # if splitting fails then cell is marked as quiet
+    # PeriodicSplit
 # Cell

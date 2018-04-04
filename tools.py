@@ -68,6 +68,24 @@ def GenerateTMatrix(size):
     return t_matrix
 # GenerateTMatrix
 
+def GeneratePeriodicTMatrix(size):
+    t_matrix = np.zeros([size,size])
+    for ix in range(size):
+        t_matrix[ix,ix] = -2.
+        if ix == 0:
+            t_matrix[ix, ix + 1] = 1.
+            t_matrix[ix, size - 1] = 1.            
+        elif ix == size -1:
+            t_matrix[ix, 0] = 1.
+            t_matrix[ix, ix - 1] = 1.
+        else:
+            t_matrix[ix, ix + 1] = 1.
+            t_matrix[ix, ix - 1] = 1.
+    #t_matrix[0,0] = -1.
+    #t_matrix[size - 1, size - 1] = -1.
+    return t_matrix
+# GeneratePeriodicTMatrix
+
 # Identity matrix
 #@jit
 def GenerateIMatrix(size):
@@ -76,6 +94,21 @@ def GenerateIMatrix(size):
         I_matrix[ix,ix] = 1.
     return I_matrix
 # GenerateIMatrix
+
+def PeriodicBoundaries(lattice_size, y_pos, x_pos):
+    # Check x axis boundaries
+    if x_pos == -1:
+        x_pos = lattice_size - 1
+    elif x_pos == lattice_size:
+        x_pos = 0
+    # Check y axis boundaries    
+    if y_pos == -1:
+        y_pos = lattice_size - 1
+    elif y_pos == lattice_size:
+        y_pos = 0
+    
+    # Return correct values corresponding to periodic boundaries
+    return y_pos, x_pos
 
 #@jit #WARNING ON is good!
 def RecurrentNeuralNetwork(inputs, wMatrix, V):             # Recurrent Neural Network dynamics
@@ -390,14 +423,19 @@ def GetSpeciesDistances(species, run_file):
         n_ind_spec = len(species[iSpec])                    # amount of individuals in species 
         n_distances = (n_ind_spec*(n_ind_spec - 1))/2
         temp_distance = 0.0
-        for iInd in range(n_ind_spec - 1):                  # iteration over individuals in species
-            for jInd in range(iInd + 1, n_ind_spec):            # iteration over the rest of individuals in species
-                iIndex = species[iSpec][iInd]               # get indexes of individuals
-                jIndex = species[iSpec][jInd]
-                temp_distance += GDMatrix[iIndex, jIndex]
-                print('g_distance between inds {0} and {1}: {2}'.format(iIndex + 1, jIndex + 1, GDMatrix[iIndex, jIndex]))
-        species_distances[iSpec] = temp_distance/n_distances
-        print('avg dist for species {}: {}\n'.format(iSpec + 1, species_distances[iSpec]))
+        if n_ind_spec == 1:
+            species_distances[iSpec] = 0
+            print('species has only one individual')
+            print('avg dist for species {}: {}\n'.format(iSpec + 1, species_distances[iSpec]))
+        else:
+            for iInd in range(n_ind_spec - 1):                  # iteration over individuals in species
+                for jInd in range(iInd + 1, n_ind_spec):            # iteration over the rest of individuals in species
+                    iIndex = species[iSpec][iInd]               # get indexes of individuals
+                    jIndex = species[iSpec][jInd]
+                    temp_distance += GDMatrix[iIndex, jIndex]
+                    print('g_distance between inds {0} and {1}: {2}'.format(iIndex + 1, jIndex + 1, GDMatrix[iIndex, jIndex]))
+            species_distances[iSpec] = temp_distance/n_distances
+            print('avg dist for species {}: {}\n'.format(iSpec + 1, species_distances[iSpec]))
     
     print(''.format())
 
