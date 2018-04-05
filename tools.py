@@ -5,7 +5,8 @@ import neat
 import os
 import pickle
 import subprocess as sp
-#from numba import jit
+import numpy as np
+import neat_cell_agent as nca
 
 # Tools
 
@@ -17,16 +18,35 @@ class flatList(list):
             raise IndexError("list index out of range")
         return super(flatList, self).__getitem__(index)
 
-#class GridEnv:
-    #def __init__(self, nLattice = 50, periodic_bound_cond = False):
-        #self.initial_xPos = int(nLattice/2)                        # Initial position for the mother cell
-        #self.initial_yPos = int(nLattice/2)                        # Initial position for the mother cell
-        #if periodic_bound_cond:
-            
+class GridEnv:
+    def __init__(self, network, nLattice, periodic_bound_cond):
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+        #       PARAMETERS                 #
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+        self.initial_xPos = int(nLattice/2)                         # Initial position for the mother cell
+        self.initial_yPos = int(nLattice/2)                         # Initial position for the mother cell
+        npCellGrid = np.zeros([nLattice,nLattice])                  # Initialize empty grid
+        semiFlatGrid = [flatList(npCellGrid[r,:]) for r in range(nLattice)]
+        self.cellGrid = flatList(semiFlatGrid)                      # Grid were the cells live
+        self.chemGrid = np.zeros([nLattice,nLattice,2])             # Grid with GF 
+        self.i_matrix = GenerateIMatrix(nLattice)                   # I matrix for LGF operations
+        self.cellList = []                                          # List for cell agents
+        if periodic_bound_cond:
+            self.t_matrix = GeneratePeriodicTMatrix(nLattice)       # T matrix for LGF operations
+            self.cellList.append(nca.PeriodicCellAgent(self.initial_yPos, self.initial_xPos, network))
+        else:
+            self.t_matrix = GenerateTMatrix(nLattice)               # T matrix for LGF operations
+            self.cellList.append(nca.CellAgent(self.initial_yPos, self.initial_xPos, network))
+
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+        #       INITIALIZATION      #
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+        # create mother cell and update the grid with its initial location
+        self.cellGrid[self.initial_yPos][self.initial_xPos] = 1
 
 #@jit
 def CheckifOccupied(xCoord, yCoord, grid):
-    if grid[yCoord][xCoord] > 0:         # if value on grid is 1 (quiet), 2 (moved) or 3 (splitted) then spot is occupied
+    if grid[yCoord][xCoord] > 0:            # if value on grid is 1 (quiet), 2 (moved) or 3 (splitted) then spot is occupied
         return True
     else:                                   # else, value is 0 (empty)
         return False
@@ -39,7 +59,6 @@ def CheckifPreferred(xOri, yOri, xCoord, yCoord):
     else:
         return False
 # CheckifPreferred
-
 
 #---------------------------#
 #           SGF/LGF         #
