@@ -2,7 +2,7 @@ import numpy as np
 from tools import *
 import neat
 
-class cell:
+class CellAgent:
     # defines whats needed when a new agent (Cell) of this class is created
     def __init__(self, yPos, xPos, network):
         self.state = 'Quiet'                        # State of the cell. DEFAULT: quiet
@@ -163,7 +163,7 @@ class cell:
                         if CheckifPreferred(xOri, yOri, neighbr[1], neighbr[0]):    # Check if is preferred
                             grid[yOri][xOri] = 1                                    # new position gets a 1 value to mark as new quiet cell
                             grid[self.yPos][self.xPos] = 3                          # mark as splitting cell
-                            cellList.append(cell(yOri, xOri, self.network))
+                            cellList.append(CellAgent(yOri, xOri, self.network))
                             needOtherNeighbours = False
                             break
                         else:
@@ -175,12 +175,14 @@ class cell:
                     r = np.random.randint(len(availableSpots))
                     grid[availableSpots[r][0]][availableSpots[r][1]] = 1    # new position gets a 1 value to mark as new quiet cell
                     grid[self.yPos][self.xPos] = 3                          # mark as splitting cell
-                    cellList.append(cell(availableSpots[r][0], availableSpots[r][1],  self.network))
+                    cellList.append(CellAgent(availableSpots[r][0], availableSpots[r][1],  self.network))
                 else:
                     grid[self.yPos][self.xPos] = 1                          # if splitting fails then cell is marked as quiet
     # Split
+# Cell
 
-    def PeriodicMove(self, grid):
+class PeriodicCellAgent(CellAgent):
+    def Move(self, grid):
         availableSpots = []
         needOtherNeighbours = True
         for neighbr in self.neighbourList:                                  # for each possible neighbour:
@@ -207,7 +209,7 @@ class cell:
                 else:                                                       # if neighbour is not occupied
                     #xOri = self.orientation[1]
                     #yOri = self.orientation[0]
-                    yOri, xOri = PeriodicBoundaries(lattice_size, neighbr[0], neighbr[1])
+                    yOri, xOri = PeriodicBoundaries(lattice_size, self.orientation[0], self.orientation[1])
                     if CheckifPreferred(xOri, yOri, neighbr[1], neighbr[0]):# Check if is preferred
                         grid[yOri][xOri] = 2                                # new position gets a 2 value to mark as moving cell
                         grid[self.yPos][self.xPos] = 0                      # old position gets a 0 as it is empty
@@ -228,7 +230,7 @@ class cell:
                 grid[self.yPos][self.xPos] = 1                              # if moving fails then cell is marked as quiet
     # PeriodicMove
 
-    def PeriodicSplit(self, grid, cellList):
+    def Split(self, grid, cellList):
         self.splitCounter += 1
         if self.splitCounter == self.splitTime:
             self.splitCounter = 0
@@ -262,7 +264,7 @@ class cell:
                         if CheckifPreferred(xOri, yOri, neighbr[1], neighbr[0]):    # Check if is preferred
                             grid[yOri][xOri] = 1                                    # new position gets a 1 value to mark as new quiet cell
                             grid[self.yPos][self.xPos] = 3                          # mark as splitting cell
-                            cellList.append(cell(yOri, xOri, self.network))
+                            cellList.append(PeriodicCellAgent(yOri, xOri, self.network))
                             needOtherNeighbours = False
                             break
                         else:
@@ -272,8 +274,21 @@ class cell:
                     r = np.random.randint(len(availableSpots))
                     grid[availableSpots[r][0]][availableSpots[r][1]] = 1    # new position gets a 1 value to mark as new quiet cell
                     grid[self.yPos][self.xPos] = 3                          # mark as splitting cell
-                    cellList.append(cell(availableSpots[r][0], availableSpots[r][1],  self.network))
+                    cellList.append(PeriodicCellAgent(availableSpots[r][0], availableSpots[r][1],  self.network))
                 else:
                     grid[self.yPos][self.xPos] = 1                          # if splitting fails then cell is marked as quiet
     # PeriodicSplit
-# Cell
+
+class DeathCell:
+    def __init__(self, yPos, xPos):
+        self.yPos = yPos
+        self.xPos = xPos
+        self.neighbourList = [[self.yPos-1, self.xPos], [self.yPos+1, self.xPos], [self.yPos, self.xPos-1], [self.yPos, self.xPos+1]]
+
+    def Move(self, grid):                               # Death cell random walk
+        r = np.random.randint(len(neighbourList))       # Death cell moves to one of its neighbours selected randomly
+        self.yPos = neighbourList[r][0]                 # Update position
+        self.xPos = neighbourList[r][1]
+        grid[yPos][xPos] = -1                           # Update grid
+        
+    def Annihilation(self, )

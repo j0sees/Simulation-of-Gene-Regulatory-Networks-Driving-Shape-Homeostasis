@@ -17,6 +17,13 @@ class flatList(list):
             raise IndexError("list index out of range")
         return super(flatList, self).__getitem__(index)
 
+#class GridEnv:
+    #def __init__(self, nLattice = 50, periodic_bound_cond = False):
+        #self.initial_xPos = int(nLattice/2)                        # Initial position for the mother cell
+        #self.initial_yPos = int(nLattice/2)                        # Initial position for the mother cell
+        #if periodic_bound_cond:
+            
+
 #@jit
 def CheckifOccupied(xCoord, yCoord, grid):
     if grid[yCoord][xCoord] > 0:         # if value on grid is 1 (quiet), 2 (moved) or 3 (splitted) then spot is occupied
@@ -33,23 +40,32 @@ def CheckifPreferred(xOri, yOri, xCoord, yCoord):
         return False
 # CheckifPreferred
 
+
+#---------------------------#
+#           SGF/LGF         #
+#---------------------------#
+# SGF/LGF dynamics parameters
+# deltaT = 1.                               # time step for discretisation [T]
+# deltaR = 1.                               # space step for discretisation [L]
+# deltaS = 0.5                              # decay rate for SGF
+# deltaL = 0.1                              # decay rate for LGF
+# D = 1.                                    # diffusion constant D [dimentionless]
+
 # SGF dynamics with matrix approach
-#@jit #WARNING ON is good!!
-def SGFDiffEq(s_matrix, sigma_matrix, deltaS, deltaT):
+def SGFDiffEq(s_matrix, sigma_matrix, deltaS = 0.5, deltaT = 1.0):
     updated_matrix = s_matrix + deltaT*(sigma_matrix - deltaS*s_matrix)
     return updated_matrix
 # sgfDiffEq
 
 # TODO use linalg solve to make it faster and numerically more stable
 # LGF dynamics with matrix approach
-#@jit # WARNING ON is good!!
-def LGFDiffEq(i_matrix, t_matrix, l_matrix, lambda_matrix, deltaL, deltaT, deltaR, D):
+def LGFDiffEq(i_matrix, t_matrix, l_matrix, lambda_matrix, deltaL = 0.1, deltaT = 1.0, deltaR = 1.0, D = 1.0):
     alpha = D*deltaT/(deltaR**2)                            # constant
     f = (deltaT/2.)*(lambda_matrix - deltaL*l_matrix)       # term that takes into account LFG production for half time step
     g = linalg.inv(i_matrix - (alpha/2.)*t_matrix)          # inverse of some intermediate matrix
     h = i_matrix + (alpha/2.)*t_matrix                      # some intermediate matrix
-    #l_halftStep = g@(l_matrix@h + f)                        # half time step calculation for LGF values
-    l_halftStep = np.matmul(g,(np.matmul(l_matrix,h) + f))                        # half time step calculation for LGF values
+    #l_halftStep = g@(l_matrix@h + f)                       # half time step calculation for LGF values
+    l_halftStep = np.matmul(g,(np.matmul(l_matrix,h) + f))  # half time step calculation for LGF values
     #print('grid after half time step...\n' + str(l_halftStep))
     f = (deltaT/2.)*(lambda_matrix - deltaL*l_halftStep)    # updated term...
     l_tStep = np.matmul((np.matmul(h,l_halftStep) + f),g)                         # final computation

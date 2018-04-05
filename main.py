@@ -160,7 +160,7 @@ def sim(network, timeSteps, nLattice, mode, location, iGenome):
     
     #stats_plots.GF_AverageMap(SGF_mean, LGF_mean, location, iGenome)
 
-def sim(network, timeSteps, nLattice, mode, location, iGenome):
+def PeriodicCellularSystem(network, timeSteps, nLattice, mode, location, iGenome):
     """
     Parameters: sim(wMatrix, numberOfTimeSteps, NumberOfGeneration, nNodes, individual, nLattice, mode)
     # mode = True: cell_system as fitness function
@@ -340,5 +340,6 @@ if __name__ == '__main__':
         subproc = sp.call(mkdir, shell = True)
         #print('genome file: {0}\nconfig file: {1}'.format(fileName, config_file))
         network = neat.nn.RecurrentNetwork.create(genomes[iGenome], config)
-        sim(network, timeSteps, nLattice, mode, location, iGenome)
+        PeriodicCellularSystem(network, timeSteps, nLattice, mode, location, iGenome)
+        #CellularSystem(network, timeSteps, nLattice, mode, location, iGenome)
         #plt.close()
