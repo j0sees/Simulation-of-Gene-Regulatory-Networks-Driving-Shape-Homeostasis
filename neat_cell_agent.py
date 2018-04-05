@@ -1,5 +1,5 @@
 import numpy as np
-from tools import *
+from tools import CheckifOccupied, CheckifPreferred
 import neat
 
 class CellAgent:
@@ -291,4 +291,4 @@ class DeathCell:
         self.xPos = neighbourList[r][1]
         grid[yPos][xPos] = -1                           # Update grid
         
-    def Annihilation(self, )
+#    def Annihilation(self, )
