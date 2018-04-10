@@ -18,11 +18,12 @@ class flatList(list):
             raise IndexError("list index out of range")
         return super(flatList, self).__getitem__(index)
 
-class GridEnv:
-    def __init__(self, network, nLattice, periodic_bound_cond):
+class BasicEnv(object):
+    def __init__(self, nLattice):
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
         #       PARAMETERS                 #
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#        super(BasicEnv, self).__init__(network, nLattice)
         self.initial_xPos = int(nLattice/2)                         # Initial position for the mother cell
         self.initial_yPos = int(nLattice/2)                         # Initial position for the mother cell
         npCellGrid = np.zeros([nLattice,nLattice])                  # Initialize empty grid
@@ -31,19 +32,122 @@ class GridEnv:
         self.chemGrid = np.zeros([nLattice,nLattice,2])             # Grid with GF 
         self.i_matrix = GenerateIMatrix(nLattice)                   # I matrix for LGF operations
         self.cellList = []                                          # List for cell agents
-        if periodic_bound_cond:
-            self.t_matrix = GeneratePeriodicTMatrix(nLattice)       # T matrix for LGF operations
-            self.cellList.append(nca.PeriodicCellAgent(self.initial_yPos, self.initial_xPos, network))
-        else:
-            self.t_matrix = GenerateTMatrix(nLattice)               # T matrix for LGF operations
-            self.cellList.append(nca.CellAgent(self.initial_yPos, self.initial_xPos, network))
-
+        self.t_matrix = GenerateTMatrix(nLattice)               # T matrix for LGF operations
+        #self.network = network
+    def init(self, network):
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~#
         #       INITIALIZATION      #
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-        # create mother cell and update the grid with its initial location
+        # Add initial cell to cell list
+        self.cellList.append(nca.BasicCell(self.initial_yPos, self.initial_xPos, network))
+        # Update the grid with its initial location
+        self.cellGrid[self.initial_yPos][self.initial_xPos] = 1
+            
+    def PostProcessing(self, sigma_m, lambda_m, *args):
+        #super(BasicEnv, self).PostProcessing(sigma_m, lambda_m, **kwargs)
+        #env.chemGrid[:,:,0] = tools.SGFDiffEq(env.chemGrid[:,:,0], sigma_m)
+        #env.chemGrid[:,:,1] = tools.LGFDiffEq(env.i_matrix, env.t_matrix, env.chemGrid[:,:,1], lambda_m)
+        # GF Diffusion and decay
+        self.chemGrid[:,:,0] = SGFDiffEq(self.chemGrid[:,:,0], sigma_m)
+        self.chemGrid[:,:,1] = LGFDiffEq(self.i_matrix, self.t_matrix, self.chemGrid[:,:,1], lambda_m)
+
+class PB_Env(BasicEnv):
+    def __init__(self, nLattice):
+        super(PB_Env, self).__init__(nLattice)
+        self.t_matrix = GeneratePeriodicTMatrix(nLattice)       # T matrix for LGF operations
+        #self.cellList.append(nca.xxx(self.initial_yPos, self.initial_xPos, network))
+
+    def init(self, network):
+        self.cellList.append(nca.PB_Cell(self.initial_yPos, self.initial_xPos, network))
         self.cellGrid[self.initial_yPos][self.initial_xPos] = 1
 
+    #def PostProcessing(self, sigma_m, lambda_m, *args):
+        #super(BasicEnv, self).PostProcessing(sigma_m, lambda_m, *args)
+        
+class DC_Env(BasicEnv):
+    def __init__(self, nLattice):
+        super(DC_Env, self).__init__(nLattice)
+        self.deathCellList = []
+        dCellGrid = np.zeros([nLattice,nLattice])                  # Initialize empty grid
+        semiFlatGrid = [flatList(dCellGrid[r,:]) for r in range(nLattice)]
+        self.deathCellGrid = flatList(semiFlatGrid)
+
+    def init(self, network):
+        self.cellList.append(nca.DC_Cell(self.initial_yPos, self.initial_xPos, network))
+        self.cellGrid[self.initial_yPos][self.initial_xPos] = 1
+
+    def PostProcessing(self, sigma_m, lambda_m, nDeathParticles = 1):
+        # GF Diffusion and decay        
+        self.chemGrid[:,:,0] = SGFDiffEq(self.chemGrid[:,:,0], sigma_m)
+        self.chemGrid[:,:,1] = LGFDiffEq(self.i_matrix, self.t_matrix, self.chemGrid[:,:,1], lambda_m)
+        #super(DC_Env, self).PostProcessing(sigma_m, lambda_m)
+
+        if len(self.deathCellList) > 0:
+            for dCell in self.deathCellList:
+                dCell.Move(self.deathCellGrid)
+
+        nLattice = len(self.cellGrid)
+        # Death particle dynamics
+        # Generate nDeathParticles new death particles
+        for _ in range(nDeathParticles):
+            rand_y_pos, rand_x_pos = GetRandomBoundaryPos(nLattice)
+            #rand_y_pos = np.random.randint(nLattice)
+            self.deathCellList.append(nca.DeathCell(rand_y_pos, rand_x_pos))
+            self.deathCellGrid[rand_y_pos][rand_x_pos] -= 1
+
+class PB_DC_Env(PB_Env, DC_Env):
+    #def __init__(self, network, nLattice):
+        #super(PB_DC_Env, self).__init__(network, nLattice)
+
+    def init(self, network):
+        self.cellList.append(nca.PB_DC_Cell(self.initial_yPos, self.initial_xPos, network))
+        self.cellGrid[self.initial_yPos][self.initial_xPos] = 1
+
+    def PostProcessing(self, sigma_m, lambda_m, nDeathParticles = 1):        
+        #super(PB_DC_Env, self).PostProcessing(sigma_m, lambda_m, *args)
+        #GF Diffusion and decay        
+        self.chemGrid[:,:,0] = SGFDiffEq(self.chemGrid[:,:,0], sigma_m)
+        self.chemGrid[:,:,1] = LGFDiffEq(self.i_matrix, self.t_matrix, self.chemGrid[:,:,1], lambda_m)
+
+        if len(self.deathCellList) > 0:
+            for dCell in self.deathCellList:
+                dCell.Move(self.deathCellGrid)
+
+        nLattice = len(self.cellGrid)
+        # Death particle dynamics
+        # Generate nDeathParticles new death particles
+        for _ in range(nDeathParticles):
+            #rand_x_pos = np.random.randint(nLattice)
+            #rand_y_pos = np.random.randint(nLattice)
+            rand_y_pos, rand_x_pos = GetRandomBoundaryPos(nLattice)
+            self.deathCellList.append(nca.PB_DeathCell(rand_y_pos, rand_x_pos))
+            self.deathCellGrid[rand_y_pos][rand_x_pos] -= 1
+    
+#class DeathCellEnv(BasicEnv):        
+    #def PostProcessing(self, sigma_m, lambda_m, nDeathParticles = 1):
+        ## GF Diffusion and decay        
+        #SGFDiffEq(self.chemGrid[:,:,0], sigma_m)
+        #LGFDiffEq(self.i_matrix, self.t_matrix, self.chemGrid[:,:,1], lambda_m)
+
+        #nLattice = len(cellGrid)
+        ## Death particle dynamics
+        ## Generate nDeathParticles new death particles
+        #for _ in range(nDeathParticles):
+            #rand_x_pos = np.random.randint(nLattice)
+            #rand_y_pos = np.random.randint(nLattice)
+            #self.deathCellList.append(nca.DeathCell(rand_y_pos, rand_x_pos))
+
+
+def GetRandomBoundaryPos(nLattice):
+    r = np.random.rand()
+    if r > 0.5:
+        x_pos = np.random.choice([0, nLattice - 1])
+        y_pos = np.random.randint(nLattice)
+    else:
+        y_pos = np.random.choice([0, nLattice - 1])
+        x_pos = np.random.randint(nLattice)
+    return y_pos, x_pos
+    
 #@jit
 def CheckifOccupied(xCoord, yCoord, grid):
     if grid[yCoord][xCoord] > 0:            # if value on grid is 1 (quiet), 2 (moved) or 3 (splitted) then spot is occupied
@@ -396,7 +500,6 @@ def NetworkClustering(run_folder):
     #print('\nData file created!')    
 
 # Clustering
-
 def GenomicDistanceMatrix(run_file):
     #-------------------------------#
     #       Generate histogram      #
