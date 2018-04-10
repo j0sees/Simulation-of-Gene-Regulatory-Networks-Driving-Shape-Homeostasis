@@ -113,11 +113,11 @@ class DC_PlotEnv:
         
         pad_dist = 0.01
         shrink_pct = 0.78
+        text_font_size = 8
 
         #discrete color scheme
         cMap = ListedColormap(['w', 'g', 'b', 'r', 'k'])
         #DC_cMap = ListedColormap(['k', 'w'])
-        
         
         color1 = colorConverter.to_rgba('white',alpha=0.0)
         color2 = colorConverter.to_rgba('black',alpha=0.8)
@@ -158,7 +158,7 @@ class DC_PlotEnv:
         
         cbar1.ax.get_yaxis().set_ticks([])
         for j, lab in enumerate(['$empty$','$quiescent$','$migrate$','$proliferate$', '$death cell$']):
-            cbar1.ax.text((2 * j + 1) / 10.0, .5, lab, ha = 'center', va = 'center')#, rotation=270)
+            cbar1.ax.text((2 * j + 1) / 10.0, .5, lab, ha = 'center', va = 'center', fontsize=text_font_size, color = 'y', fontweight='bold')#, rotation=270)
         #cbar1.ax.get_yaxis().labelpad = -25
         #cbar1.ax.get_xaxis().labelpad = -5
         cbar1.ax.set_xlabel('state')#, rotation = 90)
@@ -201,7 +201,7 @@ class DC_PlotEnv:
         self.lgfSubplot.draw_artist(self.lgfPlot)
 
         plt.savefig('{0}/best_unique_genome_{1}/cell_system-{2:03d}.png'.format(location, iGenome+1, tStep,), format='png', bbox_inches='tight')
-# UpdatePlot
+    # UpdatePlot
     
 def CellsGridFigure(fieldSize, mode):
     # mode = True: cell_system as fitness function
