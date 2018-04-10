@@ -6,7 +6,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 # to check for matplotlib backend: >> matplotlib.get_backend()
 
-from matplotlib.colors import ListedColormap
+from matplotlib.colors import ListedColormap, colorConverter
 #import networkx as nx
 import tools
 import matplotlib.colors as colors
@@ -14,8 +14,195 @@ import matplotlib.cm as cmx
 #import pylab
 #from mpl_toolkits.axes_grid1 import ImageGrid
 
-#class Environment:
+class PlotEnv:
+    def __init__(self, fieldSize):
+        plt.close()
+        
+        pad_dist = 0.01
+        shrink_pct = 0.78
 
+        #discrete color scheme
+        cMap = ListedColormap(['w', 'g', 'b', 'r'])
+
+        self.cellsFigure, (self.cellsSubplot,self.sgfSubplot,self.lgfSubplot) = plt.subplots(1, 3, figsize = (15,5))
+        #plt.tick_params(axis='x', left='off', bottom='off', labelleft='off', labelbottom='off')
+
+        self.cellsSubplot.set_aspect('equal')                        # TODO does this work?
+        self.sgfSubplot.set_aspect('equal')
+        self.lgfSubplot.set_aspect('equal')
+
+        self.cellsFigure.suptitle('Cellular System Visualisation', fontweight='bold')
+
+        self.cellGrid = np.zeros([fieldSize, fieldSize])             # may need a new name, same as in main...
+        self.sgfGrid = np.zeros([fieldSize, fieldSize])
+        self.lgfGrid = np.zeros([fieldSize, fieldSize])
+
+        self.cellsSubplot.set_title('Cellular Grid')
+        self.sgfSubplot.set_title('SGF spatial distribution')
+        self.lgfSubplot.set_title('LGF spatial distribution')
+
+        self.cellPlot = self.cellsSubplot.imshow(self.cellGrid, origin = 'lower', cmap = cMap, interpolation = 'none', vmin = 0, vmax = 3)
+        cbar1 = self.cellsFigure.colorbar(self.cellPlot, ax = self.cellsSubplot, ticks = [], orientation='horizontal', pad = pad_dist, shrink = shrink_pct)
+        #cbar1.ax.set_yticklabels(['dead', 'quiet', 'moving', 'splitting'])
+        ##legend
+        #cbar = plt.colorbar(cellPlot)
+
+        # hide ticks
+        self.cellsSubplot.axes.xaxis.set_ticklabels([])
+        self.cellsSubplot.axes.yaxis.set_ticklabels([])
+        self.cellsSubplot.axes.get_xaxis().set_visible(False)
+        self.cellsSubplot.axes.get_yaxis().set_visible(False)
+        #cellPlot.axes.xaxis.set_ticklabels([])
+        #cellPlot.axes.yaxis.set_ticklabels([])
+        
+        cbar1.ax.get_yaxis().set_ticks([])
+        for j, lab in enumerate(['$empty$','$quiescent$','$migrate$','$proliferate$']):
+            cbar1.ax.text((2 * j + 1) / 8.0, .5, lab, ha = 'center', va = 'center')#, rotation=270)
+        #cbar1.ax.get_yaxis().labelpad = -25
+        #cbar1.ax.get_xaxis().labelpad = -5
+        cbar1.ax.set_xlabel('state')#, rotation = 90)
+
+        self.sgfPlot = self.sgfSubplot.imshow(self.sgfGrid, origin = 'lower', cmap = 'Reds', interpolation = 'none', vmin = 0, vmax = 1)
+        cbar2 = self.cellsFigure.colorbar(self.sgfPlot, ax = self.sgfSubplot, orientation = 'horizontal', pad = pad_dist, shrink = shrink_pct)
+
+        # hide ticks
+        self.sgfPlot.axes.xaxis.set_ticklabels([])
+        self.sgfPlot.axes.yaxis.set_ticklabels([])
+        self.sgfPlot.axes.get_xaxis().set_visible(False)
+        self.sgfPlot.axes.get_yaxis().set_visible(False)
+
+        self.lgfPlot = self.lgfSubplot.imshow(self.lgfGrid, origin = 'lower', cmap = 'Blues', interpolation = 'none', vmin = 0, vmax = 1)
+        cbar3 = self.cellsFigure.colorbar(self.lgfPlot, ax = self.lgfSubplot, orientation = 'horizontal', pad = pad_dist, shrink = shrink_pct)
+
+        # hide ticks
+        self.lgfPlot.axes.xaxis.set_ticklabels([])
+        self.lgfPlot.axes.yaxis.set_ticklabels([])
+        self.lgfPlot.axes.get_xaxis().set_visible(False)
+        self.lgfPlot.axes.get_yaxis().set_visible(False)
+
+        plt.ion()
+        #plt.pause(0.001)
+        self.cellsFigure.canvas.draw()
+        plt.ioff()
+        plt.subplots_adjust(wspace=-0.1)
+   
+    #def CellGridPlot(self, env, nLattice, tStep, location, iGenome):
+        #cell_data = cellGrid         # slice the grid to get the layer with the cell positions
+        #sgf_data = chemGrid[:,:,0]          # slice the grid to get the layer with the SGF profile
+        #lgf_data = chemGrid[:,:,1]          # slice the grid to get the layer with the LGF profile
+
+        #UpdatePlot( self, cell_data, sgf_data, lgf_data, tStep, location, iGenome)
+    
+    def UpdatePlot( self, env, tStep, location, iGenome):
+        #
+        self.cellPlot.set_data(env.cellGrid)
+        self.sgfPlot.set_data(env.chemGrid[:,:,0])
+        self.lgfPlot.set_data(env.chemGrid[:,:,1])
+        #
+        self.cellsSubplot.draw_artist(self.cellsSubplot.patch)
+        self.cellsSubplot.draw_artist(self.cellPlot)
+        self.sgfSubplot.draw_artist(self.sgfPlot)
+        self.lgfSubplot.draw_artist(self.lgfPlot)
+
+        plt.savefig('{0}/best_unique_genome_{1}/cell_system-{2:03d}.png'.format(location, iGenome+1, tStep,), format='png', bbox_inches='tight')
+# UpdatePlot
+
+class DC_PlotEnv:
+    def __init__(self, fieldSize):
+        plt.close()
+        
+        pad_dist = 0.01
+        shrink_pct = 0.78
+
+        #discrete color scheme
+        cMap = ListedColormap(['w', 'g', 'b', 'r', 'k'])
+        #DC_cMap = ListedColormap(['k', 'w'])
+        
+        
+        color1 = colorConverter.to_rgba('white',alpha=0.0)
+        color2 = colorConverter.to_rgba('black',alpha=0.8)
+        DC_cMap = colors.LinearSegmentedColormap.from_list('DC_cMap',[color2,color1],256)
+        
+        self.cellsFigure, (self.cellsSubplot,self.sgfSubplot,self.lgfSubplot) = plt.subplots(1, 3, figsize = (15,5))
+        #plt.tick_params(axis='x', left='off', bottom='off', labelleft='off', labelbottom='off')
+
+        self.cellsSubplot.set_aspect('equal')                        # TODO does this work?
+        self.sgfSubplot.set_aspect('equal')
+        self.lgfSubplot.set_aspect('equal')
+
+        self.cellsFigure.suptitle('Cellular System Visualisation', fontweight='bold')
+
+        self.cellGrid = np.zeros([fieldSize, fieldSize])             # may need a new name, same as in main...
+        self.DC_cellGrid = np.zeros([fieldSize, fieldSize])             # may need a new name, same as in main...
+        self.sgfGrid = np.zeros([fieldSize, fieldSize])
+        self.lgfGrid = np.zeros([fieldSize, fieldSize])
+
+        self.cellsSubplot.set_title('Cellular Grid')
+        self.sgfSubplot.set_title('SGF spatial distribution')
+        self.lgfSubplot.set_title('LGF spatial distribution')
+
+        self.cellPlot = self.cellsSubplot.imshow(self.cellGrid, origin = 'lower', cmap = cMap, interpolation = 'none', vmin = 0, vmax = 4)
+        self.DC_cellPlot = self.cellsSubplot.imshow(self.DC_cellGrid, origin = 'lower', cmap = DC_cMap, interpolation = 'none', vmin = -1, vmax = 0)#, alpha = 0.4)
+        cbar1 = self.cellsFigure.colorbar(self.cellPlot, ax = self.cellsSubplot, ticks = [], orientation='horizontal', pad = pad_dist, shrink = shrink_pct)
+        #cbar1.ax.set_yticklabels(['dead', 'quiet', 'moving', 'splitting'])
+        ##legend
+        #cbar = plt.colorbar(cellPlot)
+
+        # hide ticks
+        self.cellsSubplot.axes.xaxis.set_ticklabels([])
+        self.cellsSubplot.axes.yaxis.set_ticklabels([])
+        self.cellsSubplot.axes.get_xaxis().set_visible(False)
+        self.cellsSubplot.axes.get_yaxis().set_visible(False)
+        #cellPlot.axes.xaxis.set_ticklabels([])
+        #cellPlot.axes.yaxis.set_ticklabels([])
+        
+        cbar1.ax.get_yaxis().set_ticks([])
+        for j, lab in enumerate(['$empty$','$quiescent$','$migrate$','$proliferate$', '$death cell$']):
+            cbar1.ax.text((2 * j + 1) / 10.0, .5, lab, ha = 'center', va = 'center')#, rotation=270)
+        #cbar1.ax.get_yaxis().labelpad = -25
+        #cbar1.ax.get_xaxis().labelpad = -5
+        cbar1.ax.set_xlabel('state')#, rotation = 90)
+
+        self.sgfPlot = self.sgfSubplot.imshow(self.sgfGrid, origin = 'lower', cmap = 'Reds', interpolation = 'none', vmin = 0, vmax = 1)
+        cbar2 = self.cellsFigure.colorbar(self.sgfPlot, ax = self.sgfSubplot, orientation = 'horizontal', pad = pad_dist, shrink = shrink_pct)
+
+        # hide ticks
+        self.sgfPlot.axes.xaxis.set_ticklabels([])
+        self.sgfPlot.axes.yaxis.set_ticklabels([])
+        self.sgfPlot.axes.get_xaxis().set_visible(False)
+        self.sgfPlot.axes.get_yaxis().set_visible(False)
+
+        self.lgfPlot = self.lgfSubplot.imshow(self.lgfGrid, origin = 'lower', cmap = 'Blues', interpolation = 'none', vmin = 0, vmax = 1)
+        cbar3 = self.cellsFigure.colorbar(self.lgfPlot, ax = self.lgfSubplot, orientation = 'horizontal', pad = pad_dist, shrink = shrink_pct)
+
+        # hide ticks
+        self.lgfPlot.axes.xaxis.set_ticklabels([])
+        self.lgfPlot.axes.yaxis.set_ticklabels([])
+        self.lgfPlot.axes.get_xaxis().set_visible(False)
+        self.lgfPlot.axes.get_yaxis().set_visible(False)
+
+        plt.ion()
+        #plt.pause(0.001)
+        self.cellsFigure.canvas.draw()
+        plt.ioff()
+        plt.subplots_adjust(wspace=-0.1)
+       
+    def UpdatePlot( self, env, tStep, location, iGenome):
+        #
+        self.cellPlot.set_data(env.cellGrid)
+        self.DC_cellPlot.set_data(env.deathCellGrid)
+        self.sgfPlot.set_data(env.chemGrid[:,:,0])
+        self.lgfPlot.set_data(env.chemGrid[:,:,1])
+        #
+        self.cellsSubplot.draw_artist(self.cellsSubplot.patch)
+        self.cellsSubplot.draw_artist(self.cellPlot)
+        self.cellsSubplot.draw_artist(self.DC_cellPlot)
+        self.sgfSubplot.draw_artist(self.sgfPlot)
+        self.lgfSubplot.draw_artist(self.lgfPlot)
+
+        plt.savefig('{0}/best_unique_genome_{1}/cell_system-{2:03d}.png'.format(location, iGenome+1, tStep,), format='png', bbox_inches='tight')
+# UpdatePlot
+    
 def CellsGridFigure(fieldSize, mode):
     # mode = True: cell_system as fitness function
     # mode = False: cell_system as display system

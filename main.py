@@ -12,17 +12,37 @@ import subprocess as sp
 import neat
 
 #def CellularSystem(network, timeSteps, nLattice, ):
-def CellularSystem(network, periodic_bound_cond, mode, location, iGenome, timeSteps, nLattice):
+#def CellularSystem(network, periodic_bound_cond, mode, location, iGenome, timeSteps, nLattice):
+def CellularSystem(network, periodic_bound_cond, death_cell_presence, location, iGenome, timeSteps, nLattice):
     """
     Parameters: sim(wMatrix, numberOfTimeSteps, NumberOfGeneration, nNodes, individual, nLattice, mode)
     # mode = True: cell_system as fitness function
     # mode = False: cell_system as display system
     """
     
-    # Initialise object that contains the simulation environment
-    env = tools.GridEnv(network, nLattice, periodic_bound_cond)
-    # Figure objects
-    cellsFigure, cellsSubplot, sgfSubplot, lgfSubplot, cellPlot, sgfPlot, lgfPlot = plot.CellsGridFigure(nLattice, mode)
+     # Initialise object that contains the simulation environment
+    if death_cell_presence:
+        if periodic_bound_cond:
+            # Environment with periodic boundaries and death Cells
+            env = tools.PB_DC_Env(nLattice)
+        else:
+            # No periodic boundaries but with death cells
+            env = tools.DC_Env(nLattice)
+        plot_env = plot.DC_PlotEnv(nLattice)
+
+    else:
+        if periodic_bound_cond:
+            # Environment with periodic boundaries and no death cells
+            env = tools.PB_Env(nLattice)
+        else:
+            # No periodic boundaries, no death cells
+            env = tools.BasicEnv(nLattice)
+        plot_env = plot.PlotEnv(nLattice)
+
+    env.init(network)
+    
+    ## Figure objects
+    #cellsFigure, cellsSubplot, sgfSubplot, lgfSubplot, cellPlot, sgfPlot, lgfPlot = plot.CellsGridFigure(nLattice, mode)
     
     # SGF/LGF statistics containers
     SGF_history = np.zeros([nLattice, nLattice, timeSteps], dtype = np.float64)
@@ -58,7 +78,7 @@ def CellularSystem(network, periodic_bound_cond, mode, location, iGenome, timeSt
             SGF_reading, LGF_reading = tmpCellList[rndCell].Sense(env.chemGrid)
 
             # 3rd step => random cell should decide and action
-            tmpCellList[rndCell].GenerateStatus(SGF_reading, LGF_reading)     # get status of this cell
+            tmpCellList[rndCell].GenerateStatus(SGF_reading, LGF_reading, env)     # get status of this cell
 
             # 4th step => update SGF and LGF amounts on the 'production' matrices sigma & lambda
             # production matrices get updated values
@@ -102,29 +122,34 @@ def CellularSystem(network, periodic_bound_cond, mode, location, iGenome, timeSt
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
         #    SGF/LGF diffusion and/or decay     #
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-        env.chemGrid[:,:,0] = tools.SGFDiffEq(env.chemGrid[:,:,0], sigma_m)
-        env.chemGrid[:,:,1] = tools.LGFDiffEq(env.i_matrix, env.t_matrix, env.chemGrid[:,:,1], lambda_m)
+        #env.chemGrid[:,:,0] = tools.SGFDiffEq(env.chemGrid[:,:,0], sigma_m)
+        #env.chemGrid[:,:,1] = tools.LGFDiffEq(env.i_matrix, env.t_matrix, env.chemGrid[:,:,1], lambda_m)
+        env.PostProcessing(sigma_m, lambda_m)
 
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
         #         Plot               #
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-        plot.CellGridPlot(  env.cellGrid,
-                            env.chemGrid,
-                            nLattice,
-                            cellsFigure,
-                            cellsSubplot,
-                            sgfSubplot,
-                            lgfSubplot,
-                            cellPlot,
-                            sgfPlot,
-                            lgfPlot,
-                            iTime,
-                            mode,
-                            location,
-                            iGenome)
+        plot_env.UpdatePlot(env, iTime, location, iGenome)
+        #plot.CellGridPlot(  env.cellGrid,
+                            #env.chemGrid,
+                            #nLattice,
+                            #cellsFigure,
+                            #cellsSubplot,
+                            #sgfSubplot,
+                            #lgfSubplot,
+                            #cellPlot,
+                            #sgfPlot,
+                            #lgfPlot,
+                            #iTime,
+                            #mode,
+                            #location,
+                            #iGenome)
         iTime += 1
         # this script is used to see what comes up from the main_GA, doesn't have to check for any conditions on the system, just let it run
 
+        # Temporal cell list loop
+    # time steps loop
+    
     # Plot counter stats:
     stats_plots.CounterPlots(CellCounter, location, iGenome)
     
@@ -138,11 +163,14 @@ if __name__ == '__main__':
     #print('System visualization')
     timeSteps = 200
     nLattice = 50
-    mode = False
-    periodic_bound_cond = False
+    #mode = False
     loc = sys.argv[1]
     timedateStr = sys.argv[2]
     location = '{}/{}'.format(loc, timedateStr)
+
+    periodic_bound_cond = False
+    death_cell_presence = True
+
     # mode = True: cell_system as fitness function
     # mode = False: cell_system as display system
 
@@ -157,15 +185,39 @@ if __name__ == '__main__':
     config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction, neat.DefaultSpeciesSet, neat.DefaultStagnation, config_path)
 
     # load the winner
-    print('=> Working with folder: {}...'.format(timedateStr))
+    print('=> Working with folder: {}...\n'.format(timedateStr))
     with open(fileName, 'rb') as f:
         genomes = pickle.load(f)#, encoding = 'bytes')
 
-    for iGenome in range(len(genomes)):
-        #print('=> Running genome #{}'.format(iGenome))
-        mkdir = 'mkdir {0}/best_unique_genome_{1}'.format(location, iGenome+1)
-        subproc = sp.call(mkdir, shell = True)
-        #print('genome file: {0}\nconfig file: {1}'.format(fileName, config_file))
-        network = neat.nn.RecurrentNetwork.create(genomes[iGenome], config)
-        CellularSystem(network, periodic_bound_cond, mode, location, iGenome, timeSteps, nLattice)        
-        #plt.close()
+    for iGenome in [1]:
+        # [False, False],[False, True], [True,False],  
+        for iBool in [[True, True]]:
+            #print('=> Running genome #{}'.format(iGenome))
+            periodic_bound_cond = iBool[0]
+            death_cell_presence = iBool[1]
+
+            if periodic_bound_cond:
+                if death_cell_presence:
+                    simType_string = 'PB_DC'
+                    print('\t=> Running main with periodic boundaries and death cell presence')
+                else:
+                    simType_string = 'PB_nDC'
+                    print('\t=> Running main with periodic boundaries and no death cell presence')
+            else:
+                if death_cell_presence:
+                    simType_string = 'FB_DC'
+                    print('\t=> Running main with fixed boundaries and death cell presence')
+                else:
+                    simType_string = 'FB_nDC'
+                    print('\t=> Running main with fixed boundaries and no death cell presence')
+
+            mkdir = 'mkdir {0}/best_unique_genome_{1}'.format(location, iGenome+1)
+            subproc = sp.call(mkdir, shell = True)
+            #print('genome file: {0}\nconfig file: {1}'.format(fileName, config_file))
+            network = neat.nn.RecurrentNetwork.create(genomes[iGenome], config)
+            #CellularSystem(network, periodic_bound_cond, mode, location, iGenome, timeSteps, nLattice)
+            #CellularSystem(network, periodic_bound_cond, death_cell_presence, location, iGenome, timeSteps, nLattice)
+            CellularSystem(network, iBool[0], iBool[1], location, iGenome, timeSteps, nLattice)
+            mv = 'mv {0}/best_unique_genome_{1} {0}/testing_{2}_best_unique_genome_{1}'.format(location, iGenome+1, simType_string)
+            sp.call(mv, shell = True)
+            #plt.close()
