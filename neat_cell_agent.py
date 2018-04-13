@@ -1,5 +1,5 @@
 import numpy as np
-from tools import CheckifOccupied, CheckifPreferred, PeriodicBoundaries
+import tools
 import neat
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -124,12 +124,12 @@ class BasicCell:
         needOtherNeighbours = True
         for neighbr in self.neighbourList:                                  # for each possible neighbour:
             try:                                                            # IndexError exception will determine if the neighbour is inbounds
-                if CheckifOccupied(neighbr[1], neighbr[0], grid):           # if its occupied
+                if tools.CheckifOccupied(neighbr[1], neighbr[0], grid):           # if its occupied
                     continue
                 else:                                                       # if neighbour is not occupied
                     xOri = self.orientation[1]
                     yOri = self.orientation[0]
-                    if CheckifPreferred(xOri, yOri, neighbr[1], neighbr[0]):# Check if is preferred
+                    if tools.CheckifPreferred(xOri, yOri, neighbr[1], neighbr[0]):# Check if is preferred
                         grid[yOri][xOri] = 2                                # new position gets a 2 value to mark as moving cell
                         grid[self.yPos][self.xPos] = 0                      # old position gets a 0 as it is empty
                         self.xPos = xOri                                    # update position
@@ -159,12 +159,12 @@ class BasicCell:
             needOtherNeighbours = True
             for neighbr in self.neighbourList:                              # for each possible neighbour:
                 try:                                                        # IndexError exception will determine if the neighbour is inbounds
-                    if CheckifOccupied(neighbr[1], neighbr[0], grid):       # if its occupied
+                    if tools.CheckifOccupied(neighbr[1], neighbr[0], grid):       # if its occupied
                         continue
                     else:                                                   # if neighbour is not occupied
                         yOri = self.orientation[0]
                         xOri = self.orientation[1]
-                        if CheckifPreferred(xOri, yOri, neighbr[1], neighbr[0]):    # Check if is preferred
+                        if tools.CheckifPreferred(xOri, yOri, neighbr[1], neighbr[0]):    # Check if is preferred
                             grid[yOri][xOri] = 1                                    # new position gets a 1 value to mark as new quiet cell
                             grid[self.yPos][self.xPos] = 3                          # mark as splitting cell
                             cellList.append(BasicCell(yOri, xOri, self.network))
@@ -191,12 +191,12 @@ class PB_Cell(BasicCell):
         needOtherNeighbours = True
         for neighbr in self.neighbourList:                                  # for each possible neighbour:
             try:                                                            # IndexError exception will determine if the neighbour is inbounds
-                if CheckifOccupied(neighbr[1], neighbr[0], grid):           # if its occupied
+                if tools.CheckifOccupied(neighbr[1], neighbr[0], grid):           # if its occupied
                     continue
                 else:                                                       # if neighbour is not occupied
                     xOri = self.orientation[1]
                     yOri = self.orientation[0]
-                    if CheckifPreferred(xOri, yOri, neighbr[1], neighbr[0]):# Check if is preferred
+                    if tools.CheckifPreferred(xOri, yOri, neighbr[1], neighbr[0]):# Check if is preferred
                         grid[yOri][xOri] = 2                                # new position gets a 2 value to mark as moving cell
                         grid[self.yPos][self.xPos] = 0                      # old position gets a 0 as it is empty
                         self.xPos = xOri                                    # update position
@@ -207,14 +207,14 @@ class PB_Cell(BasicCell):
                         availableSpots.append(neighbr)                      # list with other available neighbours
             except IndexError:
                 lattice_size = len(grid)
-                neighbr[0], neighbr[1] = PeriodicBoundaries(lattice_size, neighbr[0], neighbr[1])
-                if CheckifOccupied(neighbr[1], neighbr[0], grid):           # if its occupied
+                neighbr[0], neighbr[1] = tools.PeriodicBoundaries(lattice_size, neighbr[0], neighbr[1])
+                if tools.CheckifOccupied(neighbr[1], neighbr[0], grid):           # if its occupied
                     continue
                 else:                                                       # if neighbour is not occupied
                     #xOri = self.orientation[1]
                     #yOri = self.orientation[0]
-                    yOri, xOri = PeriodicBoundaries(lattice_size, self.orientation[0], self.orientation[1])
-                    if CheckifPreferred(xOri, yOri, neighbr[1], neighbr[0]):# Check if is preferred
+                    yOri, xOri = tools.PeriodicBoundaries(lattice_size, self.orientation[0], self.orientation[1])
+                    if tools.CheckifPreferred(xOri, yOri, neighbr[1], neighbr[0]):# Check if is preferred
                         grid[yOri][xOri] = 2                                # new position gets a 2 value to mark as moving cell
                         grid[self.yPos][self.xPos] = 0                      # old position gets a 0 as it is empty
                         self.xPos = xOri                                    # update position
@@ -242,12 +242,12 @@ class PB_Cell(BasicCell):
             needOtherNeighbours = True
             for neighbr in self.neighbourList:                              # for each possible neighbour:
                 try:                                                        # IndexError exception will determine if the neighbour is inbounds
-                    if CheckifOccupied(neighbr[1], neighbr[0], grid):       # if its occupied
+                    if tools.CheckifOccupied(neighbr[1], neighbr[0], grid):       # if its occupied
                         continue
                     else:                                                   # if neighbour is not occupied
                         yOri = self.orientation[0]
                         xOri = self.orientation[1]
-                        if CheckifPreferred(xOri, yOri, neighbr[1], neighbr[0]):    # Check if is preferred
+                        if tools.CheckifPreferred(xOri, yOri, neighbr[1], neighbr[0]):    # Check if is preferred
                             grid[yOri][xOri] = 1                                    # new position gets a 1 value to mark as new quiet cell
                             grid[self.yPos][self.xPos] = 3                          # mark as splitting cell
                             cellList.append(PB_Cell(yOri, xOri, self.network))
@@ -258,14 +258,14 @@ class PB_Cell(BasicCell):
                 # if periodic boundary conditions are used, the exception is used to determine if the values have to be reassigned accordingly
                 except IndexError:
                     lattice_size = len(grid)
-                    neighbr[0], neighbr[1] = PeriodicBoundaries(lattice_size, neighbr[0], neighbr[1])
-                    if CheckifOccupied(neighbr[1], neighbr[0], grid):       # if its occupied
+                    neighbr[0], neighbr[1] = tools.PeriodicBoundaries(lattice_size, neighbr[0], neighbr[1])
+                    if tools.CheckifOccupied(neighbr[1], neighbr[0], grid):       # if its occupied
                         continue
                     else:                                                   # if neighbour is not occupied
                         #yOri = self.orientation[0]
                         #xOri = self.orientation[1]
-                        yOri, xOri = PeriodicBoundaries(lattice_size, self.orientation[0], self.orientation[1])
-                        if CheckifPreferred(xOri, yOri, neighbr[1], neighbr[0]):    # Check if is preferred
+                        yOri, xOri = tools.PeriodicBoundaries(lattice_size, self.orientation[0], self.orientation[1])
+                        if tools.CheckifPreferred(xOri, yOri, neighbr[1], neighbr[0]):    # Check if is preferred
                             grid[yOri][xOri] = 1                                    # new position gets a 1 value to mark as new quiet cell
                             grid[self.yPos][self.xPos] = 3                          # mark as splitting cell
                             cellList.append(PB_Cell(yOri, xOri, self.network))
@@ -297,7 +297,7 @@ class DC_Cell(BasicCell):
                 #print('{}th cell in deathCellList is located at {},{}'.format(iCell, env.deathCellList[iCell].yPos, env.deathCellList[iCell].xPos))
                 if env.deathCellList[iCell].yPos == self.yPos and env.deathCellList[iCell].xPos == self.xPos:
                     del env.deathCellList[iCell]
-                    print('Annihilation!!')
+                    #print('Annihilation!!')
                     break
         else:
             # neural network generates a status based on the reads
@@ -372,12 +372,12 @@ class DC_Cell(BasicCell):
             needOtherNeighbours = True
             for neighbr in self.neighbourList:                              # for each possible neighbour:
                 try:                                                        # IndexError exception will determine if the neighbour is inbounds
-                    if CheckifOccupied(neighbr[1], neighbr[0], grid):       # if its occupied
+                    if tools.CheckifOccupied(neighbr[1], neighbr[0], grid):       # if its occupied
                         continue
                     else:                                                   # if neighbour is not occupied
                         yOri = self.orientation[0]
                         xOri = self.orientation[1]
-                        if CheckifPreferred(xOri, yOri, neighbr[1], neighbr[0]):    # Check if is preferred
+                        if tools.CheckifPreferred(xOri, yOri, neighbr[1], neighbr[0]):    # Check if is preferred
                             grid[yOri][xOri] = 1                                    # new position gets a 1 value to mark as new quiet cell
                             grid[self.yPos][self.xPos] = 3                          # mark as splitting cell
                             cellList.append(DC_Cell(yOri, xOri, self.network))
@@ -407,12 +407,12 @@ class PB_DC_Cell(PB_Cell):
             needOtherNeighbours = True
             for neighbr in self.neighbourList:                              # for each possible neighbour:
                 try:                                                        # IndexError exception will determine if the neighbour is inbounds
-                    if CheckifOccupied(neighbr[1], neighbr[0], grid):       # if its occupied
+                    if tools.CheckifOccupied(neighbr[1], neighbr[0], grid):       # if its occupied
                         continue
                     else:                                                   # if neighbour is not occupied
                         yOri = self.orientation[0]
                         xOri = self.orientation[1]
-                        if CheckifPreferred(xOri, yOri, neighbr[1], neighbr[0]):    # Check if is preferred
+                        if tools.CheckifPreferred(xOri, yOri, neighbr[1], neighbr[0]):    # Check if is preferred
                             grid[yOri][xOri] = 1                                    # new position gets a 1 value to mark as new quiet cell
                             grid[self.yPos][self.xPos] = 3                          # mark as splitting cell
                             cellList.append(PB_DC_Cell(yOri, xOri, self.network))
@@ -423,14 +423,14 @@ class PB_DC_Cell(PB_Cell):
                 # if periodic boundary conditions are used, the exception is used to determine if the values have to be reassigned accordingly
                 except IndexError:
                     lattice_size = len(grid)
-                    neighbr[0], neighbr[1] = PeriodicBoundaries(lattice_size, neighbr[0], neighbr[1])
-                    if CheckifOccupied(neighbr[1], neighbr[0], grid):       # if its occupied
+                    neighbr[0], neighbr[1] = tools.PeriodicBoundaries(lattice_size, neighbr[0], neighbr[1])
+                    if tools.CheckifOccupied(neighbr[1], neighbr[0], grid):       # if its occupied
                         continue
                     else:                                                   # if neighbour is not occupied
                         #yOri = self.orientation[0]
                         #xOri = self.orientation[1]
-                        yOri, xOri = PeriodicBoundaries(lattice_size, self.orientation[0], self.orientation[1])
-                        if CheckifPreferred(xOri, yOri, neighbr[1], neighbr[0]):    # Check if is preferred
+                        yOri, xOri = tools.PeriodicBoundaries(lattice_size, self.orientation[0], self.orientation[1])
+                        if tools.CheckifPreferred(xOri, yOri, neighbr[1], neighbr[0]):    # Check if is preferred
                             grid[yOri][xOri] = 1                                    # new position gets a 1 value to mark as new quiet cell
                             grid[self.yPos][self.xPos] = 3                          # mark as splitting cell
                             cellList.append(PB_DC_Cell(yOri, xOri, self.network))
@@ -460,7 +460,7 @@ class PB_DC_Cell(PB_Cell):
                 #print('{}th cell in deathCellList is located at {},{}'.format(iCell, env.deathCellList[iCell].yPos, env.deathCellList[iCell].xPos))
                 if env.deathCellList[iCell].yPos == self.yPos and env.deathCellList[iCell].xPos == self.xPos:
                     del env.deathCellList[iCell]
-                    print('Annihilation!!')
+                    #print('Annihilation!!')
                     break
         else:
             # neural network generates a status based on the reads
@@ -540,38 +540,42 @@ class DeathCell:
         self.neighbourList = [[self.yPos-1, self.xPos], [self.yPos+1, self.xPos], [self.yPos, self.xPos-1], [self.yPos, self.xPos+1]]
 
     def Move(self, grid):                               # Death cell random walk
-        self.neighbourList = [[self.yPos-1, self.xPos], [self.yPos+1, self.xPos], [self.yPos, self.xPos-1], [self.yPos, self.xPos+1]]
-        np.random.shuffle(self.neighbourList)
-        for neighbour in self.neighbourList:
-            try:                
+        nSteps = 2
+        for _ in range(nSteps):
+            self.neighbourList = [[self.yPos-1, self.xPos], [self.yPos+1, self.xPos], [self.yPos, self.xPos-1], [self.yPos, self.xPos+1]]
+            np.random.shuffle(self.neighbourList)
+            for neighbour in self.neighbourList:
+                try:                
+                    _ = grid[neighbour[0]][neighbour[1]]    # Index arror will be raised if this fails
+                    grid[self.yPos][self.xPos] = +1         # leave old position
+                    self.yPos = neighbour[0]                # Update to new position
+                    self.xPos = neighbour[1]
+                    grid[self.yPos][self.xPos] = -1                   # Update grid
+                    break
+                except IndexError:
+                    continue
+# Death Cell
+
+class PB_DeathCell(DeathCell):
+    def Move(self, grid):                               # Death cell random walk
+        nSteps = 2
+        for _ in range(nSteps):
+            #neighbour = np.random.choice(self.neighbourList)
+            self.neighbourList = [[self.yPos-1, self.xPos], [self.yPos+1, self.xPos], [self.yPos, self.xPos-1], [self.yPos, self.xPos+1]]
+            index = np.random.randint(len(self.neighbourList))
+            neighbour = self.neighbourList[index]
+            #for neighbour in self.neighbourList:
+            try:
                 _ = grid[neighbour[0]][neighbour[1]]    # Index arror will be raised if this fails
                 grid[self.yPos][self.xPos] = +1         # leave old position
                 self.yPos = neighbour[0]                # Update to new position
                 self.xPos = neighbour[1]
                 grid[self.yPos][self.xPos] = -1                   # Update grid
-                break
             except IndexError:
-                continue
-# Death Cell
-
-class PB_DeathCell(DeathCell):
-    def Move(self, grid):                               # Death cell random walk
-        #neighbour = np.random.choice(self.neighbourList)
-        self.neighbourList = [[self.yPos-1, self.xPos], [self.yPos+1, self.xPos], [self.yPos, self.xPos-1], [self.yPos, self.xPos+1]]
-        index = np.random.randint(len(self.neighbourList))
-        neighbour = self.neighbourList[index]
-        #for neighbour in self.neighbourList:
-        try:
-            _ = grid[neighbour[0]][neighbour[1]]    # Index arror will be raised if this fails
-            grid[self.yPos][self.xPos] = +1         # leave old position
-            self.yPos = neighbour[0]                # Update to new position
-            self.xPos = neighbour[1]
-            grid[self.yPos][self.xPos] = -1                   # Update grid
-        except IndexError:
-            lattice_size = len(grid)
-            grid[self.yPos][self.xPos] = +1         # leave old position
-            self.yPos, self.xPos = PeriodicBoundaries(lattice_size, neighbour[0], neighbour[1])
-            #self.yPos = neighbour[0]                # Update to new position
-            #self.xPos = neighbour[1]
-            grid[self.yPos][self.xPos] = -1                   # Update grid
+                lattice_size = len(grid)
+                grid[self.yPos][self.xPos] = +1         # leave old position
+                self.yPos, self.xPos = tools.PeriodicBoundaries(lattice_size, neighbour[0], neighbour[1])
+                #self.yPos = neighbour[0]                # Update to new position
+                #self.xPos = neighbour[1]
+                grid[self.yPos][self.xPos] = -1                   # Update grid
 # Periodic Boundary Cell
