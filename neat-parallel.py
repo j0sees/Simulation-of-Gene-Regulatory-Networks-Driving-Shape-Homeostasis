@@ -21,21 +21,60 @@ import math
 import os
 import sys
 import time
-import main_GA
+#import main_GA
+from fit_func import CellularSystem
 import neat
 import pickle
 #import json
 import visualize
 import subprocess as sp
 import numpy as np
+import ConfigParser
+
+def WriteConfigFile(fileName, periodic_bound_cond = False, death_cell_presence = False, nWorkers = 10, nGen = 40, nUniqueGenomes = 20, nLattice = 50, timeSteps = 400):
+    #configFile = 'config-ca'
+    config = ConfigParser.RawConfigParser()
+
+    # When adding sections or items, add them in the reverse order of
+    # how you want them to be displayed in the actual file.
+    # In addition, please note that using RawConfigParser's and the raw
+    # mode of ConfigParser's respective set functions, you can assign
+    # non-string values to keys internally, but will receive an error
+    # when attempting to write to a file or when you get it in non-raw
+    # mode. SafeConfigParser does not allow such assignments to take place.
+
+    config.add_section('Run settings')
+    config.set('Run settings', 'periodic_bound_cond', '{}'.format(periodic_bound_cond))
+    config.set('Run settings', 'death_cell_presence', '{}'.format(death_cell_presence))
+    config.set('Run settings', 'nWorkers', '{}'.format(nWorkers))
+    config.set('Run settings', 'nGen', '{}'.format(nGen))
+    config.set('Run settings', 'nUniqueGenomes', '{}'.format(nUniqueGenomes))
+    config.set('Run settings', 'timeSteps', '{}'.format(timeSteps))
+    config.set('Run settings', 'nLattice', '{}'.format(nLattice))
+
+    # Writing our configuration file to 'example.cfg'
+    with open(fileName, 'w') as configfile:
+        config.write(configfile)
 
 def EvaluateIndividual(genome, config):
     totSum = 0.
-    nLattice = 50
-    timeSteps = 200
+
+    run_config = ConfigParser.RawConfigParser()
+    run_config.read('run.cfg')
+
+    periodic_bound_cond = run_config.getboolean('Run settings', 'periodic_bound_cond')
+    death_cell_presence = run_config.getboolean('Run settings', 'death_cell_presence')
+    timeSteps = run_config.getint('Run settings', 'timeSteps')
+    nLattice = run_config.getint('Run settings', 'nLattice')
+
+    #periodic_bound_cond = False
+    #death_cell_presence = False
 
     network = neat.nn.recurrent.RecurrentNetwork.create(genome, config)
-    deltaMatrix = main_GA.sim(network, timeSteps, nLattice)
+    #deltaMatrix = main_GA.sim(network, timeSteps, nLattice)
+    #deltaMatrix = CellularSystem(network, timeSteps, nLattice)
+    #deltaMatrix = PeriodicCellularSystem(network, timeSteps, nLattice)    
+    deltaMatrix = CellularSystem(network, periodic_bound_cond, death_cell_presence, timeSteps, nLattice)
 
     for ix in range(nLattice):
         for jx in range(nLattice):
@@ -60,15 +99,6 @@ def run(config_file, nWorkers, nGen, timedateStr, nUniqueGenomes):
     p.add_reporter(neat.StdOutReporter(True))
     stats = neat.StatisticsReporter()
     p.add_reporter(stats)
-
-    #enc = sys.getdefaultencoding()
-    #print('=> before encoding: {}'.format(enc))
-
-    #reload(sys)  
-    #sys.setdefaultencoding('utf-8')
-
-    #enc = sys.getdefaultencoding()
-    #print('=> after encoding: {}'.format(enc))
 
     # Run for up to 300 generations.
     pe = neat.ParallelEvaluator(nWorkers, EvaluateIndividual)
@@ -113,7 +143,7 @@ def run(config_file, nWorkers, nGen, timedateStr, nUniqueGenomes):
     subproc = sp.call(rename2, shell = True)
     subproc = sp.call(rename3, shell = True)
 #    time.sleep(5)
-    print('Finished.\n')
+    #print('Finished.\n')
     
 def SetupConfigFile(configFile, comp_thres, weight_coeff, disj_coeff, p_conn):
 
@@ -128,8 +158,10 @@ def SetupConfigFile(configFile, comp_thres, weight_coeff, disj_coeff, p_conn):
     weight = 'sed -i "s/compatibility_weight_coefficient   = NaN/compatibility_weight_coefficient   = {0}/" {1}'.format(weight_coeff, configFile)
     disjoint = 'sed -i "s/compatibility_disjoint_coefficient = NaN/compatibility_disjoint_coefficient = {0}/" {1}'.format(disj_coeff, configFile)
     conn = 'sed -i "s/partial_nodirect NaN/partial_nodirect {0}/" {1}'.format(p_conn, configFile)
+    #pb = 'sed -i "s/# periodic_bound_cond = bool/# periodic_bound_cond = {0}/" {1}'.format(pb_cond, configFile)
+    #dc = 'sed -i "s/# death_cell_presence = bool/# death_cell_presence = {0}/" {1}'.format(dc_cond, configFile)
 
-    for ix in mkdir, cp, threshold, weight, disjoint, conn:
+    for ix in mkdir, cp, threshold, weight, disjoint, conn:#, pb, dc:
         sp.call(ix, shell = True)
 
     # Determine path to configuration file. This path manipulation is
@@ -138,26 +170,54 @@ def SetupConfigFile(configFile, comp_thres, weight_coeff, disj_coeff, p_conn):
     local_dir = os.path.dirname(__file__)
     config_path = os.path.join(local_dir, configFile)
     
-    return config_path
-
+    return config_path, current_time
 
 if __name__ == '__main__':
     nWorkers = 10
-    nGen = 10
+    nGen = 40
     nUniqueGenomes = 20
+
     configFile = 'config-ca'
-    comp_thres = 101
-    weight_coeff = 101
-    disj_coeff = 101
-    p_conn = 101
+    comp_thres = 0.75
+    weight_coeff = 1.
+    disj_coeff = 0.5
+    p_conn = 0.7
+    periodic_bound_cond = False
+    death_cell_presence = False
+    run_config = 'run.cfg'
 
-    print('=> Running NEAT...\n')
-    
-    # Run NEAT algorithm
-    config_path = SetupConfigFile(configFile, comp_thres, weight_coeff, disj_coeff, p_conn)
-    run(config_path, nWorkers, nGen, current_time, nUniqueGenomes)
+    print('\n=> Running NEAT...')
 
-    rm = 'rm {0}'.format(configFile)
-    sp.call(rm, shell = True)
+    for iBool in [[False, False],[True, False],[False, True],[True, True]]:
+        periodic_bound_cond = iBool[0]
+        death_cell_presence = iBool[1]
 
-    print('Finished.\n')
+        if periodic_bound_cond:
+            if death_cell_presence:
+                simType_string = 'PB_DC_runs'
+                print('=> Periodic boundaries and death cell presence')
+            else:
+                simType_string = 'PB_nDC_runs'
+                print('=> Periodic boundaries and no death cell presence')
+        else:
+            if death_cell_presence:
+                simType_string = 'nPB_DC_runs'
+                print('=> No periodic boundaries and death cell presence')
+            else:
+                simType_string = 'nPB_nDC_runs'
+                print('=> No periodic boundaries and no death cell presence')
+
+        WriteConfigFile(run_config, periodic_bound_cond, death_cell_presence, nWorkers, nGen, nUniqueGenomes)
+
+        # Run NEAT algorithm
+        config_path, current_time = SetupConfigFile(configFile, comp_thres, weight_coeff, disj_coeff, p_conn)
+        run(config_path, nWorkers, nGen, current_time, nUniqueGenomes)
+
+        mv = 'mv {0} plots/{1}/'.format(configFile, current_time)
+        mv1 = 'mv {0} plots/{1}/'.format(run_config, current_time)
+        mv_dir = 'mv -t plots/{0}/ plots/{1}'.format(simType_string, current_time)
+        
+        for iComm in mv, mv1, mv_dir:
+            sp.call('{}'.format(iComm), shell = True)
+
+        print('Finished.\n')

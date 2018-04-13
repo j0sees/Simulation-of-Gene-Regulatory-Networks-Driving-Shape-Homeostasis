@@ -93,7 +93,8 @@ class PlotEnv:
 
         #UpdatePlot( self, cell_data, sgf_data, lgf_data, tStep, location, iGenome)
     
-    def UpdatePlot( self, env, tStep, location, iGenome):
+    #def UpdatePlot( self, env, tStep, location, iGenome):
+    def UpdatePlot( self, env, tStep, iGenome):
         #
         self.cellPlot.set_data(env.cellGrid)
         self.sgfPlot.set_data(env.chemGrid[:,:,0])
@@ -104,7 +105,8 @@ class PlotEnv:
         self.sgfSubplot.draw_artist(self.sgfPlot)
         self.lgfSubplot.draw_artist(self.lgfPlot)
 
-        plt.savefig('{0}/best_unique_genome_{1}/cell_system-{2:03d}.png'.format(location, iGenome+1, tStep,), format='png', bbox_inches='tight')
+        #plt.savefig('{0}/best_unique_genome_{1}/cell_system-{2:03d}.png'.format(location, iGenome+1, tStep,), format='png', bbox_inches='tight')
+        plt.savefig('best_unique_genome_{0}/cell_system-{1:03d}.png'.format(iGenome+1, tStep,), format='png', bbox_inches='tight')
 # UpdatePlot
 
 class DC_PlotEnv:
@@ -120,7 +122,7 @@ class DC_PlotEnv:
         #DC_cMap = ListedColormap(['k', 'w'])
         
         color1 = colorConverter.to_rgba('white',alpha=0.0)
-        color2 = colorConverter.to_rgba('black',alpha=0.8)
+        color2 = colorConverter.to_rgba('black',alpha=1)
         DC_cMap = colors.LinearSegmentedColormap.from_list('DC_cMap',[color2,color1],256)
         
         self.cellsFigure, (self.cellsSubplot,self.sgfSubplot,self.lgfSubplot) = plt.subplots(1, 3, figsize = (15,5))

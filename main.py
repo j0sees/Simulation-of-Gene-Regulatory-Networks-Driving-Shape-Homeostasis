@@ -10,10 +10,12 @@ import plot
 import stats_plots
 import subprocess as sp
 import neat
+import ConfigParser
 
 #def CellularSystem(network, timeSteps, nLattice, ):
 #def CellularSystem(network, periodic_bound_cond, mode, location, iGenome, timeSteps, nLattice):
-def CellularSystem(network, periodic_bound_cond, death_cell_presence, location, iGenome, timeSteps, nLattice):
+#def CellularSystem(network, periodic_bound_cond, death_cell_presence, location, iGenome, timeSteps, nLattice):
+def CellularSystem(network, periodic_bound_cond, death_cell_presence, iGenome, timeSteps, nLattice):
     """
     Parameters: sim(wMatrix, numberOfTimeSteps, NumberOfGeneration, nNodes, individual, nLattice, mode)
     # mode = True: cell_system as fitness function
@@ -129,7 +131,8 @@ def CellularSystem(network, periodic_bound_cond, death_cell_presence, location, 
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
         #         Plot               #
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-        plot_env.UpdatePlot(env, iTime, location, iGenome)
+#        plot_env.UpdatePlot(env, iTime, location, iGenome)
+        plot_env.UpdatePlot(env, iTime, iGenome)
         #plot.CellGridPlot(  env.cellGrid,
                             #env.chemGrid,
                             #nLattice,
@@ -151,7 +154,7 @@ def CellularSystem(network, periodic_bound_cond, death_cell_presence, location, 
     # time steps loop
     
     # Plot counter stats:
-    stats_plots.CounterPlots(CellCounter, location, iGenome)
+    #stats_plots.CounterPlots(CellCounter, location, iGenome)
     
     # Get SGF/LGF statistics
     #SGF_mean = np.mean(SGF_history, axis = 2, dtype = np.float64)
@@ -167,9 +170,9 @@ if __name__ == '__main__':
     loc = sys.argv[1]
     timedateStr = sys.argv[2]
     location = '{}/{}'.format(loc, timedateStr)
-
-    periodic_bound_cond = False
-    death_cell_presence = True
+    
+    #periodic_bound_cond = False
+    #death_cell_presence = True
 
     # mode = True: cell_system as fitness function
     # mode = False: cell_system as display system
@@ -189,35 +192,44 @@ if __name__ == '__main__':
     with open(fileName, 'rb') as f:
         genomes = pickle.load(f)#, encoding = 'bytes')
 
-    for iGenome in [1]:
+    run_config = ConfigParser.RawConfigParser()
+    run_config.read('run.cfg')
+    periodic_bound_cond = run_config.getboolean('Run settings', 'periodic_bound_cond')
+    death_cell_presence = run_config.getboolean('Run settings', 'death_cell_presence')
+    timeSteps = run_config.getint('Run settings', 'timeSteps')
+    nLattice = run_config.getint('Run settings', 'nLattice')
+
+    os.chdir(location)
+    for iGenome in range(len(genomes)):
         # [False, False],[False, True], [True,False],  
-        for iBool in [[True, True]]:
+        #for iBool in [[False, False],[False, True], [True,False],[True, True]]:
             #print('=> Running genome #{}'.format(iGenome))
-            periodic_bound_cond = iBool[0]
-            death_cell_presence = iBool[1]
+            #periodic_bound_cond = False #iBool[0]
+            #death_cell_presence = False #iBool[1]
 
-            if periodic_bound_cond:
-                if death_cell_presence:
-                    simType_string = 'PB_DC'
-                    print('\t=> Running main with periodic boundaries and death cell presence')
-                else:
-                    simType_string = 'PB_nDC'
-                    print('\t=> Running main with periodic boundaries and no death cell presence')
-            else:
-                if death_cell_presence:
-                    simType_string = 'FB_DC'
-                    print('\t=> Running main with fixed boundaries and death cell presence')
-                else:
-                    simType_string = 'FB_nDC'
-                    print('\t=> Running main with fixed boundaries and no death cell presence')
+            #if periodic_bound_cond:
+                #if death_cell_presence:
+                    #simType_string = 'PB_DC'
+                    #print('\t=> Running main with periodic boundaries and death cell presence')
+                #else:
+                    #simType_string = 'PB_nDC'
+                    #print('\t=> Running main with periodic boundaries and no death cell presence')
+            #else:
+                #if death_cell_presence:
+                    #simType_string = 'FB_DC'
+                    #print('\t=> Running main with fixed boundaries and death cell presence')
+                #else:
+                    #simType_string = 'FB_nDC'
+                    #print('\t=> Running main with fixed boundaries and no death cell presence')
 
-            mkdir = 'mkdir {0}/best_unique_genome_{1}'.format(location, iGenome+1)
+            #mkdir = 'mkdir {0}/best_unique_genome_{1}'.format(location, iGenome+1)
+            mkdir = 'mkdir best_unique_genome_{0}'.format(iGenome+1)
             subproc = sp.call(mkdir, shell = True)
             #print('genome file: {0}\nconfig file: {1}'.format(fileName, config_file))
             network = neat.nn.RecurrentNetwork.create(genomes[iGenome], config)
             #CellularSystem(network, periodic_bound_cond, mode, location, iGenome, timeSteps, nLattice)
-            #CellularSystem(network, periodic_bound_cond, death_cell_presence, location, iGenome, timeSteps, nLattice)
-            CellularSystem(network, iBool[0], iBool[1], location, iGenome, timeSteps, nLattice)
-            mv = 'mv {0}/best_unique_genome_{1} {0}/testing_{2}_best_unique_genome_{1}'.format(location, iGenome+1, simType_string)
-            sp.call(mv, shell = True)
+            CellularSystem(network, periodic_bound_cond, death_cell_presence, iGenome, timeSteps, nLattice)
+            #CellularSystem(network, iBool[0], iBool[1], location, iGenome, timeSteps, nLattice)
+            #mv = 'mv {0}/best_unique_genome_{1} {0}/testing_{2}_best_unique_genome_{1}'.format(location, iGenome+1, simType_string)
+            #sp.call(mv, shell = True)
             #plt.close()
