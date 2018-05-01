@@ -10,6 +10,8 @@ from matplotlib.colors import ListedColormap
 import subprocess as sp
 import neat
 import tools
+import ConfigParser
+#from tools import GetNetwork, GenerateStatus
 
 def FitnessMapPlot():
     fileName = 'filesList'                                                  # name of the temporary file with names
@@ -124,10 +126,19 @@ def NetworkBehaviourMap(location, fileID):#, iGenome):
     SGF_size = 100                                                      # Seems to be enough
     LGF_size = 100
     marker_size = 0.1
-    reps = 500                                                          # Same number of time steps of the cellular system
+#    reps = 200                                                          # Same number of time steps of the cellular system
     nOutputs = 2
     SGF_max = 1#1
     LGF_max = 1
+    loc = '{}/{}'.format(location, fileID)
+    
+    run_config = ConfigParser.RawConfigParser()
+    run_config.read('{}/run.cfg'.format(loc))
+    #periodic_bound_cond = run_config.getboolean('Run settings', 'periodic_bound_cond')
+    #death_cell_presence = run_config.getboolean('Run settings', 'death_cell_presence')
+    reps = run_config.getint('Run settings', 'timeSteps')
+    #nLattice = run_config.getint('Run settings', 'nLattice')
+    print('Run rettings: \n\tTime steps = {}'.format(reps))
 
     SGF_range = np.arange(0, SGF_max + (1./scale), (1./scale))          # set plot axis scales
     LGF_range = np.arange(0, LGF_max + (1./scale), (1./scale))
@@ -247,7 +258,7 @@ def NetworkBehaviourMap(location, fileID):#, iGenome):
         fig.tight_layout(w_pad=-5)
 
         # Save figure with four subplots
-        plt.savefig('{0}/{1}/{1}_best_genome_{2}_maps.eps'.format(location, fileID, iGenome+1), format='eps', bbox_inches='tight')
+        plt.savefig('{0}/{1}_best_genome_{2}_maps.eps'.format(loc, fileID, iGenome+1), format='eps', bbox_inches='tight')
 
 def GF_AverageMap(SGF_mean, LGF_mean, location, iGenome):
     """
@@ -286,34 +297,86 @@ def GF_AverageMap(SGF_mean, LGF_mean, location, iGenome):
     plt.savefig('{0}/GF_average_dist_best_genome_{1}.eps'.format(location, iGenome + 1), format='eps', bbox_inches='tight')
 
 #
+def GetCellState(cell_state, cell_pol):
+    # Cell counters: quiet, migr, prolif, apopt, failed_move, failed_split, north, west, south, east, none
+    states = np.zeros(11)
+    if cell_state = 'Move':
+        states[1] += 1
+    elif cell_state = 'failed_split':
+        states[5] += 1
+    elif cell_state = 'Split':
+        states[2] += 1
+    elif cell_state = 'Die':
+        states[3] += 1
+    if cell_state = 'Quiet':
+        states[0] += 1
+    else:# 'failed_move'
+        states[4] += 1
+        
+    if cell_pol = 'north':
+        states[6] += 1
+    elif cell_pol = 'west':
+        states[7] += 1
+    elif cell_pol = 'south':
+        states[8] += 1
+    elif cell_pol = 'east':
+        states[9] += 1
+    else:#  'none'
+        states[10] += 1
+    
+    return states
+
+
 def CounterPlots(CellCounter, loc, genome):#, loc):
     plt.close()
-    fig, ax = plt.subplots(1)
+    fig, (ax1, ax2) = plt.subplots(2)
     #fig = plt.figure()
     #ax = fig.add_subplot(111)
     fig.canvas.draw()
     
-    _, nGens = np.shape(CellCounter)
+    nGens, _ = np.shape(CellCounter)
     
     gen_range = np.arange(0, nGens)
-    totalCellCount = np.sum(CellCounter, axis = 0)
+
+    # Cell state counters: quiet, migr, prolif, apopt, failed_move, failed_split, north, west, south, east, none
+    totalCellCount = np.sum(CellCounter[:,0:6], axis = 1)
     
-    ax.set_title('Cell status counts per generation')
-    ax.set_xlabel('Generation')
-    ax.set_ylabel('Number of cells')
-    
+    ax1.set_title('Cell status counts per generation')
+    ax1.set_xlabel('Generation')
+    ax1.set_ylabel('Number of cells')
+        
     # Total number of cells per generation count
-    ax.plot(gen_range, totalCellCount, 'y-', alpha = 0.3, lw = 1.5, label = 'Total')
+    ax1.plot(gen_range, totalCellCount, '*', label = 'Total')
     # Apoptosis counts
-    ax.plot(gen_range, CellCounter[3,:], 'k-', lw = 0.8, label = 'Apoptosis')
+    ax1.plot(gen_range, CellCounter[:,3], 'k-', lw = 0.8, label = 'Apoptosis')
     # Proliferation counts
-    ax.plot(gen_range, CellCounter[1,:], 'r-', lw = 0.8, label = 'Proliferation')
+    ax1.plot(gen_range, CellCounter[:,2], 'r-', lw = 0.8, label = 'Proliferation')
     # Migrate counts
-    ax.plot(gen_range, CellCounter[0,:], 'b-', lw = 0.8, label = 'Migrate')
+    ax1.plot(gen_range, CellCounter[:,1], 'b-', lw = 0.8, label = 'Migrate')
     # Quiescense counts
-    ax.plot(gen_range, CellCounter[2,:], 'g-', lw = 0.8, label = 'Quiescence')
-    ax.legend(loc = 'best')
+    ax1.plot(gen_range, CellCounter[:,0], 'g-', lw = 0.8, label = 'Quiescence')
+    # Quiescense counts
+    ax1.plot(gen_range, CellCounter[:,4], 'greenish blue', ls = '-', lw = 0.8, label = 'Failed Migr')
+    # Quiescense counts
+    ax1.plot(gen_range, CellCounter[:,5], 'orange', ls = '-', lw = 0.8, label = 'Failed Prolif')
+
+    ax1.legend(loc = 'best')
     
+    ax2.set_title('Cell status polarisation counts per generation')
+    ax2.set_xlabel('Generation')
+    ax2.set_ylabel('Number of cells')
+
+    # North counts
+    ax2.plot(gen_range, CellCounter[:,6], 'c-', lw = 0.8, label = 'North')
+    # West counts
+    ax2.plot(gen_range, CellCounter[:,7], 'r-', lw = 0.8, label = 'West')
+    # South counts
+    ax2.plot(gen_range, CellCounter[:,8], 'y-', lw = 0.8, label = 'South')
+    # East counts
+    ax2.plot(gen_range, CellCounter[:,9], 'm-', lw = 0.8, label = 'East')
+    # None counts
+    ax2.plot(gen_range, CellCounter[:,10], 'w-', lw = 0.8, label = 'None')
+
     #plt.savefig('{0}/GF_average_dist_best_genome_{1}.eps'.format(location, iGenome + 1), format='eps', bbox_inches='tight')
     plt.savefig('{}/cell_counts_best_genome_{}.eps'.format(loc, genome + 1), format = 'eps', bbox_inches='tight')
     
