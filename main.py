@@ -51,7 +51,7 @@ def CellularSystem(network, periodic_bound_cond, death_cell_presence, iGenome, t
     LGF_history = np.zeros([nLattice, nLattice, timeSteps], dtype = np.float64)
     
     # Cell count container
-    CellCounter = np.zeros([4, timeSteps])      # Number of states x number of generations
+    CellCounter = np.zeros([11, timeSteps])      # Number of states x number of generations
 
     iTime = 0
     while iTime < timeSteps:
@@ -59,11 +59,8 @@ def CellularSystem(network, periodic_bound_cond, death_cell_presence, iGenome, t
         SGF_history[:,:,iTime] = env.chemGrid[:,:,0]
         LGF_history[:,:,iTime] = env.chemGrid[:,:,1]
         
-        # Cell counters
-        migr_counter = 0
-        prolif_counter = 0
-        quiet_counter = 0
-        apopt_counter = 0
+        # Cell counters: quiet, migr, prolif, apopt, failed_move, failed_split, north, west, south, east, none
+        state_counts = np.zeros(11)
         
         # this matrixes must be updated everytime so that if there's no production in one spot that spot contains a zero
         # but must not lose contained information, i.e. must use it before setting it to zero
@@ -92,24 +89,28 @@ def CellularSystem(network, periodic_bound_cond, death_cell_presence, iGenome, t
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
             # according to cell status perform action: split or stay quiet
             if tmpCellList[rndCell].state == 'Quiet':               # Check the state
-                tmpCellList[rndCell].Quiet(env.cellGrid)                # call method that performs selected action
+                tmpCellList[rndCell].Quiet(env.cellGrid)            # call method that performs selected action
                 #quiet_counter += 1
-                del tmpCellList[rndCell]                            # delete cell from temporal list
+                #del tmpCellList[rndCell]                            # delete cell from temporal list
 
             elif tmpCellList[rndCell].state == 'Split':
                 tmpCellList[rndCell].Split(env.cellGrid,env.cellList)
                 #prolif_counter += 1
-                del tmpCellList[rndCell]
+                #del tmpCellList[rndCell]
 
             elif tmpCellList[rndCell].state == 'Move':
                 tmpCellList[rndCell].Move(env.cellGrid)
                 #migr_counter += 1
-                del tmpCellList[rndCell]
+                #del tmpCellList[rndCell]
 
             else: # Die
-                tmpCellList[rndCell].Die(env.cellGrid)                  # Off the grid, method also changes the "amidead" switch to True
-                apopt_counter += 1
-                del tmpCellList[rndCell]
+                tmpCellList[rndCell].Die(env.cellGrid)              # Off the grid, method also changes the "amidead" switch to True
+                #apopt_counter += 1
+                #del tmpCellList[rndCell]
+                
+            # Log State counts:
+            state_counts += tools.GetCellState(tmpCellList[rndCell].state, tmpCellList[rndCell].cell_compass)
+            del tmpCellList[rndCell]
         # while
 
         # A list of cells that "died" is stored to later actually kill the cells...
@@ -118,14 +119,12 @@ def CellularSystem(network, periodic_bound_cond, death_cell_presence, iGenome, t
             if env.cellList[jCell].amidead:
                 del env.cellList[jCell]
 
-        # Count stats are saved for current time steop:
-        CellCounter[:, iTime] = np.array([migr_counter, prolif_counter, quiet_counter, apopt_counter])
+        # Count stats are saved for current time step:
+        CellCounter[iTime,:] = state_counts
 
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
         #    SGF/LGF diffusion and/or decay     #
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-        #env.chemGrid[:,:,0] = tools.SGFDiffEq(env.chemGrid[:,:,0], sigma_m)
-        #env.chemGrid[:,:,1] = tools.LGFDiffEq(env.i_matrix, env.t_matrix, env.chemGrid[:,:,1], lambda_m)
         env.PostProcessing(sigma_m, lambda_m)
 
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -133,20 +132,6 @@ def CellularSystem(network, periodic_bound_cond, death_cell_presence, iGenome, t
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 #        plot_env.UpdatePlot(env, iTime, location, iGenome)
         plot_env.UpdatePlot(env, iTime, iGenome)
-        #plot.CellGridPlot(  env.cellGrid,
-                            #env.chemGrid,
-                            #nLattice,
-                            #cellsFigure,
-                            #cellsSubplot,
-                            #sgfSubplot,
-                            #lgfSubplot,
-                            #cellPlot,
-                            #sgfPlot,
-                            #lgfPlot,
-                            #iTime,
-                            #mode,
-                            #location,
-                            #iGenome)
         iTime += 1
         # this script is used to see what comes up from the main_GA, doesn't have to check for any conditions on the system, just let it run
 
@@ -154,7 +139,7 @@ def CellularSystem(network, periodic_bound_cond, death_cell_presence, iGenome, t
     # time steps loop
     
     # Plot counter stats:
-    #stats_plots.CounterPlots(CellCounter, location, iGenome)
+    stats_plots.CounterPlots(CellCounter, location, iGenome)
     
     # Get SGF/LGF statistics
     #SGF_mean = np.mean(SGF_history, axis = 2, dtype = np.float64)
@@ -164,8 +149,8 @@ def CellularSystem(network, periodic_bound_cond, death_cell_presence, iGenome, t
 
 if __name__ == '__main__':
     #print('System visualization')
-    timeSteps = 200
-    nLattice = 50
+    #timeSteps = 200
+    #nLattice = 50
     #mode = False
     loc = sys.argv[1]
     timedateStr = sys.argv[2]
@@ -188,16 +173,17 @@ if __name__ == '__main__':
     config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction, neat.DefaultSpeciesSet, neat.DefaultStagnation, config_path)
 
     # load the winner
-    print('=> Working with folder: {}...\n'.format(timedateStr))
+    print('=> Working with folder: {}...'.format(timedateStr))
     with open(fileName, 'rb') as f:
         genomes = pickle.load(f)#, encoding = 'bytes')
 
     run_config = ConfigParser.RawConfigParser()
-    run_config.read('run.cfg')
+    run_config.read('{}/run.cfg'.format(location))
     periodic_bound_cond = run_config.getboolean('Run settings', 'periodic_bound_cond')
     death_cell_presence = run_config.getboolean('Run settings', 'death_cell_presence')
     timeSteps = run_config.getint('Run settings', 'timeSteps')
     nLattice = run_config.getint('Run settings', 'nLattice')
+    print('Run rettings: \n\tTime steps = {}, \n\tLattice size = {}, \n\tDeath cells = {}, \n\tPeridic boundary conditions = {}'.format(timeSteps, nLattice, death_cell_presence, periodic_bound_cond))
 
     os.chdir(location)
     for iGenome in range(len(genomes)):

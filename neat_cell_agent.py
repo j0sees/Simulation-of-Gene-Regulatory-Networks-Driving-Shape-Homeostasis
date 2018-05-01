@@ -13,8 +13,9 @@ class BasicCell:
         self.xPos = xPos                            # Initial position on x axis
         self.yPos = yPos                            # Initial position on y axis
         self.compass = True                         # Polarisation: WARNING ON/OFF => True/False
-        self.orientation = [self.yPos,self.xPos]    # Preferred direction. DEFAULT: own position
+        self.orientation = [self.yPos,self.xPos]    # Preferred direction. DEFAULT: own position        
         self.neighbourList = [[self.yPos - 1, self.xPos], [self.yPos + 1, self.xPos], [self.yPos, self.xPos - 1], [self.yPos, self.xPos + 1]]
+        self.cell_compass = 'none'                  # Default polarisation
         self.splitCounter = 0                       # Counter for splitting
         self.splitTime = 1                          # Time scale for splitting
         self.deathCounter = 0                       # Countdown to extinction
@@ -70,20 +71,25 @@ class BasicCell:
             # oriented according to numpy order v>, not usual >^
             if abs(arrow - sBoundary) <= yThreshold:
                 self.orientation = [self.yPos, self.xPos]
+                self.cell_compass = 'none'
             elif arrow < sBoundary:
                 if arrow < nBoundary:
                     # orientation West
                     self.orientation = self.neighbourList[0]
+                    self.cell_compass = 'west'
                 else:
                     # orientation North
                     self.orientation = self.neighbourList[1]
+                    self.cell_compass = 'north'
             else:
                 if arrow <= eBoundary:   # and arrow > sBoundary:
                     # orientation East
                     self.orientation = self.neighbourList[2]
+                    self.cell_compass = 'east'
                 else:   #arrow < wBoundary:
                     # orientation South
                     self.orientation = self.neighbourList[3]
+                    self.cell_compass = 'south'
         else:   # update orientation as current position if compass False
             self.orientation = [self.yPos, self.xPos]
 
@@ -149,6 +155,7 @@ class BasicCell:
                 self.xPos = availableSpots[r][1]
             else:
                 grid[self.yPos][self.xPos] = 1                              # if moving fails then cell is marked as quiet
+                self.state = 'failed_move'
     # Move
 
     def Split(self, grid, cellList):
@@ -159,7 +166,7 @@ class BasicCell:
             needOtherNeighbours = True
             for neighbr in self.neighbourList:                              # for each possible neighbour:
                 try:                                                        # IndexError exception will determine if the neighbour is inbounds
-                    if tools.CheckifOccupied(neighbr[1], neighbr[0], grid):       # if its occupied
+                    if tools.CheckifOccupied(neighbr[1], neighbr[0], grid): # if its occupied
                         continue
                     else:                                                   # if neighbour is not occupied
                         yOri = self.orientation[0]
@@ -182,6 +189,7 @@ class BasicCell:
                     cellList.append(BasicCell(availableSpots[r][0], availableSpots[r][1],  self.network))
                 else:
                     grid[self.yPos][self.xPos] = 1                          # if splitting fails then cell is marked as quiet
+                    self.state = 'failed_split'
     # Split
 # BasicCell
 
@@ -232,6 +240,7 @@ class PB_Cell(BasicCell):
                 self.xPos = availableSpots[r][1]
             else:
                 grid[self.yPos][self.xPos] = 1                              # if moving fails then cell is marked as quiet
+                self.state = 'failed_move'
     # PeriodicMove
 
     def Split(self, grid, cellList):
@@ -281,6 +290,8 @@ class PB_Cell(BasicCell):
                     cellList.append(PB_Cell(availableSpots[r][0], availableSpots[r][1],  self.network))
                 else:
                     grid[self.yPos][self.xPos] = 1                          # if splitting fails then cell is marked as quiet
+                    self.state = 'failed_split'
+
     # PeriodicSplit
 # Periodic Boundary Cell
 
@@ -329,20 +340,25 @@ class DC_Cell(BasicCell):
                 # oriented according to numpy order v>, not usual >^
                 if abs(arrow - sBoundary) <= yThreshold:
                     self.orientation = [self.yPos, self.xPos]
+                    self.cell_compass = 'none'
                 elif arrow < sBoundary:
                     if arrow < nBoundary:
                         # orientation West
                         self.orientation = self.neighbourList[0]
+                        self.cell_compass = 'west'
                     else:
                         # orientation North
                         self.orientation = self.neighbourList[1]
+                        self.cell_compass = 'north'
                 else:
                     if arrow <= eBoundary:   # and arrow > sBoundary:
                         # orientation East
                         self.orientation = self.neighbourList[2]
+                        self.cell_compass = 'east'
                     else:   #arrow < wBoundary:
                         # orientation South
                         self.orientation = self.neighbourList[3]
+                        self.cell_compass = 'south'
             else:   # update orientation as current position if compass False
                 self.orientation = [self.yPos, self.xPos]
 
@@ -395,6 +411,7 @@ class DC_Cell(BasicCell):
                     cellList.append(DC_Cell(availableSpots[r][0], availableSpots[r][1],  self.network))
                 else:
                     grid[self.yPos][self.xPos] = 1                          # if splitting fails then cell is marked as quiet
+                    self.state = 'failed_split'
     # Split
 # Death Cell Env Cell
 
@@ -446,6 +463,7 @@ class PB_DC_Cell(PB_Cell):
                     cellList.append(PB_DC_Cell(availableSpots[r][0], availableSpots[r][1],  self.network))
                 else:
                     grid[self.yPos][self.xPos] = 1                          # if splitting fails then cell is marked as quiet
+                    self.state = 'failed_split'
     # PeriodicSplit
 
     def GenerateStatus(self, SGF_lecture, LGF_lecture, env):
@@ -496,16 +514,20 @@ class PB_DC_Cell(PB_Cell):
                     if arrow < nBoundary:
                         # orientation West
                         self.orientation = self.neighbourList[0]
+                        self.cell_compass = 'none'
                     else:
                         # orientation North
                         self.orientation = self.neighbourList[1]
+                        self.cell_compass = 'north'
                 else:
                     if arrow <= eBoundary:   # and arrow > sBoundary:
                         # orientation East
                         self.orientation = self.neighbourList[2]
+                        self.cell_compass = 'east'
                     else:   #arrow < wBoundary:
                         # orientation South
                         self.orientation = self.neighbourList[3]
+                        self.cell_compass = 'south'
             else:   # update orientation as current position if compass False
                 self.orientation = [self.yPos, self.xPos]
 
