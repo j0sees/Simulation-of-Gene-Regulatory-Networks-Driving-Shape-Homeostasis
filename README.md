@@ -119,11 +119,26 @@ uv run python core/main.py [filename] [nNodes] [individual]
 uv run python evolution/main_ga.py [filename] [parameters]
 ```
 
+#### Testing and Linting
+
+```bash
+# Sync development dependencies (pytest, ruff)
+uv sync --dev
+
+# Run the unit test suite
+uv run pytest -v
+
+# Run Ruff linter across the codebase
+uv run ruff check .
+```
+
 ---
 
 ## Project Structure
 
 ```text
+├── .github/workflows/                       # GitHub Actions CI workflows
+│   └── ci.yml                               # Automated linting, unit tests, and Docker build check
 ├── core/                                    # Core simulation engine
 │   ├── cell_agent.py                        # Cell agent class and intracellular neural network
 │   ├── main.py                              # Cellular automata simulation loop
@@ -142,6 +157,11 @@ uv run python evolution/main_ga.py [filename] [parameters]
 │   ├── run_simulation.py                    # Standalone simulation example
 │   ├── run_evolution.py                     # Standalone genetic algorithm example
 │   └── generate_documentation_images.py     # Script to generate documentation figures
+├── tests/                                   # Unit test suite (pytest)
+│   ├── test_tools.py                        # PDE solver, RNN, and matrix utility tests
+│   ├── test_cell_agent.py                   # Cell agent sensing and action transition tests
+│   ├── test_evolution.py                    # Genetic operators and headless simulation tests
+│   └── test_web_and_topologies.py           # Network topology and Plotly figure tests
 ├── docs/                                    # Project documentation
 │   ├── README.md                            # Documentation index
 │   ├── web-interface.md                     # Web application guide
@@ -170,6 +190,7 @@ uv run python evolution/main_ga.py [filename] [parameters]
 - **`visualization/`**: Provides Matplotlib visualization classes for rendering grid states and chemical concentration fields.
 - **`analysis/`**: Generates and evaluates graph topologies (Erdős-Rényi, Watts-Strogatz, Barabási-Albert) mapped onto GRN weight matrices.
 - **`examples/`**: Self-contained scripts demonstrating simulation execution, evolutionary runs, and figure generation.
+- **`tests/`**: Automated unit tests covering mathematical solvers, cellular automata rules, evolutionary operators, and graph topologies.
 - **`web_app.py`**: Browser-based interface built with Streamlit and Plotly.
 
 ---
