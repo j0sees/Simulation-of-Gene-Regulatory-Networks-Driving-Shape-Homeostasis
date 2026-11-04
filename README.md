@@ -24,14 +24,14 @@ Key scientific objectives include:
 
 ## Quick Start
 
-### Option 1: Docker (Recommended)
+### Option 1: Container — Podman or Docker (Recommended on macOS & Linux)
 
 ```bash
 git clone https://github.com/userravs/simulation-of-gene-regulatory-networks-driving-shape-homeostasis.git
 cd simulation-of-gene-regulatory-networks-driving-shape-homeostasis
 
-# Build and start the Streamlit web application at http://localhost:8501
-./scripts/run_docker.sh
+# Auto-detects Podman or Docker, builds the image, and starts the web app at http://localhost:8501
+./scripts/run_container.sh
 ```
 
 ### Option 2: Local Setup with `uv`
@@ -72,7 +72,7 @@ uv run pytest -v
 ├── docs/                 # Project documentation and example figures
 ├── evolution/            # Genetic Algorithm (main_ga.py) and NEAT neuroevolution
 ├── examples/             # Runnable simulation, evolution, and figure generation scripts
-├── scripts/              # Helper scripts (run_docker.sh, run_web_app.sh)
+├── scripts/              # Helper scripts (run_container.sh, run_web_app.sh)
 ├── tests/                # Pytest unit test suite
 ├── visualization/        # Matplotlib plotting utilities, Gnuplot script, and Streamlit app
 ├── CITATION.cff          # Citation metadata for GitHub and academic references

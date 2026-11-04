@@ -6,11 +6,11 @@ The Gene Regulatory Network simulation includes an interactive web application (
 
 ## Quick Start
 
-### Option 1: Docker (Recommended)
+### Option 1: Container — Podman or Docker (Recommended)
 
 ```bash
-# Build and start the containerized web application
-./scripts/run_docker.sh
+# Auto-detects Podman or Docker and starts the containerized web application
+./scripts/run_container.sh
 
 # Open in your browser: http://localhost:8501
 ```
