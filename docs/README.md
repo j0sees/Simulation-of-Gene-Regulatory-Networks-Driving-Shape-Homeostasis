@@ -23,6 +23,22 @@ To regenerate these figures locally:
 uv run python examples/generate_documentation_images.py
 ```
 
+## Continuous Integration and Testing
+
+The repository includes an automated GitHub Actions workflow (`.github/workflows/ci.yml`) running on free `ubuntu-latest` runners for every push and pull request to `main`:
+
+- **Linting & Static Validation**: Validates shell scripts (`bash -n`), checks Python style with `ruff`, and compiles all Python modules.
+- **Unit Test Suite (`tests/`)**: Runs `pytest` across PDE diffusion solvers, RNN activation dynamics, cell agent state transitions, genetic algorithm operators, and network topology generators.
+- **Docker Build Verification**: Builds the `Dockerfile` and verifies module imports inside the container.
+
+To run the checks locally with `uv`:
+
+```bash
+uv sync --dev
+uv run ruff check .
+uv run pytest -v
+```
+
 ## Quick Links
 
 - [Main README](../README.md) — Project overview and quick start instructions

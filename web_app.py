@@ -240,7 +240,8 @@ def main() -> None:
 
         with col1:
             if st.button("Start Simulation", type="primary"):
-                if st.session_state.current_step == 0 or st.session_state.current_step >= time_steps:
+                at_end = st.session_state.current_step >= time_steps
+                if st.session_state.current_step == 0 or at_end:
                     init_simulation_state(n_nodes, n_lattice, network_type)
                     st.session_state.current_step = 0
                 st.session_state.running = True
@@ -351,7 +352,7 @@ def main() -> None:
         ### Key Components
 
         1. **Cell States**: Empty, Quiet, Moving, Divided
-        2. **Chemical Signaling**: SGF (Short-range Growth Factor) and LGF (Long-range Growth Factor)
+        2. **Chemical Signaling**: SGF (Short-range) and LGF (Long-range) Growth Factors
         3. **Neural Networks**: Control cell behavior based on local conditions
 
         ### Research Applications
@@ -382,9 +383,11 @@ def main() -> None:
             """
         ### Research Project Information
 
-        This software was developed as part of the master's thesis *"Classification of Gene Regulatory Networks Driving Shape Homeostasis"*.
+        This software was developed as part of the master's thesis
+        *"Classification of Gene Regulatory Networks Driving Shape Homeostasis"*.
 
-        **Author**: M.Sc. J. Esteban Pérez-Hidalgo (School of Physics, Costa Rica Institute of Technology)
+        **Author**: M.Sc. J. Esteban Pérez-Hidalgo
+        (School of Physics, Costa Rica Institute of Technology)
         """
         )
 
