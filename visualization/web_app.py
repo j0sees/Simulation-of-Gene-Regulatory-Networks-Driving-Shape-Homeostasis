@@ -386,7 +386,7 @@ def main() -> None:
         This software is based on the master's thesis
         *"Classification of Gene Regulatory Networks Driving Shape Homeostasis"*.
 
-        - **Original Research & Model (`v0.1`)**: M.Sc. J. Esteban Pérez-Hidalgo
+        - **Original Research & Model (`v0.1.0`)**: M.Sc. J. Esteban Pérez-Hidalgo
           ([@j0sees](https://github.com/j0sees), Costa Rica Institute of Technology)
         - **Software Architecture & Lead Maintainer (`v0.2.0`–`v0.3.0`)**: Reymer Vargas
           ([@userravs](https://github.com/userravs), Independent Research Software Engineer)
