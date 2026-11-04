@@ -1,14 +1,15 @@
 # Simulation of Gene Regulatory Networks Driving Shape Homeostasis
 
-Software developed for the master's thesis **"Classification of Gene Regulatory Networks Driving Shape Homeostasis"** by **M.Sc. J. Esteban Pérez-Hidalgo** (School of Physics, Costa Rica Institute of Technology), under the supervision of **Ph.D. Philip Gerlee** (Department of Mathematical Sciences, University of Gothenburg & Chalmers University of Technology, Sweden).
+Computational platform for simulating and classifying **Gene Regulatory Networks (GRNs)** that drive **shape homeostasis** in multicellular systems.
 
-- **Original Repository**: [https://github.com/j0sees/Simulation-of-Gene-Regulatory-Networks-Driving-Shape-Homeostasis](https://github.com/j0sees/Simulation-of-Gene-Regulatory-Networks-Driving-Shape-Homeostasis)
+- **Original Research & Mathematical Model (`v0.1`)**: **M.Sc. J. Esteban Pérez-Hidalgo** ([@j0sees](https://github.com/j0sees), School of Physics, Costa Rica Institute of Technology), supervised by **Ph.D. Philip Gerlee** (Department of Mathematical Sciences, University of Gothenburg & Chalmers University of Technology, Sweden) — [Original Baseline (`6c3fae7`)](https://github.com/j0sees/Simulation-of-Gene-Regulatory-Networks-Driving-Shape-Homeostasis/tree/6c3fae7834a2ca502b1a439d7535c4adab1673f3)
+- **Software Architecture & Lead Maintainer (`v0.2.0`–`v0.3.0`)**: **Reymer Vargas** ([@userravs](https://github.com/userravs), Independent Research Software Engineer)
 
 ---
 
 ## Overview
 
-This repository simulates and classifies **Gene Regulatory Networks (GRNs)** that drive **shape homeostasis** in multicellular collectives. It combines a 2D discrete **cellular automaton**, reaction-diffusion solvers for **Short-range (SGF)** and **Long-range (LGF)** growth factors, intracellular **recurrent neural networks**, and **evolutionary optimization** (Genetic Algorithms and NEAT), based on the framework of *Gerlee et al. (2015)*.
+This software simulates multicellular collectives where shape homeostasis emerges from local cellular interactions. It integrates a 2D discrete **cellular automaton**, reaction-diffusion solvers for **Short-range (SGF)** and **Long-range (LGF)** growth factors, intracellular **recurrent neural networks**, and **evolutionary optimization** (Genetic Algorithms and NEAT), based on the framework of *Gerlee et al. (2015)*.
 
 ![Cell System Example](./docs/images/cell_system_example.png)
 
@@ -67,6 +68,7 @@ uv run pytest -v
 ├── scripts/              # Helper scripts (run_docker.sh, run_web_app.sh)
 ├── tests/                # Pytest unit test suite
 ├── visualization/        # Matplotlib plotting utilities, Gnuplot script, and Streamlit app
+├── CITATION.cff          # Citation metadata for GitHub and academic references
 ├── Dockerfile            # Container image definition (Python 3.12 + uv)
 ├── docker-compose.yml    # Docker Compose service configuration
 └── pyproject.toml        # Project metadata, dependencies, and tool configuration
@@ -86,7 +88,8 @@ Detailed guides are located in the [`docs/`](./docs/README.md) directory:
 
 ---
 
-## Author & License
+## Authors & License
 
-- **Author**: M.Sc. J. Esteban Pérez-Hidalgo (School of Physics, Costa Rica Institute of Technology — `jose.perez at tec.ac.cr`)
+- **J. Esteban Pérez-Hidalgo** ([@j0sees](https://github.com/j0sees), School of Physics, Costa Rica Institute of Technology) — Original research, mathematical model, and initial simulation engine (`v0.1`, master's thesis *"Classification of Gene Regulatory Networks Driving Shape Homeostasis"*, `jose.perez at tec.ac.cr`)
+- **Reymer Vargas** ([@userravs](https://github.com/userravs), Independent Research Software Engineer) — Software architecture, Python 3 refactoring, interactive web platform, containerization, CI/test suite, and lead maintainer (`v0.2.0`–`v0.3.0`)
 - **License**: Released under the [MIT License](LICENSE).

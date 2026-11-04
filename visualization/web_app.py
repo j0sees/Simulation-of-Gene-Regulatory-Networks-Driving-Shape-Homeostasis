@@ -383,11 +383,13 @@ def main() -> None:
             """
         ### Research Project Information
 
-        This software was developed as part of the master's thesis
+        This software is based on the master's thesis
         *"Classification of Gene Regulatory Networks Driving Shape Homeostasis"*.
 
-        **Author**: M.Sc. J. Esteban Pérez-Hidalgo
-        (School of Physics, Costa Rica Institute of Technology)
+        - **Original Research & Model (`v0.1`)**: M.Sc. J. Esteban Pérez-Hidalgo
+          ([@j0sees](https://github.com/j0sees), Costa Rica Institute of Technology)
+        - **Software Architecture & Lead Maintainer (`v0.2.0`–`v0.3.0`)**: Reymer Vargas
+          ([@userravs](https://github.com/userravs), Independent Research Software Engineer)
         """
         )
 
