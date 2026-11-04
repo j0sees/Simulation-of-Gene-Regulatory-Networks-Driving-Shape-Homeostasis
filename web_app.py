@@ -272,14 +272,9 @@ def main():
         st.markdown("""
         ### Research Project Information
         
-        This is a research project developed as part of a master's thesis on the classification of gene regulatory networks driving shape homeostasis.
+        This software was developed as part of the master's thesis *"Classification of Gene Regulatory Networks Driving Shape Homeostasis"*.
         
-        **Original Research**: M.Sc. J. Esteban Pérez-Hidalgo (School of Physics, Costa Rica Institute of Technology)
-        
-        **Project Modernization**: Reymer Vargas - Platform Engineer
-        - Containerization and web interface development
-        - Infrastructure as Code and DevOps implementation
-        - Research software engineering improvements
+        **Author**: M.Sc. J. Esteban Pérez-Hidalgo (School of Physics, Costa Rica Institute of Technology)
         """)
 
 if __name__ == "__main__":

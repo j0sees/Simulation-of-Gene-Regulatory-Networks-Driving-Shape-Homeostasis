@@ -207,24 +207,21 @@ This project combines methods from three disciplines:
 
 ---
 
-## Authors and Contributors
+## Author
 
 - **M.Sc. J. Esteban Pérez-Hidalgo** (School of Physics, Costa Rica Institute of Technology)
-  - Master's Thesis Author — University of Gothenburg & Chalmers University of Technology
-  - Original mathematical modeling, simulation engine, and scientific research
+  - Master's Thesis — University of Gothenburg & Chalmers University of Technology
   - Contact: `jose.perez at tec.ac.cr`
-- **Reymer Vargas** — Platform Engineering & Research Software Modernization
-  - Project restructuring, Docker containerization, Streamlit web interface, and documentation
 
 ---
 
 ## Development History
 
-### Original Research (M.Sc. J. Esteban Pérez-Hidalgo)
+### Original Research
 - Master's thesis research on classifying gene regulatory networks driving shape homeostasis.
 - Implementation of the 2D cellular automata engine, recurrent neural network controller, SGF/LGF diffusion solver, and parallel genetic algorithm.
 
-### Modernization (Reymer Vargas)
+### Repository Modernization
 - **Modular Structure**: Reorganized codebase into `core/`, `evolution/`, `visualization/`, `analysis/`, `config/`, and `examples/`.
 - **Containerization**: Added `Dockerfile`, `docker-compose.yml`, and launcher scripts for reproducible execution.
 - **Web Interface**: Built interactive Streamlit and Plotly application (`web_app.py`).

@@ -67,10 +67,8 @@ cd simulation-of-gene-regulatory-networks-driving-shape-homeostasis
 # Open the web interface at: http://localhost:8501
 ```
 
-## Contributors
+## Author
 
 - **M.Sc. J. Esteban Pérez-Hidalgo** (School of Physics, Costa Rica Institute of Technology)
-  - Master's Thesis Author — University of Gothenburg & Chalmers University of Technology
+  - Master's Thesis — University of Gothenburg & Chalmers University of Technology
   - Original research and simulation implementation
-- **Reymer Vargas** — Platform Engineer
-  - Project restructuring, containerization, web interface development, and documentation
