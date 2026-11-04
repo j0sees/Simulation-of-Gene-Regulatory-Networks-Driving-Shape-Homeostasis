@@ -11,6 +11,13 @@ Computational platform for simulating and classifying **Gene Regulatory Networks
 
 This software simulates multicellular collectives where shape homeostasis emerges from local cellular interactions. It integrates a 2D discrete **cellular automaton**, reaction-diffusion solvers for **Short-range (SGF)** and **Long-range (LGF)** growth factors, intracellular **recurrent neural networks**, and **evolutionary optimization** (Genetic Algorithms and NEAT), based on the framework of *Gerlee et al. (2015)*.
 
+Key scientific objectives include:
+
+- Simulating multicellular collectives and observing adaptive morphogenesis under dynamic chemical environments.
+- Generalizing the intracellular signaling network into a fully connected **Recurrent Neural Network (RNN)** to expand the evolutionary search space.
+- Classifying evolved GRNs into **three major behavioral classes** that achieve shape homeostasis through a dynamic equilibrium of proliferation (`Split`), migration (`Move`), quiescence (`Quiet`), and apoptosis (`Die`).
+- Exploring network topology effects across **Erdős-Rényi**, **Watts-Strogatz**, and **Barabási-Albert** graph architectures.
+
 ![Cell System Example](./docs/images/cell_system_example.png)
 
 ---
