@@ -1,6 +1,11 @@
-# Version control
+# Version control and CI workflows
 .git
 .gitignore
+.github/
+
+# Unit tests and host launcher scripts
+tests/
+scripts/
 
 # Python caches and virtual environments
 __pycache__/
@@ -16,9 +21,8 @@ ENV/
 .ruff_cache/
 .pytest_cache/
 
-# Documentation and PR notes (keep README.md and LICENSE for package metadata)
+# Documentation (keep README.md and LICENSE for package metadata)
 docs/
-PR_DESCRIPTION.md
 
 # IDEs and editors
 .vscode/
@@ -41,10 +45,6 @@ plots/
 *.eps
 *.csv
 *.log
-
-# Local launcher scripts
-run_web_app.sh
-run_docker.sh
 
 # OS metadata
 .DS_Store

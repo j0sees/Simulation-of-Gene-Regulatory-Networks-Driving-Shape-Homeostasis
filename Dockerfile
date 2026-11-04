@@ -12,11 +12,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     g++ \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy dependency definitions first for layer caching
-COPY pyproject.toml requirements.txt ./
+# Copy project metadata first for Docker layer caching
+COPY pyproject.toml ./
 
 # Install Python dependencies into the system environment using uv
-RUN uv pip install --system --no-cache -r requirements.txt
+RUN uv pip install --system --no-cache -r pyproject.toml
 
 # Copy the application code
 COPY . .
@@ -32,5 +32,5 @@ ENV PYTHONUNBUFFERED=1
 # Expose port for Streamlit
 EXPOSE 8501
 
-# Default command - run the web application
-CMD ["streamlit", "run", "web_app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+# Default command - run the Streamlit web application
+CMD ["streamlit", "run", "visualization/web_app.py", "--server.port=8501", "--server.address=0.0.0.0"]

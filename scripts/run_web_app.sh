@@ -4,6 +4,8 @@
 
 set -e
 
+cd "$(dirname "$0")/.."
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -32,4 +34,5 @@ echo "Press Ctrl+C to stop the application"
 echo ""
 
 # Run Streamlit via uv
-uv run streamlit run web_app.py --server.port 8501 --server.address 0.0.0.0
+uv run streamlit run visualization/web_app.py --server.port 8501 --server.address 0.0.0.0
+

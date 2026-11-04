@@ -3,8 +3,12 @@
 from __future__ import annotations
 
 import os
+import sys
 import neat
 import numpy as np
+
+# Ensure repository root is on sys.path when invoked directly
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from core.tools import (
     GenerateIMatrix,
@@ -14,7 +18,7 @@ from core.tools import (
     SGFDiffEq,
     flatList,
 )
-from neat_cell_agent import cell
+from evolution.neat_cell_agent import cell
 
 xor_inputs = [(0.0, 0.0), (0.0, 1.0), (1.0, 0.0), (1.0, 1.0)]
 xor_outputs = [(0.0,), (1.0,), (1.0,), (0.0,)]
@@ -132,6 +136,7 @@ def run(config_file: str) -> None:
 
 
 if __name__ == "__main__":
-    local_dir = os.path.dirname(os.path.abspath(__file__))
-    config_path = os.path.join(local_dir, "config", "config-ca")
+    repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    config_path = os.path.join(repo_root, "config", "config-ca")
     run(config_path)
+
