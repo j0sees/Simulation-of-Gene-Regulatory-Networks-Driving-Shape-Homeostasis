@@ -36,7 +36,7 @@ jobs:
         run: uv sync --dev
 
       - name: Validate shell scripts
-        run: bash -n scripts/run_docker.sh scripts/run_web_app.sh
+        run: bash -n scripts/run_container.sh scripts/run_web_app.sh
 
       - name: Lint with Ruff
         run: uv run ruff check .

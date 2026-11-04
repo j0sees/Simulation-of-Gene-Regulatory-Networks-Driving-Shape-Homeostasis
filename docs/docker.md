@@ -1,23 +1,27 @@
-# Docker Documentation
+# Container Documentation (Podman & Docker)
 
 ## Overview
 
-This repository includes Docker and Docker Compose configurations to run the simulation and web interface in a reproducible container environment without requiring a local Python setup.
+This repository includes container configurations (`Dockerfile`, `docker-compose.yml`, and `scripts/run_container.sh`) to run the simulation and web interface in a reproducible container environment on **macOS** and **Linux** using either **Podman** (including **Podman Desktop**) or **Docker**.
 
 ## Quick Start
 
 ### Prerequisites
-- **Docker** (Docker Engine or Docker Desktop)
-- **Docker Compose** (`docker-compose` or `docker compose`)
+- **Operating System**: macOS (`Darwin`) or Linux (`Linux`)
+- **Container Engine**:
+  - **Podman** (Podman Desktop on macOS or rootless Podman on Linux), **or**
+  - **Docker** (Docker Desktop or Docker Engine)
+- **Compose (Optional)**: `podman compose` / `podman-compose` or `docker compose` / `docker-compose` (if no Compose plugin is installed, `scripts/run_container.sh` automatically falls back to direct `podman` or `docker` CLI build/run commands).
 
 ### Running the Web Interface
 
 ```bash
-# Build and start using the helper script
-./scripts/run_docker.sh
+# Auto-detects Podman or Docker, builds the image, and starts the web app
+./scripts/run_container.sh
 
-# Or build and start directly with Docker Compose
-docker-compose up --build
+# Explicitly select Podman or Docker when both are installed
+CONTAINER_ENGINE=podman ./scripts/run_container.sh
+CONTAINER_ENGINE=docker ./scripts/run_container.sh
 ```
 
 Open `http://localhost:8501` in your browser.
