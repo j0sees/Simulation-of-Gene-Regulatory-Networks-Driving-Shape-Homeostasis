@@ -4,6 +4,28 @@
 
 The Gene Regulatory Network simulation includes an interactive web application (`visualization/web_app.py`) built with **Streamlit** and **Plotly**. It provides browser-based parameter configuration, simulation playback controls, and real-time heatmaps of cell states and chemical signaling fields.
 
+```mermaid
+flowchart LR
+    subgraph Browser["Browser UI (http://localhost:8501)"]
+        Sidebar["Sidebar Controls\nNodes (8..50), Lattice (10..100),\nSteps (10..500), Topology"]
+        Tabs["Interactive Tabs\n1. Simulation | 2. Analysis | 3. About"]
+    end
+
+    subgraph Backend["Streamlit Session & Engine (visualization/web_app.py)"]
+        Topo["Topology Generator\nRandom | Erdos-Renyi |\nWatts-Strogatz | Barabasi-Albert"]
+        Sim["Live CA & PDE Stepper\ncell + SGFDiffEq + LGFDiffEq"]
+        Evo["Multi-Generation Fitness Runner"]
+    end
+
+    subgraph Charts["Plotly Visualizations"]
+        Heatmaps["3-Panel Heatmaps\nCell Grid, SGF Field, LGF Field"]
+        Curves["Best vs. Mean Fitness Curves"]
+    end
+
+    Sidebar --> Topo --> Sim --> Heatmaps --> Tabs
+    Sidebar --> Evo --> Curves --> Tabs
+```
+
 ## Quick Start
 
 ### Option 1: Container — Podman or Docker (Recommended)
