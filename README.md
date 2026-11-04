@@ -2,7 +2,7 @@
 
 Computational platform for simulating and classifying **Gene Regulatory Networks (GRNs)** that drive **shape homeostasis** in multicellular systems.
 
-- **Original Research & Mathematical Model (`v0.1`)**: **M.Sc. J. Esteban Pérez-Hidalgo** ([@j0sees](https://github.com/j0sees), School of Physics, Costa Rica Institute of Technology), supervised by **Ph.D. Philip Gerlee** (Department of Mathematical Sciences, University of Gothenburg & Chalmers University of Technology, Sweden) — [Original Baseline (`6c3fae7`)](https://github.com/j0sees/Simulation-of-Gene-Regulatory-Networks-Driving-Shape-Homeostasis/tree/6c3fae7834a2ca502b1a439d7535c4adab1673f3)
+- **Original Research & Mathematical Model (`v0.1.0`)**: **M.Sc. J. Esteban Pérez-Hidalgo** ([@j0sees](https://github.com/j0sees), School of Physics, Costa Rica Institute of Technology), supervised by **Ph.D. Philip Gerlee** (Department of Mathematical Sciences, University of Gothenburg & Chalmers University of Technology, Sweden) — [Original Baseline (`6c3fae7`)](https://github.com/j0sees/Simulation-of-Gene-Regulatory-Networks-Driving-Shape-Homeostasis/tree/6c3fae7834a2ca502b1a439d7535c4adab1673f3)
 - **Software Architecture & Lead Maintainer (`v0.2.0`–`v0.3.0`)**: **Reymer Vargas** ([@userravs](https://github.com/userravs), Independent Research Software Engineer)
 
 ---
@@ -75,10 +75,14 @@ uv run pytest -v
 ├── scripts/              # Helper scripts (run_container.sh, run_web_app.sh)
 ├── tests/                # Pytest unit test suite
 ├── visualization/        # Matplotlib plotting utilities, Gnuplot script, and Streamlit app
+├── CHANGELOG.md          # Release changelog with commit references and timestamps
 ├── CITATION.cff          # Citation metadata for GitHub and academic references
+├── CODE_OF_CONDUCT.md    # Contributor Covenant Code of Conduct
+├── CONTRIBUTING.md       # Contribution workflow, coding standards, and pre-PR checks
 ├── Dockerfile            # Container image definition (Python 3.12 + uv)
 ├── docker-compose.yml    # Docker Compose service configuration
-└── pyproject.toml        # Project metadata, dependencies, and tool configuration
+├── pyproject.toml        # Project metadata, dependencies, and tool configuration
+└── VERSION               # Canonical semantic version file
 ```
 
 ---
@@ -92,11 +96,14 @@ Detailed guides are located in the [`docs/`](./docs/README.md) directory:
 - **[Web Interface Guide](./docs/web-interface.md)** — Interactive Streamlit & Plotly simulation controls
 - **[Docker Guide](./docs/docker.md)** — Container setup, volume mounts, and troubleshooting
 - **[Development History](./docs/history-log.md)** — Chronological research and modernization log
+- **[Changelog](./CHANGELOG.md)** — Versioned release notes with commit references and timestamps
+- **[Contributing Guide](./CONTRIBUTING.md)** — Trunk-Based Development workflow, `uv` setup, and pre-PR verification
+- **[Code of Conduct](./CODE_OF_CONDUCT.md)** — Community standards for scientific and open-source collaboration
 
 ---
 
 ## Authors & License
 
-- **J. Esteban Pérez-Hidalgo** ([@j0sees](https://github.com/j0sees), School of Physics, Costa Rica Institute of Technology) — Original research, mathematical model, and initial simulation engine (`v0.1`, master's thesis *"Classification of Gene Regulatory Networks Driving Shape Homeostasis"*, `jose.perez at tec.ac.cr`)
+- **J. Esteban Pérez-Hidalgo** ([@j0sees](https://github.com/j0sees), School of Physics, Costa Rica Institute of Technology) — Original research, mathematical model, and initial simulation engine (`v0.1.0`, master's thesis *"Classification of Gene Regulatory Networks Driving Shape Homeostasis"*, `jose.perez at tec.ac.cr`)
 - **Reymer Vargas** ([@userravs](https://github.com/userravs), Independent Research Software Engineer) — Software architecture, Python 3 refactoring, interactive web platform, containerization, CI/test suite, and lead maintainer (`v0.2.0`–`v0.3.0`)
 - **License**: Released under the [MIT License](LICENSE).

@@ -1,6 +1,6 @@
 # Project History and Roadmap
 
-This document summarizes the major development milestones of the Gene Regulatory Networks (GRN) shape homeostasis simulation project and links to the active GitHub Issues derived from the original 2017 thesis notes.
+This document summarizes the major development milestones of the Gene Regulatory Networks (GRN) shape homeostasis simulation project and links to the active GitHub Issues derived from the original 2017 thesis notes. For detailed per-commit release notes with timestamps, see [`CHANGELOG.md`](../CHANGELOG.md) and [`VERSION`](../VERSION).
 
 ---
 
