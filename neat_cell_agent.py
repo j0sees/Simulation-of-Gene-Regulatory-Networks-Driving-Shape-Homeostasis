@@ -1,9 +1,6 @@
 import numpy as np
-#from tools import flatList, CheckifOccupied, CheckifPreferred, SGFDiffEq, LGFDiffEq, 
-from tools import *
+from core.tools import *
 import neat
-#from tools import flatList as fl
-#from numba import jit
 
 class cell:
     # defines whats needed when a new agent (Cell) of this class is created
@@ -13,7 +10,6 @@ class cell:
         self.yPos = yPos                            # Initial position on y axis
         self.compass = True                         # Polarization: WARNING: ON/OFF => True/False
         self.orientation = [self.yPos,self.xPos]    # Preferred direction. DEFAULT: own position
-        #self.neighbourList = flatList([flatList([self.yPos - 1, self.xPos]), flatList([self.yPos + 1, self.xPos]), flatList([self.yPos, self.xPos - 1]), flatList([self.yPos, self.xPos + 1])])
         self.neighbourList = [[self.yPos - 1, self.xPos], [self.yPos + 1, self.xPos], [self.yPos, self.xPos - 1], [self.yPos, self.xPos + 1]]
         self.splitCounter = 0                       # Counter for splitting
         self.splitTime = 1                          # Time scale for splitting
@@ -21,18 +17,12 @@ class cell:
         self.deathTime = 1                          # Time scale for dying
         self.amidead = False                        # Cell dead or alive
         self.quietCounter = 0                       # Quiet counter
-        #self.border = 0                             # size of the lattice
         self.sgfAmount = 0                          # Amount of "pheromone" to deposit in the grid
         self.lgfAmount = 0
-        # Neural network stuff
-        #self.wMatrix = np.array(w)
-        #self.WMatrix = W
+        self.genome = genome
+        self.config = config
         self.network = neat.nn.recurrent.RecurrentNetwork.create(genome, config)
- #self.phi = phi
-        #self.theta = theta
-#        self.nNodes = nodes                            # WARNING hardcoded!
-#        self.nInputs = 2
-#        self.V = np.zeros([self.nNodes])
+        self.V = np.zeros(8)
     # self
 
     #   Values stored in grid according to state:
@@ -234,27 +224,19 @@ class cell:
                         if CheckifPreferred(xOri, yOri, neighbr[1], neighbr[0]):    # Check if is preferred
                             grid[yOri][xOri] = 1         # new position gets a 1 value to mark as new quiet cell
                             grid[self.yPos][self.xPos] = 3                               # mark as splitting cell
-                            cellList.append(cell(yOri, xOri, self.wMatrix, self.nNodes))
+                            cellList.append(cell(yOri, xOri, self.genome, self.config))
                             needOtherNeighbours = False
-                            #print('{}: new cell at preferred position!'.format(neighbr))                                       
                             break
-                            # DEBUG
-                            #print(str(neighbr) + ': preferred position available')                                       
                         else:
-                            # DEBUG
-                            #print(str(neighbr) + ': available neighbour')
-                            #print('{}: available!'.format(neighbr))                                       
                             availableSpots.append(neighbr)                     # list with other available neighbours
                 except IndexError:
-                    #print('{}: out of bounds!!'.format(neighbr))                                       
                     continue
             if needOtherNeighbours:
                 if len(availableSpots) > 0:
                     r = np.random.randint(len(availableSpots))
-                    #print('preferred position not available. New cell at {}'.format(availableSpots[r]))
                     grid[availableSpots[r][0]][availableSpots[r][1]] = 1         # new position gets a 1 value to mark as new quiet cell
                     grid[self.yPos][self.xPos] = 3                               # mark as splitting cell
-                    cellList.append(cell(availableSpots[r][0], availableSpots[r][1], self.wMatrix, self.nNodes))
+                    cellList.append(cell(availableSpots[r][0], availableSpots[r][1], self.genome, self.config))
                     # DEBUG
                     #print('cell moved!')
                 else:

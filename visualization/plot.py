@@ -20,6 +20,7 @@ class Environment:
     - LGF (Long-range Growth Factor) concentrations
     """
 
+    @staticmethod
     def CellsGridFigure(fieldSize, mode):
         """
         Create the main figure with subplots for cell system visualization.
@@ -118,6 +119,7 @@ class Environment:
         return cellsFigure, cellsSubplot, sgfSubplot, lgfSubplot, cellPlot, sgfPlot, lgfPlot
     # CellsGridFigure
 
+    @staticmethod
     def AntGridPlot(cellGrid,
                     chemGrid,
                     nLattice,
@@ -138,7 +140,7 @@ class Environment:
         Environment.UpdatePlot( cellsFigure,
                                 cellsSubplot,
                                 sgfSubplot,
-                                lgfSubplot,
+                                sgfSubplot_lgf := lgfSubplot,
                                 cellPlot,
                                 sgfPlot,
                                 lgfPlot,
@@ -148,6 +150,7 @@ class Environment:
                                 tStep,
                                 mode)
 
+    @staticmethod
     def UpdatePlot( cellsFigure,
                     cellsSubplot,
                     sgfSubplot,
@@ -160,18 +163,11 @@ class Environment:
                     lgf_data,
                     tStep,
                     mode):
-        #
         cellPlot.set_data(cell_data)
         sgfPlot.set_data(sgf_data)
         lgfPlot.set_data(lgf_data)
-        #
-        cellsSubplot.draw_artist(cellsSubplot.patch)
-        cellsSubplot.draw_artist(cellPlot)
-        sgfSubplot.draw_artist(sgfPlot)
-        lgfSubplot.draw_artist(lgfPlot)
-        
-        #
-        cellsFigure.canvas.update()
+
+        cellsFigure.canvas.draw_idle()
         cellsFigure.canvas.flush_events()
         #cellsSubplot.spines['right'].set_visible(True)
         #cellsSubplot.spines['top'].set_visible(True)
@@ -301,7 +297,7 @@ def ShowNetwork(dataFile):
     ind = 460
     nNodes = 25
     wMatrix = tools.GetrNN(csvFile, ind)
-    G = nx.from_numpy_matrix(wMatrix)
+    G = nx.from_numpy_array(wMatrix, create_using=nx.DiGraph)
     plt.close()
     fig = plt.figure()
     ax = fig.add_subplot(111)
