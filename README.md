@@ -7,7 +7,7 @@
 
 [![Version](https://img.shields.io/badge/version-0.3.0-blue.svg)](./CHANGELOG.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-teal.svg)](./LICENSE)
-[![CI](https://github.com/userravs/simulation-of-gene-regulatory-networks-driving-shape-homeostasis/actions/workflows/ci.yml/badge.svg)](https://github.com/userravs/simulation-of-gene-regulatory-networks-driving-shape-homeostasis/actions/workflows/ci.yml)
+[![CI](https://github.com/userravs/simulation-of-gene-regulatory-networks-driving-shape-homeostasis/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/userravs/simulation-of-gene-regulatory-networks-driving-shape-homeostasis/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white)
 ![uv](https://img.shields.io/badge/uv-managed-DE5FE9?logo=uv&logoColor=white)
 ![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey)

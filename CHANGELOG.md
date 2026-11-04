@@ -7,13 +7,15 @@ All notable changes to this project are documented in this file. The format is b
 ## [0.3.0] - 2026-11-04
 
 ### Added
-- **Release Baseline & Community Standards**: Added `VERSION` (`0.3.0`), `CHANGELOG.md`, `CONTRIBUTING.md` (Trunk-Based Development, Conventional Commits, issue guidelines), and `CODE_OF_CONDUCT.md` (`2026-11-04`).
+- **Hero Header, Mermaid Diagrams & Scientific References**: Added centered hero header and shields.io badges in `README.md`, Mermaid architectural and execution flowcharts across `README.md`, `docs/architecture.md`, `docs/docker.md`, and `docs/web-interface.md`, and a foundational references section (`abaa83e`, `2026-11-04T12:03:07-06:00`).
+- **Release Baseline & Community Standards**: Added `VERSION` (`0.3.0`), `CHANGELOG.md`, `CONTRIBUTING.md` (Trunk-Based Development, Conventional Commits, issue guidelines), and `CODE_OF_CONDUCT.md` (`5e8f88e`, `2026-11-04T11:55:56-06:00`).
 - **Podman & Docker Container Launcher**: Replaced the Docker-only launcher with `scripts/run_container.sh` supporting both Podman (Podman Desktop / rootless Podman) and Docker on macOS and Linux (`adc3acd`, `2026-11-04T08:27:38-06:00`).
 - **Multi-Topology CLI & Thesis Context**: Re-infused `v0.1.0` mathematical and biological context (`flatList` closed boundaries, Neumann zero-flux Laplacian, 2-layer feedforward to RNN generalization, and `MapPlot` phase-space maps) into `docs/architecture.md`, and added CLI/programmatic support for `erdos-renyi`, `watts-strogatz`, and `barabasi-albert` topologies in `analysis/graph_generator.py` (`17ae423`, `2026-11-04T07:48:28-06:00`).
 - **Citation & Author Metadata**: Added `CITATION.cff` and standardized author/maintainer attribution across `README.md`, `pyproject.toml`, `LICENSE`, `docs/architecture.md`, and `visualization/web_app.py` (`39bf506`, `2026-11-04T07:24:37-06:00`).
 - **GitHub Actions CI & Unit Test Suite**: Added `.github/workflows/ci.yml` (`ruff`, `compileall`, `pytest`, container smoke build) and `pytest` unit tests under `tests/` (`5a59441`, `2026-11-03T23:12:03-06:00`).
 
 ### Changed
+- **License Copyright & Upstream CI Compatibility**: Updated `LICENSE` copyright range to `2017-2026` and added `master` branch trigger support to `.github/workflows/ci.yml` (`f054b90`, `2026-11-04T12:28:44-06:00`).
 - **Roadmap Tracking**: Converted raw 2017 scratch notes in `docs/history-log.md` into a milestone history and issue tracker (`8d68da2`, `2026-11-04T08:03:03-06:00`).
 - **Root Directory Organization & Namespace Packages**: Moved `neat_cell_agent.py` and `neat_parallel.py` to `evolution/`, `web_app.py` and `plots.gp` to `visualization/`, and shell launchers to `scripts/`; removed empty `__init__.py` files in favor of PEP 420 namespace packages and bumped version to `0.3.0` (`dd99a8d`, `2026-11-04T07:11:15-06:00`).
 - **PEP 8 Cleanup & Ignore Rules**: Removed commented-out legacy code across all Python modules, enforced PEP 8 formatting (`<= 100` chars/line), and aligned `.gitignore` and `.dockerignore` (`a65cc53`, `2026-11-03T23:02:24-06:00`).
