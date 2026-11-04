@@ -1,11 +1,11 @@
-"""Unit tests for network topology generators and Plotly figure construction in web_app.py."""
+"""Unit tests for network topology generators and Plotly figures in visualization/web_app.py."""
 
 from __future__ import annotations
 
 import numpy as np
 import pytest
 
-from web_app import create_cell_grid_plot, generate_weight_matrix
+from visualization.web_app import create_cell_grid_plot, generate_weight_matrix
 
 
 @pytest.mark.parametrize(
@@ -30,4 +30,3 @@ def test_create_cell_grid_plot_traces() -> None:
     fig = create_cell_grid_plot(cell_grid, sgf_grid, lgf_grid)
     assert len(fig.data) == 3
     assert [trace.name for trace in fig.data] == ["Cells", "SGF", "LGF"]
-

@@ -16,8 +16,8 @@ This document records the chronological development history of the Gene Regulato
   ```bash
   ffmpeg -f image2 -pattern_type glob -framerate 24 -i 'cell_system-*.png' -s 1024x1024 cell_system.avi
   ```
-- Start containerized web interface: `./run_docker.sh`
-- Start local web interface: `./run_web_app.sh`
+- Start containerized web interface: `./scripts/run_docker.sh`
+- Start local web interface: `./scripts/run_web_app.sh`
 - Web interface URL: `http://localhost:8501`
 
 ---
@@ -188,8 +188,9 @@ This document records the chronological development history of the Gene Regulato
 ## Project Modernization (2024–2025)
 
 ### Summary of Modernization Changes
-- **Modular Package Structure**: Reorganized source files into `core/`, `evolution/`, `visualization/`, `analysis/`, `config/`, `examples/`, and `docs/`.
-- **Python 3 Compatibility**: Updated imports, dependencies (`requirements.txt`), and package initialization files.
-- **Containerization**: Added `Dockerfile`, `docker-compose.yml`, `.dockerignore`, and `run_docker.sh` for reproducible deployment.
-- **Interactive Web Application**: Created `web_app.py` and `run_web_app.sh` using Streamlit and Plotly for real-time browser-based simulation and visualization.
-- **Documentation Suite**: Added structured guides in `docs/` (`web-interface.md`, `docker.md`, `thesis-summary.md`, `history-log.md`) and automated figure generation (`examples/generate_documentation_images.py`).
+- **Modular Package Structure**: Reorganized source files into `core/`, `evolution/`, `visualization/`, `analysis/`, `config/`, `examples/`, `scripts/`, `tests/`, and `docs/` using Python 3 PEP 420 namespace packages.
+- **Modern Tooling (`uv` & `pyproject.toml`)**: Migrated dependency management to `uv` and `pyproject.toml`, targeting Python 3.11+ and modern scientific stack releases.
+- **Containerization**: Added `Dockerfile` (`python:3.12-slim` + `uv`), `docker-compose.yml`, `.dockerignore`, and `scripts/run_docker.sh` for reproducible deployment.
+- **Interactive Web Application**: Created `visualization/web_app.py` and `scripts/run_web_app.sh` using Streamlit and Plotly for real-time browser-based simulation and visualization.
+- **Continuous Integration & Unit Tests**: Added GitHub Actions CI (`.github/workflows/ci.yml`) and a `pytest` unit test suite in `tests/`.
+- **Documentation Suite**: Added structured guides in `docs/` (`architecture.md`, `web-interface.md`, `docker.md`, `history-log.md`) and automated figure generation (`examples/generate_documentation_images.py`).

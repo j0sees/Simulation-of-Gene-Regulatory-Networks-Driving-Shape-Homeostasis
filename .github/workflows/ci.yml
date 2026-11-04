@@ -36,7 +36,7 @@ jobs:
         run: uv sync --dev
 
       - name: Validate shell scripts
-        run: bash -n run_docker.sh run_web_app.sh
+        run: bash -n scripts/run_docker.sh scripts/run_web_app.sh
 
       - name: Lint with Ruff
         run: uv run ruff check .
@@ -45,7 +45,6 @@ jobs:
         run: >-
           uv run python -m compileall -q
           core evolution visualization analysis examples tests
-          web_app.py neat_cell_agent.py neat_parallel.py
 
       - name: Run unit tests with pytest
         run: uv run pytest -v
@@ -63,5 +62,4 @@ jobs:
       - name: Verify container imports
         run: >-
           docker run --rm -e MPLBACKEND=Agg grn-simulation:ci
-          python -c "import core.main, evolution.main_ga, visualization.plot, web_app"
-
+          python -c "import core.main, evolution.main_ga, visualization.plot, visualization.web_app"

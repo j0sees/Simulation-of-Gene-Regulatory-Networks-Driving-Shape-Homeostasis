@@ -18,8 +18,8 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import streamlit as st
 
-# Add the project root to the path
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+# Add the project root to sys.path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from core.cell_agent import cell
 from core.tools import (
@@ -394,3 +394,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

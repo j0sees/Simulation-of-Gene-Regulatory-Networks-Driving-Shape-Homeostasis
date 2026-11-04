@@ -192,3 +192,4 @@ class cell:
                     )
                 else:
                     grid[self.yPos][self.xPos] = 1
+
