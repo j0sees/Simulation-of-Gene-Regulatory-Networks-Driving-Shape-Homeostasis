@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   grn-simulation:
     build: .
@@ -14,6 +12,5 @@ services:
     environment:
       - PYTHONPATH=/app
       - PYTHONUNBUFFERED=1
-    # Keep container running
     tty: true
     stdin_open: true

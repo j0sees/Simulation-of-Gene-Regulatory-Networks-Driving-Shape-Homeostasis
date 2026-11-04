@@ -9,7 +9,7 @@ The Gene Regulatory Network simulation includes an interactive web application b
 ### Prerequisites
 
 - **Docker & Docker Compose** (recommended; no local Python installation required)
-- **Python 3.9+** (for local execution without Docker)
+- **Python 3.11+** and **[uv](https://docs.astral.sh/uv/)** (for local execution without Docker)
 
 ### Running the Web Interface
 
@@ -22,15 +22,15 @@ The Gene Regulatory Network simulation includes an interactive web application b
 # Open in your browser: http://localhost:8501
 ```
 
-#### Option 2: Local Execution
+#### Option 2: Local Execution with `uv`
 
 ```bash
-# Use the local launcher script (checks and installs dependencies automatically)
+# Use the local launcher script (syncs dependencies via uv automatically)
 ./run_web_app.sh
 
-# Or run Streamlit directly after installing requirements.txt
-pip install -r requirements.txt
-streamlit run web_app.py --server.port 8501 --server.address 0.0.0.0
+# Or run Streamlit directly with uv
+uv sync
+uv run streamlit run web_app.py --server.port 8501 --server.address 0.0.0.0
 ```
 
 ## Interface Features
@@ -94,7 +94,7 @@ The web application is organized into three main tabs:
 - **Evolutionary Engine (`evolution/`)**: Genetic algorithm operators and fitness evaluation.
 
 ### Containerization
-- **Docker**: Packages Python 3.9, system build tools (`gcc`, `g++`), and Python dependencies.
+- **Docker**: Packages Python 3.12, `uv`, system build tools (`gcc`, `g++`), and Python dependencies.
 - **Port Mapping**: Exposes port `8501` to the host machine.
 - **Volume Mounting**: Mounts `./data` to `/app/data` for persisting output files.
 
@@ -125,7 +125,7 @@ The web application is organized into three main tabs:
 
 ### Module Import Errors
 - **Rebuild the container image**: Run `docker-compose down && docker-compose up --build`.
-- **Verify local dependencies**: Run `pip install -r requirements.txt` when running outside Docker.
+- **Verify local dependencies**: Run `uv sync` when running outside Docker.
 
 ### Slow Simulation Updates
 - Reduce **Lattice Size** (e.g., `25`–`40`) or **Time Steps** for faster interactive rendering.

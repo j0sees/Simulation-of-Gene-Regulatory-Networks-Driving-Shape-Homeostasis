@@ -14,13 +14,13 @@ in neat-python.  You can of course roll your own parallelism mechanism
 or inherit from ParallelEvaluator if you need to do something more complicated.
 """
 
-from __future__ import print_function
-
 import math
 import os
 import time
-import core.main as main
+import numpy as np
 import neat
+import core.main as main
+import evolution.main_ga as main_ga
 
 #import visualize
 
@@ -123,5 +123,5 @@ if __name__ == '__main__':
     # here so that the script will run successfully regardless of the
     # current working directory.
     local_dir = os.path.dirname(__file__)
-    config_path = os.path.join(local_dir, 'config-ca')
+    config_path = os.path.join(local_dir, 'config', 'config-ca')
     run(config_path)

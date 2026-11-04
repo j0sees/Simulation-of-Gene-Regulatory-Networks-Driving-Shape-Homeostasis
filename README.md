@@ -57,7 +57,7 @@ Collective multicellular behavior emerges from:
 ### Prerequisites
 
 - **Docker & Docker Compose** (recommended; no local Python setup required)
-- **Python 3.9+** (for local execution and development)
+- **Python 3.11+** and **[uv](https://docs.astral.sh/uv/)** (for local execution and development)
 
 ### Installation
 
@@ -72,15 +72,15 @@ cd simulation-of-gene-regulatory-networks-driving-shape-homeostasis
 ./run_docker.sh
 ```
 
-#### Option 2: Local Installation
+#### Option 2: Local Installation with `uv`
 
 ```bash
 # Clone the repository
 git clone https://github.com/userravs/simulation-of-gene-regulatory-networks-driving-shape-homeostasis.git
 cd simulation-of-gene-regulatory-networks-driving-shape-homeostasis
 
-# Install Python dependencies
-pip install -r requirements.txt
+# Create virtual environment and sync dependencies using uv
+uv sync
 ```
 
 ### Usage
@@ -91,7 +91,7 @@ pip install -r requirements.txt
 # Using Docker
 ./run_docker.sh
 
-# Or locally using the launcher script
+# Or locally using uv via the launcher script
 ./run_web_app.sh
 ```
 
@@ -106,17 +106,17 @@ Open your browser at `http://localhost:8501`. The web interface provides:
 
 ```bash
 # Run a basic cellular automata simulation example
-python examples/run_simulation.py
+uv run python examples/run_simulation.py
 
 # Run a genetic algorithm evolution example
-python examples/run_evolution.py
+uv run python examples/run_evolution.py
 
 # Regenerate documentation example plots
-python examples/generate_documentation_images.py
+uv run python examples/generate_documentation_images.py
 
 # Run core simulation or genetic algorithm modules directly
-python core/main.py [filename] [nNodes] [individual]
-python evolution/main_ga.py [filename] [parameters]
+uv run python core/main.py [filename] [nNodes] [individual]
+uv run python evolution/main_ga.py [filename] [parameters]
 ```
 
 ---
@@ -155,8 +155,9 @@ python evolution/main_ga.py [filename] [parameters]
 ├── plots_gp                                 # Gnuplot script for fitness curves
 ├── run_docker.sh                            # Docker build and launch script
 ├── run_web_app.sh                           # Local Streamlit launch script
-├── Dockerfile                               # Container image definition
+├── Dockerfile                               # Container image definition (Python 3.12 + uv)
 ├── docker-compose.yml                       # Docker Compose service configuration
+├── pyproject.toml                           # Project metadata and uv dependencies
 ├── requirements.txt                         # Python package dependencies
 ├── LICENSE                                  # MIT License
 └── README.md                                # Main project documentation

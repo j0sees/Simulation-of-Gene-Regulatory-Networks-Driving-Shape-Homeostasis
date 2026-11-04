@@ -24,7 +24,7 @@ Reorganized the codebase into dedicated packages:
 - `docs/` — Project documentation and reference figures
 
 ### 2. Containerization
-- **`Dockerfile`**: Builds a lightweight image based on `python:3.9-slim` running as a non-root user (`appuser`).
+- **`Dockerfile`**: Builds a lightweight image based on `python:3.12-slim` with `uv` package management, running as a non-root user (`appuser`).
 - **`docker-compose.yml`**: Configures service ports (`8501:8501`) and volume mounts for local development and data persistence.
 - **`run_docker.sh`**: Helper script to validate Docker status, build the image, and launch the application.
 - **`.dockerignore`**: Excludes build artifacts, caches, and version control metadata from the image context.
@@ -47,8 +47,8 @@ Reorganized the codebase into dedicated packages:
   - `docs/history-log.md` — Development timeline
 
 ### 5. Dependency Management and Code Quality
-- **`requirements.txt`**: Pinned minimum versions for `numpy`, `scipy`, `matplotlib`, `networkx`, `numba`, `neat-python`, `streamlit`, and `plotly`.
-- **Module Imports**: Updated relative and package-level imports across restructured directories.
+- **`pyproject.toml` and `requirements.txt`**: Managed with `uv`, targeting Python 3.11+ and modern versions of `numpy`, `scipy`, `matplotlib`, `networkx`, `numba`, `neat-python`, `streamlit`, `plotly`, and `pandas`.
+- **Module Imports & API Updates**: Updated NetworkX 3.x (`from_numpy_array`, `to_numpy_array`), Numba (`@njit`), and Matplotlib (`draw_idle`) APIs across restructured modules.
 - **Docstrings and Formatting**: Improved docstrings and comments across Python modules.
 
 ## Backward Compatibility

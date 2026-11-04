@@ -36,7 +36,12 @@ def sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice, mode):
     # TODO: organize in different categories...
     #nLattice = 5                               # TODO change name
     #timeSteps = 40                             # Number of simulation time steps
-    cellGrid = np.zeros([nLattice,nLattice,3])  # Initialize empty grid
+    npCellGrid = np.zeros([nLattice, nLattice])  # Initialize empty grid
+    semiFlatGrid = [flatList(npCellGrid[r, :]) for r in range(nLattice)]
+    cellGrid = flatList(semiFlatGrid)
+    chemGrid = np.zeros([nLattice, nLattice, 2])
+    halfwayStruct = np.zeros([nLattice, nLattice])
+    finalStruct = np.ones([nLattice, nLattice])
     SGF_read = 0.                               # in the future values will be read from the grid
     LGF_read = 0.
     ix = int(nLattice/2)                        # Initial position for the mother cell
@@ -63,7 +68,9 @@ def sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice, mode):
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
     # create mother cell and update the grid with its initial location
     cellList.append(cell(ix,iy,wMatrix,nNodes))
-    cellGrid[ix][iy][0] = 1
+    cellGrid[ix][iy] = 1
+    if not mode:
+        cellsFigure, cellsSubplot, sgfSubplot, lgfSubplot, cellPlot, sgfPlot, lgfPlot = Environment.CellsGridFigure(nLattice, mode)
     #print('Initial grid:\n' + str(cellGrid[:,:,0]))
     #cellGrid[ix][iy][2] = 400.
 
@@ -103,7 +110,7 @@ def sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice, mode):
             #tmpCellList[rndCell].nNodes = nNodes                       # WARNING hardcoded
 
             # 2nd step => read chemicals
-            SGF_reading, LGF_reading = tmpCellList[rndCell].Sense(cellGrid)
+            SGF_reading, LGF_reading = tmpCellList[rndCell].Sense(chemGrid)
 
             # 3rd step => random cell should decide and action
             tmpCellList[rndCell].GenerateStatus(SGF_reading, LGF_reading)     # get status of this cell
@@ -157,8 +164,8 @@ def sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice, mode):
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
         # Timing!
         #start_time_chemicalsUpdate = time.time()
-        cellGrid[:,:,1] = SGFDiffEq(cellGrid[:,:,1], sigma_m, deltaS, deltaT)
-        cellGrid[:,:,2] = LGFDiffEq(i_matrix, t_matrix, cellGrid[:,:,2], lambda_m, deltaL, deltaT, deltaR, diffConst)
+        chemGrid[:,:,0] = SGFDiffEq(chemGrid[:,:,0], sigma_m, deltaS, deltaT)
+        chemGrid[:,:,1] = LGFDiffEq(i_matrix, t_matrix, chemGrid[:,:,1], lambda_m, deltaL, deltaT, deltaR, diffConst)
         # Timing!
         #end_time_chemicalsUpdate = time.time()
         #secs = end_time_chemicalsUpdate - start_time_chemicalsUpdate
@@ -189,45 +196,17 @@ def sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice, mode):
                     finalStruct = np.ones([nLattice,nLattice])
                     break
                 else:
-                    halfwayStruct = np.array(cellGrid[:,:,0])
-        #         Environment.AntGridPlot(cellGrid,
-        #                                 nLattice,
-        #                                 cellsFigure,
-        #                                 cellsSubplot,
-        #                                 sgfSubplot,
-        #                                 lgfSubplot,
-        #                                 cellPlot,
-        #                                 sgfPlot,
-        #                                 lgfPlot,
-        #                                 iTime,
-        #                                 iGen,
-        #                                 individual,
-        #                                 mode)
-        #
+                    halfwayStruct = np.array(cellGrid)
             elif iTime == timeSteps - 1:
                 if len(cellList) == nLattice**2:                      # If cells fill space 
                     halfwayStruct = np.zeros([nLattice,nLattice])       # return two completely different structure matrices to get 0 fitness
                     finalStruct = np.ones([nLattice,nLattice])
                     # break
                 else:
-                    finalStruct = np.array(cellGrid[:,:,0])
-        #         Environment.AntGridPlot(cellGrid,
-        #                                 nLattice,
-        #                                 cellsFigure,
-        #                                 cellsSubplot,
-        #                                 sgfSubplot,
-        #                                 lgfSubplot,
-        #                                 cellPlot,
-        #                                 sgfPlot,
-        #                                 lgfPlot,
-        #                                 iTime,
-        #                                 iGen,
-        #                                 individual,
-        #                                 mode)
+                    finalStruct = np.array(cellGrid)
         else:
-            # Timing!
-            #start_time_plotUpdate = time.time()
             Environment.AntGridPlot(    cellGrid,
+                                        chemGrid,
                                         nLattice,
                                         cellsFigure,
                                         cellsSubplot,
@@ -237,8 +216,6 @@ def sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice, mode):
                                         sgfPlot,
                                         lgfPlot,
                                         iTime,
-                                        iGen,
-                                        individual,
                                         mode)
             # Timing!
         #     end_time_plotUpdate = time.time()

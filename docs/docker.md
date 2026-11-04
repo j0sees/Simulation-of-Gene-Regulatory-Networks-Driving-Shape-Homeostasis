@@ -26,9 +26,9 @@ Once started, open `http://localhost:8501` in your browser.
 
 ### `Dockerfile`
 Defines the container image:
-- Uses `python:3.9-slim` for a compact base image.
+- Uses `python:3.12-slim` as the base image and copies the `uv` binary from `ghcr.io/astral-sh/uv:latest`.
 - Installs system build dependencies (`gcc`, `g++`) required by scientific Python packages.
-- Installs Python dependencies from `requirements.txt`.
+- Installs Python dependencies from `requirements.txt` using `uv pip install --system --no-cache`.
 - Creates and switches to a non-root user (`appuser`, UID `1000`).
 - Exposes port `8501` and launches the Streamlit web interface by default.
 

@@ -1,10 +1,10 @@
 # -*- coding: latin_1 -*-
-#import matplotlib.pyplot as plt
-import numpy as np
-import networkx as nx
-from datetime import datetime as dt
 import csv
+from datetime import datetime as dt
+import os
 import sys
+import networkx as nx
+import numpy as np
 
 
 if __name__ == '__main__':
@@ -18,7 +18,9 @@ if __name__ == '__main__':
     tSteps = 100
     arrayContainer = np.zeros([len(nodeProb)*nRuns,nNodes**2])
     infofFileID = '{0:%Y%m%d_%H%M%S_%f}'.format(dt.now())
-    runsMainFile = 'runs/run_ graphs_{0}.log'.format(infofFileID)
+    os.makedirs('runs', exist_ok=True)
+    os.makedirs('populations', exist_ok=True)
+    runsMainFile = 'runs/run_graphs_{0}.log'.format(infofFileID)
     commentString = sys.argv[1]
     timeSteps = 200
     nLattice = 50
@@ -52,7 +54,7 @@ if __name__ == '__main__':
         # some repetitions of the same settings
         for rep in range(nRuns):
             Graph = nx.erdos_renyi_graph(nNodes, nP, directed = True)
-            wMatrix = nx.to_numpy_matrix(Graph)
+            wMatrix = nx.to_numpy_array(Graph, dtype=np.float64)
             for ix in range(nNodes):                               
                 for iy in range(nNodes):
                     if wMatrix[ix,iy] == 1:
