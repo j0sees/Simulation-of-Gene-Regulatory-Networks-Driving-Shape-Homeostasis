@@ -27,7 +27,6 @@ import evolution.main_ga as main_GA
 # Page configuration
 st.set_page_config(
     page_title="Gene Regulatory Network Simulation",
-    page_icon="🧬",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -124,7 +123,7 @@ def main():
     """Main Streamlit application."""
     
     # Header
-    st.title("🧬 Gene Regulatory Network Simulation")
+    st.title("Gene Regulatory Network Simulation")
     st.markdown("Interactive simulation of cellular automata with gene regulatory networks")
     
     # Sidebar for controls
@@ -152,16 +151,16 @@ def main():
         col1, col2, col3 = st.columns(3)
         
         with col1:
-            if st.button("🚀 Start Simulation", type="primary"):
+            if st.button("Start Simulation", type="primary"):
                 st.session_state.running = True
                 st.session_state.current_step = 0
         
         with col2:
-            if st.button("⏸️ Pause"):
+            if st.button("Pause"):
                 st.session_state.running = False
         
         with col3:
-            if st.button("🔄 Reset"):
+            if st.button("Reset"):
                 st.session_state.running = False
                 st.session_state.current_step = 0
         

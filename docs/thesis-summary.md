@@ -1,62 +1,65 @@
-# Master's Thesis: Gene Regulatory Networks Driving Shape Homeostasis
+# Master's Thesis Summary: Gene Regulatory Networks Driving Shape Homeostasis
 
 ## Project Overview
 
-The main goal of the master thesis project is to expand the work made by Gerlee et al. (missing/fix reference). 
-They implemented a computational model of developing cells on a grid.
-Their aim was to study how different 
-individual cellular characteristics drive the emergence of homeostatic structures. The model combines 
-different sets of abilities for the cells such as: sense of orientation (polarization) and communication with 
-surrounding neighbors via diffusible factors.
+This master's thesis project builds upon the computational framework introduced by **Gerlee et al. (2015)** (*"The influence of cellular characteristics on the evolution of shape homeostasis"*, *Journal of the Royal Society Interface*, 12(103), 20141222).
+
+The framework models developing multicellular structures on a two-dimensional discrete lattice to study how individual cellular characteristics give rise to emergent shape homeostasis. It combines intracellular signaling networks with local capabilities such as cell polarization (orientation) and intercellular communication via diffusible growth factors.
 
 ## Model Description
 
-Each cell has four possible states, namely: **quiet**, **move**, **die**, **split**. The selection of a state is 
-made by a neural network which takes input values from the grid/environment. The outputs of the neural network give the cells a state, the amount 
-of chemicals they produce and an orientation in the grid. Every individual cell contains a neural network which is inherited by its mother 
-cell, this is the cell genotype. To reach the expected solutions, i.e., the homeostatic structure, an 
-evolutionary algorithm optimizes the neural network.
+Each cell on the lattice adopts one of four discrete actions at each time step: **quiet**, **move**, **die**, or **split** (divide).
+
+Action selection is governed by an intracellular recurrent neural network (representing a Gene Regulatory Network, or GRN) that receives local environmental inputs from the grid. At each step, the network outputs:
+
+1. The cell's discrete behavioral state (`quiet`, `move`, `die`, or `split`),
+2. The production rate of diffusible chemical factors, and
+3. A spatial orientation vector (polarization compass) on the grid.
+
+Every cell carries an identical neural network genotype inherited from its parent cell during division. To discover genotypes that self-organize into stable, homeostatic multicellular structures, an evolutionary algorithm optimizes the network weights across generations.
 
 ![Cell System Simulation](./images/cell_system_example.png)
 
-*The simulation environment shows cells in different states alongside SGF and LGF concentration patterns.*
+*Simulation environment showing cells in discrete states alongside Short-range Growth Factor (SGF) and Long-range Growth Factor (LGF) concentration fields.*
 
 ## Implementation Features
 
 ### Core Components
-- **Cellular Automata**: Spatial modeling of cell dynamics on a grid
-- **Neural Networks**: Gene regulatory networks within each cell
-- **Chemical Signaling**: SGF (Short-range Growth Factor) and LGF (Long-range Growth Factor)
-- **Evolutionary Algorithms**: Genetic algorithm for network optimization
+- **Cellular Automata**: Discrete 2D lattice modeling spatial occupancy and local neighborhood interactions.
+- **Recurrent Neural Networks**: Intracellular gene regulatory networks mapping local chemical inputs to cellular actions.
+- **Chemical Signaling**: Reaction-diffusion dynamics for Short-range Growth Factor (SGF) and Long-range Growth Factor (LGF).
+- **Evolutionary Optimization**: Parallel genetic algorithm and NEAT neuroevolution for optimizing network parameters.
 
 ![Gene Regulatory Network](./images/network_example.png)
 
-*Example of a gene regulatory network showing regulatory interactions and feedback loops.*
+*Example directed gene regulatory network illustrating regulatory connections and feedback loops.*
 
-### Technical Improvements
-- **Optimized algorithms** with improved performance
-- **Relaxed model constraints** (grid borders, cell genotype)
-- **Expanded solution space** for evolutionary algorithms
-- **Interactive web interface** for real-time simulation control
-- **Containerized deployment** for reproducible environments
+### Technical Enhancements
+- **Vectorized Diffusion Solver**: Matrix-based finite-difference updates for SGF and LGF fields.
+- **Parallel Evaluation**: Multiprocessing support for evaluating candidate genomes across CPU cores.
+- **Network Topology Analysis**: Graph generators for testing Erdős-Rényi, Watts-Strogatz, and Barabási-Albert architectures.
+- **Interactive Web Interface**: Streamlit and Plotly web application for real-time visualization.
+- **Containerized Environment**: Docker configuration for reproducible execution across platforms.
 
 ![Evolutionary Progress](./images/evolution_example.png)
 
-*Typical fitness progression during genetic algorithm optimization.*
+*Best and mean population fitness progression during genetic algorithm optimization.*
 
-## Expected Results
+## Research Objectives and Outcomes
 
-The research aims to identify:
-- **Minimal sets of characteristics** that lead to different cellular behavior
-- **Distinct fitness functions** that favor specific physical shapes
-- **Different models of cell dynamics**: sets of rules, dynamical systems
-- **Emergent homeostasis mechanisms** in multicellular systems
+The research investigates:
 
-## Software Implementation
+- **Minimal Cellular Capabilities**: Identifying the minimal set of cellular behaviors and signaling mechanisms required for shape homeostasis.
+- **Behavioral Classification**: Categorizing evolved GRNs into three primary behavioral classes that achieve homeostatic stability.
+- **Environmental Robustness**: Evaluating how evolved multicellular collectives respond to varied chemical and spatial conditions.
+- **Topology-Function Relationships**: Analyzing how structural graph properties of GRNs relate to developmental stability.
 
-The project includes:
-- **Modular architecture** with clean separation of concerns
-- **Interactive web interface** using Streamlit and Plotly
-- **Containerized deployment** with Docker
-- **Comprehensive documentation** and examples
-- **Research tools** for analysis and evaluation 
+## Software Architecture
+
+The repository organizes the research implementation into modular packages:
+
+- **`core/`**: Cellular automata engine, cell agent definition, and PDE solvers.
+- **`evolution/`**: Genetic algorithm operators, tournament selection, elitism, and parallel fitness evaluation.
+- **`visualization/`**: Matplotlib plotting utilities for lattice states and chemical maps.
+- **`analysis/`**: Network topology generators and graph evaluation scripts.
+- **`web_app.py`**: Browser-based simulation interface built with Streamlit and Plotly.

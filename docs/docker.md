@@ -2,329 +2,148 @@
 
 ## Overview
 
-This project includes Docker support for easy deployment and reproducible environments. Docker ensures that the simulation runs consistently across different systems and eliminates dependency issues.
+This project includes Docker and Docker Compose configurations to provide a consistent, reproducible environment across platforms without requiring a local Python setup.
 
 ## Quick Start
 
 ### Prerequisites
-- **Docker Desktop** installed and running
-- **Docker Compose** (usually included with Docker Desktop)
+- **Docker** (Docker Engine or Docker Desktop) installed and running
+- **Docker Compose** (`docker-compose` or `docker compose`)
 
 ### Running with Docker
 
 ```bash
-# Start the web interface
+# Build and start the web interface using the helper script
 ./run_docker.sh
 
-# Or manually with docker-compose
+# Or build and start directly with Docker Compose
 docker-compose up --build
 ```
 
-The web interface will be available at: **http://localhost:8501**
+Once started, open `http://localhost:8501` in your browser.
 
 ## Docker Components
 
-### Dockerfile
-The main container configuration file that:
-- Uses Python 3.9 slim image for smaller size
-- Installs system dependencies (gcc, g++)
-- Installs Python packages from requirements.txt
-- Creates a non-root user for security
-- Exposes port 8501 for the web interface
-- Sets the default command to run the Streamlit app
+### `Dockerfile`
+Defines the container image:
+- Uses `python:3.9-slim` for a compact base image.
+- Installs system build dependencies (`gcc`, `g++`) required by scientific Python packages.
+- Installs Python dependencies from `requirements.txt`.
+- Creates and switches to a non-root user (`appuser`, UID `1000`).
+- Exposes port `8501` and launches the Streamlit web interface by default.
 
-### docker-compose.yml
-Orchestrates the container setup:
-- Builds the image from Dockerfile
-- Maps port 8501 to host
-- Mounts volumes for development and data
-- Sets environment variables
-- Configures container behavior
+### `docker-compose.yml`
+Configures the `grn-simulation` service:
+- Builds the image from the local `Dockerfile`.
+- Maps host port `8501` to container port `8501`.
+- Mounts the workspace directory (`.:/app`) and data directory (`./data:/app/data`).
+- Sets `PYTHONPATH=/app` and `PYTHONUNBUFFERED=1`.
 
-### .dockerignore
-Specifies files to exclude from the Docker build context:
-- Git files (.git, .gitignore)
-- Python cache files (__pycache__, *.pyc)
-- Documentation files (*.md)
-- Development files (.vscode, .idea)
-- Data and output files (*.png, *.avi, *.csv)
-- Experimental files (neat-*.py)
+### `.dockerignore`
+Excludes non-essential files from the Docker build context:
+- Version control metadata (`.git`, `.gitignore`)
+- Python bytecode and caches (`__pycache__`, `*.pyc`)
+- Markdown documentation (`*.md`)
+- Editor configurations (`.vscode`, `.idea`)
+- Generated media and data artifacts (`*.png`, `*.avi`, `*.csv`)
 
-### run_docker.sh
-A convenient script that:
-- Checks if Docker is running
-- Creates necessary directories
-- Builds the Docker image
-- Starts the container
-- Provides helpful information
+### `run_docker.sh`
+Convenience launcher script that:
+1. Verifies that the Docker daemon is running.
+2. Ensures the local `./data` directory exists.
+3. Builds the container image via `docker-compose build`.
+4. Starts the service via `docker-compose up`.
 
 ## Container Architecture
 
-### Base Image
-- **python:3.9-slim**: Lightweight Python image
-- **System Dependencies**: gcc, g++ for compiled extensions
-- **Security**: Non-root user (appuser)
-
-### Application Structure
-```
+### Application Layout Inside `/app`
+```text
 /app/
-├── core/           # Core simulation modules
-├── evolution/      # Genetic algorithm
-├── visualization/ # Plotting tools
-├── analysis/       # Research tools
-├── examples/       # Usage examples
-├── web_app.py      # Streamlit application
-├── requirements.txt # Python dependencies
-└── Dockerfile     # Container configuration
+├── core/               # Core simulation modules
+├── evolution/          # Genetic algorithm implementation
+├── visualization/      # Matplotlib plotting utilities
+├── analysis/           # Network topology and evaluation tools
+├── config/             # Configuration files
+├── examples/           # Runnable example scripts
+├── data/               # Mounted directory for persistent outputs
+├── web_app.py          # Streamlit web application
+├── requirements.txt    # Python package dependencies
+└── Dockerfile          # Container build definition
 ```
 
-### Port Mapping
-- **Host Port**: 8501
-- **Container Port**: 8501
-- **Protocol**: HTTP
+### Port Mapping and Volumes
+- **Port**: Host `8501` -> Container `8501` (HTTP)
+- **Workspace Mount**: `.:/app` (enables live code updates during development)
+- **Data Mount**: `./data:/app/data` (persists simulation outputs on the host)
 
-### Volume Mounts
-- **Current Directory**: `.:/app` (for development)
-- **Data Directory**: `./data:/app/data` (for data persistence)
+## Common Workflows
 
-## Usage Examples
-
-### Basic Usage
+### Standard Web Interface Startup
 ```bash
-# Start the web interface
 ./run_docker.sh
-
-# Access at http://localhost:8501
 ```
 
-### Development Mode
+### Running in Detached (Background) Mode
 ```bash
-# Run with volume mounting for live code changes
-docker-compose up --build
-
-# Make changes to code and see them reflected immediately
-```
-
-### Custom Port
-```bash
-# Run on a different port
-docker-compose up --build -p 8080:8501
-
-# Access at http://localhost:8080
-```
-
-### Background Mode
-```bash
-# Run in background
+# Start container in the background
 docker-compose up -d --build
 
-# Check logs
+# Follow container logs
 docker-compose logs -f
 
-# Stop container
+# Stop and remove containers
 docker-compose down
 ```
 
-### Interactive Shell
+### Running on a Custom Host Port
 ```bash
-# Run container with interactive shell
+# Map host port 8080 to container port 8501
+docker-compose run --rm -p 8080:8501 grn-simulation
+```
+
+### Running CLI Scripts Inside the Container
+```bash
+# Open an interactive shell inside the container
 docker-compose run --rm grn-simulation bash
 
-# Inside container, run commands like:
+# Inside the container shell:
 python examples/run_simulation.py
-python evolution/main_ga.py
+python examples/run_evolution.py
 ```
 
 ## Troubleshooting
 
-### Common Issues
-
-#### Container Won't Start
+### Container Fails to Start
 ```bash
-# Check Docker status
+# Verify Docker daemon status
 docker info
 
-# Check available ports
-netstat -an | grep 8501
+# Check if port 8501 is already in use on the host
+lsof -i :8501
 
-# Check container logs
+# Inspect service logs
 docker-compose logs
 ```
 
-#### Import Errors
+### Module Import or Dependency Errors
 ```bash
-# Rebuild container
+# Stop containers and rebuild the image from scratch
 docker-compose down
-docker-compose up --build
-
-# Check if all files are copied
-docker-compose run --rm grn-simulation ls -la
+docker-compose build --no-cache
+docker-compose up
 ```
 
-#### Performance Issues
+### Permission Issues on `run_docker.sh` or `data/`
 ```bash
-# Check resource usage
-docker stats
-
-# Increase memory/CPU limits in docker-compose.yml
-```
-
-#### Permission Issues
-```bash
-# Fix file permissions
+# Ensure the launcher script is executable
 chmod +x run_docker.sh
 
-# Check user permissions in container
+# Verify container user identity
 docker-compose run --rm grn-simulation whoami
 ```
-
-### Debugging
-
-#### Container Inspection
-```bash
-# Enter running container
-docker exec -it grn-simulation bash
-
-# Check Python environment
-python -c "import sys; print(sys.path)"
-
-# Check installed packages
-pip list
-```
-
-#### Build Debugging
-```bash
-# Build with verbose output
-docker-compose build --progress=plain
-
-# Check build context
-docker-compose build --no-cache
-```
-
-#### Network Debugging
-```bash
-# Check port binding
-docker port grn-simulation
-
-# Test connectivity
-curl http://localhost:8501
-```
-
-## Advanced Configuration
-
-### Custom Environment Variables
-```yaml
-# In docker-compose.yml
-environment:
-  - PYTHONPATH=/app
-  - PYTHONUNBUFFERED=1
-  - STREAMLIT_SERVER_PORT=8501
-  - STREAMLIT_SERVER_ADDRESS=0.0.0.0
-```
-
-### Resource Limits
-```yaml
-# In docker-compose.yml
-deploy:
-  resources:
-    limits:
-      memory: 2G
-      cpus: '1.0'
-```
-
-### Health Checks
-```yaml
-# In docker-compose.yml
-healthcheck:
-  test: ["CMD", "curl", "-f", "http://localhost:8501"]
-  interval: 30s
-  timeout: 10s
-  retries: 3
-```
-
-### Multi-stage Builds
-```dockerfile
-# For production optimization
-FROM python:3.9-slim as builder
-# Build stage...
-
-FROM python:3.9-slim as runtime
-# Runtime stage...
-```
-
-## Production Deployment
-
-### Docker Registry
-```bash
-# Tag image for registry
-docker tag grn-simulation:latest your-registry/grn-simulation:latest
-
-# Push to registry
-docker push your-registry/grn-simulation:latest
-```
-
-### Docker Swarm
-```bash
-# Initialize swarm
-docker swarm init
-
-# Deploy stack
-docker stack deploy -c docker-compose.yml grn-simulation
-```
-
-### Kubernetes
-```yaml
-# Create deployment
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: grn-simulation
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: grn-simulation
-  template:
-    metadata:
-      labels:
-        app: grn-simulation
-    spec:
-      containers:
-      - name: grn-simulation
-        image: grn-simulation:latest
-        ports:
-        - containerPort: 8501
-```
-
-## Best Practices
-
-### Security
-- Use non-root user in container
-- Keep base image updated
-- Scan for vulnerabilities
-- Limit container capabilities
-
-### Performance
-- Use multi-stage builds
-- Optimize layer caching
-- Minimize image size
-- Use appropriate base images
-
-### Development
-- Use volume mounts for live development
-- Keep Dockerfile simple
-- Document build process
-- Use .dockerignore effectively
-
-### Maintenance
-- Regular base image updates
-- Security patches
-- Dependency updates
-- Performance monitoring
 
 ## References
 
 - **Docker Documentation**: https://docs.docker.com/
-- **Docker Compose**: https://docs.docker.com/compose/
-- **Docker Best Practices**: https://docs.docker.com/develop/dev-best-practices/
-- **Streamlit Docker**: https://docs.streamlit.io/knowledge-base/deploy/deploy-streamlit-using-docker
+- **Docker Compose Documentation**: https://docs.docker.com/compose/
+- **Deploy Streamlit Using Docker**: https://docs.streamlit.io/deploy/tutorials/docker
