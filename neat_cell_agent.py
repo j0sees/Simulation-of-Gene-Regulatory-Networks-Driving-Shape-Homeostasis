@@ -1,251 +1,194 @@
-import numpy as np
-from core.tools import *
+"""NEAT-based cell agent implementation for evolving network topologies."""
+
+from __future__ import annotations
+
 import neat
+import numpy as np
+
+from core.tools import (
+    CheckifOccupied,
+    CheckifPreferred,
+)
+
 
 class cell:
-    # defines whats needed when a new agent (Cell) of this class is created
-    def __init__(self, yPos, xPos, genome, config):
-        self.state = 'Quiet'                        # State of the cell. DEFAULT: quiet
-        self.xPos = xPos                            # Initial position on x axis
-        self.yPos = yPos                            # Initial position on y axis
-        self.compass = True                         # Polarization: WARNING: ON/OFF => True/False
-        self.orientation = [self.yPos,self.xPos]    # Preferred direction. DEFAULT: own position
-        self.neighbourList = [[self.yPos - 1, self.xPos], [self.yPos + 1, self.xPos], [self.yPos, self.xPos - 1], [self.yPos, self.xPos + 1]]
-        self.splitCounter = 0                       # Counter for splitting
-        self.splitTime = 1                          # Time scale for splitting
-        self.deathCounter = 0                       # Countdown to extinction
-        self.deathTime = 1                          # Time scale for dying
-        self.amidead = False                        # Cell dead or alive
-        self.quietCounter = 0                       # Quiet counter
-        self.sgfAmount = 0                          # Amount of "pheromone" to deposit in the grid
-        self.lgfAmount = 0
+    """
+    A cell agent controlled by a NEAT recurrent neural network genome.
+
+    Grid State Encoding
+    -------------------
+    - 0: Empty (available) grid spot
+    - 1: Quiet cell (or failed move/split action)
+    - 2: Moving cell
+    - 3: Newly divided cell
+    """
+
+    def __init__(self, yPos: int, xPos: int, genome, config) -> None:
+        """Initialize a NEAT-controlled cell agent at (yPos, xPos)."""
+        self.state = "Quiet"
+        self.xPos = xPos
+        self.yPos = yPos
+        self.compass = True
+        self.orientation = [self.yPos, self.xPos]
+        self.neighbourList = [
+            [self.yPos - 1, self.xPos],
+            [self.yPos + 1, self.xPos],
+            [self.yPos, self.xPos - 1],
+            [self.yPos, self.xPos + 1],
+        ]
+        self.splitCounter = 0
+        self.splitTime = 1
+        self.deathCounter = 0
+        self.deathTime = 1
+        self.amidead = False
+        self.quietCounter = 0
+        self.sgfAmount = 0.0
+        self.lgfAmount = 0.0
         self.genome = genome
         self.config = config
         self.network = neat.nn.recurrent.RecurrentNetwork.create(genome, config)
-        self.V = np.zeros(8)
-    # self
+        self.V = np.zeros(8, dtype=np.float64)
 
-    #   Values stored in grid according to state:
-    #       0   =>  spot has been always empty i.e. available
-    #       1   =>  quiet cell, or move/split failed/didn't reach the activation value
-    #       2   =>  moving cell
-    #       3   =>  divided cell
+    def Sense(self, grid: np.ndarray) -> tuple[float, float]:
+        """Sense SGF and LGF concentrations at the cell's current grid coordinate."""
+        sgf_reading = float(grid[self.yPos, self.xPos][0])
+        lgf_reading = float(grid[self.yPos, self.xPos][1])
+        return sgf_reading, lgf_reading
 
-    def Sense(self, grid):
-        # sense chemicals from the grid
-        SGF_reading = grid[self.yPos, self.xPos][0] # grid contains two values on each coordinate:
-        LGF_reading = grid[self.yPos, self.xPos][1] # occupation (boolean), SGF level, LGF level
-        #reads = [SGF_read, LGF_read]
-        return SGF_reading, LGF_reading
-    # Sense
+    def GenerateStatus(self, SGF_lecture: float, LGF_lecture: float) -> None:
+        """Activate the NEAT recurrent network to determine cell state and chemical output."""
+        outputs = self.network.activate((SGF_lecture, LGF_lecture))
+        for idx, val in enumerate(outputs[:6]):
+            self.V[idx + 2] = val
 
-    #@jit
-    def GenerateStatus(self, SGF_lecture, LGF_lecture):
-        # neural network generates a status based on the reads
-        #inputs = np.array([SGF_lecture, LGF_lecture])
-        # Neural network first implementation
-        #O = np.zeros([self.m])
-        #O = NeuralNetwork(inputs, self.WMatrix, self.wMatrix, self.phi, self.theta)
+        self.neighbourList = [
+            [self.yPos - 1, self.xPos],
+            [self.yPos + 1, self.xPos],
+            [self.yPos, self.xPos - 1],
+            [self.yPos, self.xPos + 1],
+        ]
 
-        inputs = np.zeros([self.nNodes])
-        inputs[0] = SGF_lecture
-        inputs[1] = LGF_lecture
-        self.V = RecurrentNeuralNetwork(inputs, self.wMatrix, self.V)
-        #self.neighbourList = flatList([flatList([self.yPos - 1, self.xPos]), flatList([self.yPos + 1, self.xPos]), flatList([self.yPos, self.xPos - 1]), flatList([self.yPos, self.xPos + 1])])
-        self.neighbourList = [[self.yPos - 1, self.xPos], [self.yPos + 1, self.xPos], [self.yPos, self.xPos - 1], [self.yPos, self.xPos + 1]]
-        #border = self.border
-        # possible states: split, move, die
-        iStatus = self.V[2] #np.random.random() #O[0]        # Proliferate:  Split
-        jStatus = self.V[3] #np.random.random() #O[1]        # Move:         Move
-        kStatus = self.V[4] #np.random.random() #O[2]        # Apoptosis:    Die
-        # values for SGF and LGF
-        self.sgfAmount = self.V[5] #np.random.randint(5) #O[4]
-        self.lgfAmount = self.V[6] #np.random.randint(5) #O[5]
+        i_status = self.V[2]  # Proliferate: Split
+        j_status = self.V[3]  # Migrate: Move
+        k_status = self.V[4]  # Apoptosis: Die
 
-        # ORIENTATION:
-        # randomly sets a preferred neighbour (polarisation)
-        # if the direction is out of bounds then no preferred direction is stored
-        # WARNING: This code needs to be revisited depending on the implementation of the NN later on
+        self.sgfAmount = float(self.V[5])
+        self.lgfAmount = float(self.V[6])
+
         if self.compass:
-            # boundaries for orientation
-            nBoundary = 0.25
-            sBoundary = 0.5
-            eBoundary = 0.75
-            #wBoundary = 1
-            arrow = self.V[7]  #np.random.random()
-            # oriented according to numpy order v>, not usual >^
-            if arrow < sBoundary:
-                if arrow < nBoundary:
-                    #xCoord = self.xPos 
-                    #yCoord = self.yPos - 1
-                    self.orientation = self.neighbourList[0]
-                # orientation North
+            n_boundary = 0.25
+            s_boundary = 0.5
+            e_boundary = 0.75
+            arrow = self.V[7]
+            if arrow < s_boundary:
+                if arrow < n_boundary:
+                    self.orientation = self.neighbourList[0]  # North
                 else:
-                    # orientation South
-                    # xCoord = self.xPos 
-                    # yCoord = self.yPos + 1
-                    self.orientation = self.neighbourList[1]
-            else: 
-                if arrow < eBoundary:
-                    # orientation East
-                    #xCoord = self.xPos + 1
-                    #yCoord = self.yPos 
-                    self.orientation = self.neighbourList[3]
-                else:   #arrow < wBoundary:
-                    # orientation West
-                    #xCoord = self.xPos - 1
-                    #yCoord = self.yPos
-                    self.orientation = self.neighbourList[2]
-            #self.orientation = [yCoord, xCoord]
-        else:                                           # update orientation as current position if compass False
-            self.orientation = [self.yPos, self.xPos]
-        # if
-        #print('neighbourList type: {}'.format(type(self.neighbourList)))
-        #print('Current pos: [{}, {}], arrow: {:.3f}, preferred direction: {}'.format(self.yPos, self.xPos, arrow, self.orientation))
-
-        # Generate state
-        maxVal = 0.5
-        #tmpVal = 0
-        xThreshold = 0.5
-        yThreshold = 0.01
-
-        # TODO: is the order of these operations ideal?
-        if iStatus < xThreshold and jStatus < xThreshold and kStatus < xThreshold:
-            self.state = 'Quiet'
-            # DEBUG
-            #print('split = ' + str(iStatus) + ', move = ' + str(jStatus) + '\ndie = ' + str(kStatus) + '. Max: quiet\n')
+                    self.orientation = self.neighbourList[1]  # South
+            else:
+                if arrow < e_boundary:
+                    self.orientation = self.neighbourList[3]  # East
+                else:
+                    self.orientation = self.neighbourList[2]  # West
         else:
-            for ix in iStatus, jStatus, kStatus:
-                if maxVal < ix:
-                    maxVal = ix
-            if abs(maxVal - iStatus) <= yThreshold:
-                self.state = 'Split'
-            elif abs(maxVal - jStatus) <= yThreshold:
-                self.state = 'Move'
-            else:   # abs(maxVal - kStatus) <= yThreshold:
-                self.state = 'Die'
-            # DEBUG
-            #print('split = ' + str(iStatus) + ', move = ' + str(jStatus) + '\ndie = ' + str(kStatus) + '. Max: '+ str(maxVal) + '\n')
-    # GenerateStatus
+            self.orientation = [self.yPos, self.xPos]
 
-    #@jit
-    def Quiet(self,grid):
+        max_val = 0.5
+        x_threshold = 0.5
+        y_threshold = 0.01
+
+        if i_status < x_threshold and j_status < x_threshold and k_status < x_threshold:
+            self.state = "Quiet"
+        else:
+            for val in (i_status, j_status, k_status):
+                if max_val < val:
+                    max_val = val
+            if abs(max_val - i_status) <= y_threshold:
+                self.state = "Split"
+            elif abs(max_val - j_status) <= y_threshold:
+                self.state = "Move"
+            else:
+                self.state = "Die"
+
+    def Quiet(self, grid) -> None:
+        """Keep the cell in the quiet state at its current position."""
         grid[self.yPos][self.xPos] = 1
         self.quietCounter += 1
-    # Quiet
 
-    #@jit
-    def Die(self, grid):
+    def Die(self, grid) -> None:
+        """Advance the death counter and remove the cell when deathTime is reached."""
         self.deathCounter += 1
-        if self.deathCounter == self.deathTime:             # if cell set to die then do
+        if self.deathCounter == self.deathTime:
             self.amidead = True
-            # DEBUG
-            #print('cell died!')
             grid[self.yPos][self.xPos] = 0
-        else:                                               # otherwise stay quiet
-            # DEBUG
-            #print('Death counter = ' + str(self.deathCounter))
+        else:
             grid[self.yPos][self.xPos] = 1
-    # Die
 
-    def Move(self, grid):
-        # create a list with the four Von Neumann neighbours
-        #finalList = []
-        availableSpots = []
-        needOtherNeighbours = True
-#        gridDim = grid.shape
-#        semiFlatGrid = [flatList(grid[r,:,0]) for r in range(gridDim[0])]
-#        flatGrid = flatList(semiFlatGrid)
-        #print('moving... preferred position: {}'.format(self.orientation))
-        for neighbr in self.neighbourList:                               # for each possible neighbour:
-            try: # the exception IndexError will determine if the neighbour is inbounds
-                if CheckifOccupied(neighbr[1], neighbr[0], grid):   # if its occupied
-                    # DEBUG
-                    #print('{}: occupied...'.format(neighbr))                                       
+    def Move(self, grid) -> None:
+        """Move the cell to its preferred or another available Von Neumann neighbor."""
+        available_spots = []
+        need_other_neighbours = True
+
+        for neighbr in self.neighbourList:
+            try:
+                if CheckifOccupied(neighbr[1], neighbr[0], grid):
                     continue
-                else:   # if neighbour is not occupied
-                    xOri = self.orientation[1]
-                    yOri = self.orientation[0]
-                    if CheckifPreferred(xOri, yOri, neighbr[1], neighbr[0]):    # Check if is preferred
-                        grid[yOri][xOri] = 2      # new position gets a 2 value to mark as moving cell
-                        grid[self.yPos][self.xPos] = 0        # old position gets a -1 value to indicate that there was a cell there before
-                        self.xPos = xOri                                  # update position
-                        self.yPos = yOri
-                        needOtherNeighbours = False
-                        # DEBUG
-                        #print('{}: moved to preferred position!'.format(neighbr))                                       
-                        break
-                    else:
-                        # DEBUG
-                        #print('{}: available!'.format(neighbr))                                       
-                        availableSpots.append(neighbr)                     # list with other available neighbours
+                x_ori = self.orientation[1]
+                y_ori = self.orientation[0]
+                if CheckifPreferred(x_ori, y_ori, neighbr[1], neighbr[0]):
+                    grid[y_ori][x_ori] = 2
+                    grid[self.yPos][self.xPos] = 0
+                    self.xPos = x_ori
+                    self.yPos = y_ori
+                    need_other_neighbours = False
+                    break
+                available_spots.append(neighbr)
             except IndexError:
-                #print('{}: out of bounds!!'.format(neighbr))                                       
                 continue
-        if needOtherNeighbours:
-            if len(availableSpots) > 0:
-                r = np.random.randint(len(availableSpots))
-                #print('prefered position not available. Moving to {}'.format(availableSpots[r]))
-                grid[availableSpots[r][0]][availableSpots[r][1]] = 2        # new position gets a 2 value to mark as moving cell
-                grid[self.yPos][self.xPos] = 0          # old position gets a -1 value to indicate that there was a cell there before
-                self.yPos = availableSpots[r][0]                                  # update position
-                self.xPos = availableSpots[r][1]
-                # DEBUG
-                #print('cell moved!')
+
+        if need_other_neighbours:
+            if len(available_spots) > 0:
+                idx = np.random.randint(len(available_spots))
+                target_y, target_x = available_spots[idx]
+                grid[target_y][target_x] = 2
+                grid[self.yPos][self.xPos] = 0
+                self.yPos = target_y
+                self.xPos = target_x
             else:
-                #print('moving failed... stay quiet')
-                grid[self.yPos][self.xPos] = 1                       # if moving fails then cell is marked as quiet
-        #print('Grid:\n{}'.format(grid[:,:,0]))
-    ## Move
+                grid[self.yPos][self.xPos] = 1
 
-    # OrientedMove, works with orientation ON and OFF
-
-    def Split(self, grid, cellList):
+    def Split(self, grid, cellList: list) -> None:
+        """Divide the cell, placing a daughter cell in an available neighboring spot."""
         self.splitCounter += 1
         if self.splitCounter == self.splitTime:
-            #print('split counter = {}'.format(self.splitCounter))
             self.splitCounter = 0
-            availableSpots = []
-            needOtherNeighbours = True
-#            gridDim = grid.shape
-#            semiFlatGrid = [flatList(grid[r,:,0]) for r in range(gridDim[0])]
-#            flatGrid = flatList(semiFlatGrid)
-            #print('splitting... preferred position: {}'.format(self.orientation))
-            for neighbr in self.neighbourList:                               # for each possible neighbour:
-                try: # the exception IndexError will determine if the neighbour is inbounds
-                    if CheckifOccupied(neighbr[1], neighbr[0], grid):   # if its occupied
-                        # DEBUG
-                        #print(str(neighbr) + ': neighbour occupied')
-                        #print('{}: occupied...'.format(neighbr))                                       
+            available_spots = []
+            need_other_neighbours = True
+
+            for neighbr in self.neighbourList:
+                try:
+                    if CheckifOccupied(neighbr[1], neighbr[0], grid):
                         continue
-                    else:   # if neighbour is not occupied
-                        yOri = self.orientation[0]
-                        xOri = self.orientation[1]
-                        if CheckifPreferred(xOri, yOri, neighbr[1], neighbr[0]):    # Check if is preferred
-                            grid[yOri][xOri] = 1         # new position gets a 1 value to mark as new quiet cell
-                            grid[self.yPos][self.xPos] = 3                               # mark as splitting cell
-                            cellList.append(cell(yOri, xOri, self.genome, self.config))
-                            needOtherNeighbours = False
-                            break
-                        else:
-                            availableSpots.append(neighbr)                     # list with other available neighbours
+                    y_ori = self.orientation[0]
+                    x_ori = self.orientation[1]
+                    if CheckifPreferred(x_ori, y_ori, neighbr[1], neighbr[0]):
+                        grid[y_ori][x_ori] = 1
+                        grid[self.yPos][self.xPos] = 3
+                        cellList.append(cell(y_ori, x_ori, self.genome, self.config))
+                        need_other_neighbours = False
+                        break
+                    available_spots.append(neighbr)
                 except IndexError:
                     continue
-            if needOtherNeighbours:
-                if len(availableSpots) > 0:
-                    r = np.random.randint(len(availableSpots))
-                    grid[availableSpots[r][0]][availableSpots[r][1]] = 1         # new position gets a 1 value to mark as new quiet cell
-                    grid[self.yPos][self.xPos] = 3                               # mark as splitting cell
-                    cellList.append(cell(availableSpots[r][0], availableSpots[r][1], self.genome, self.config))
-                    # DEBUG
-                    #print('cell moved!')
+
+            if need_other_neighbours:
+                if len(available_spots) > 0:
+                    idx = np.random.randint(len(available_spots))
+                    target_y, target_x = available_spots[idx]
+                    grid[target_y][target_x] = 1
+                    grid[self.yPos][self.xPos] = 3
+                    cellList.append(
+                        cell(target_y, target_x, self.genome, self.config)
+                    )
                 else:
-                    #print('moving failed... stay quiet')
-                    grid[self.yPos][self.xPos] = 1                       # if splitting fails then cell is marked as quiet
-            #print('Grid:\n{}'.format(grid[:,:,0]))
-    ## Split
-
-    # works with polarisation ON and OFF
-    # initial for and then if are the same as in Move2, might be useful to use a single function
-
-# Cell
+                    grid[self.yPos][self.xPos] = 1

@@ -6,38 +6,36 @@ This script demonstrates how to run a simple cellular automata simulation
 with a gene regulatory network.
 """
 
-import sys
+from __future__ import annotations
+
 import os
+import sys
+import numpy as np
 
 # Add parent directory to path to import modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from core import main
-from core import tools
 
-def run_basic_simulation():
+
+def run_basic_simulation() -> None:
     """Run a basic simulation with default parameters."""
-    
-    # Default parameters
-    nNodes = 25
-    timeSteps = 50
-    nLattice = 20
+    n_nodes = 25
+    time_steps = 50
+    n_lattice = 20
     mode = False  # Visualization mode
-    
-    # Create a simple weight matrix (random)
-    import numpy as np
-    wMatrix = np.random.rand(nNodes, nNodes) * 2 - 1  # Random weights between -1 and 1
-    
-    print(f"Running simulation with:")
-    print(f"  Nodes: {nNodes}")
-    print(f"  Time steps: {timeSteps}")
-    print(f"  Lattice size: {nLattice}x{nLattice}")
-    print(f"  Mode: {'Visualization' if mode else 'Fitness'}")
-    
-    # Run simulation
-    main.sim(wMatrix, timeSteps, nNodes, nLattice, mode)
-    
+
+    w_matrix = np.random.rand(n_nodes, n_nodes) * 2.0 - 1.0
+
+    print("Running simulation with:")
+    print(f"  Nodes: {n_nodes}")
+    print(f"  Time steps: {time_steps}")
+    print(f"  Lattice size: {n_lattice}x{n_lattice}")
+    print(f"  Mode: {'Fitness' if mode else 'Visualization'}")
+
+    main.sim(w_matrix, time_steps, n_nodes, n_lattice, mode)
     print("Simulation completed!")
+
 
 if __name__ == "__main__":
     run_basic_simulation()

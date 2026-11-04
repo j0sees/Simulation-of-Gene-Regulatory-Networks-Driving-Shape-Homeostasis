@@ -1,6 +1,8 @@
-import csv
+"""Core mathematical and utility functions for the GRN cellular automata simulation."""
+
+from __future__ import annotations
+
 import numpy as np
-from scipy import linalg
 
 try:
     from numba import njit
@@ -11,148 +13,99 @@ except ImportError:  # pragma: no cover
         return func
 
 
-# List without joint ends
-# https://stackoverflow.com/questions/29710249/python-force-list-index-out-of-range-exception
 class flatList(list):
     """
     A list subclass that raises IndexError for negative indices.
 
-    This prevents circular indexing behavior that could cause issues
-    in the cellular automata grid operations.
+    Prevents circular wrap-around indexing on cellular automata grid boundaries.
     """
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int):
         if index < 0:
             raise IndexError("list index out of range")
         return super().__getitem__(index)
 
 
-def CheckifOccupied(xCoord, yCoord, grid):
+def CheckifOccupied(xCoord: int, yCoord: int, grid) -> bool:
     """
     Check if a grid position is occupied by a cell.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     xCoord, yCoord : int
-        Grid coordinates to check
+        Grid coordinates to check.
     grid : list or numpy.ndarray
-        2D grid where values > 0 indicate occupied positions
+        2D grid where values > 0 indicate occupied positions.
 
-    Returns:
-    --------
+    Returns
+    -------
     bool
-        True if position is occupied, False otherwise
+        True if the position is occupied, False otherwise.
     """
-    return grid[yCoord][xCoord] > 0
+    return bool(grid[yCoord][xCoord] > 0)
 
 
-def CheckifPreferred(xOri, yOri, xCoord, yCoord):
+def CheckifPreferred(xOri: int, yOri: int, xCoord: int, yCoord: int) -> bool:
     """
     Check if a position matches the preferred orientation direction.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     xOri, yOri : int
-        Preferred orientation coordinates
+        Preferred orientation coordinates.
     xCoord, yCoord : int
-        Position coordinates to check
+        Candidate position coordinates.
 
-    Returns:
-    --------
+    Returns
+    -------
     bool
-        True if position matches preferred direction, False otherwise
+        True if the candidate position matches the preferred direction.
     """
     return xCoord == xOri and yCoord == yOri
 
 
 @njit
-def SGFDiffEq(s_matrix, sigma_matrix, deltaS, deltaT):
+def SGFDiffEq(
+    s_matrix: np.ndarray, sigma_matrix: np.ndarray, deltaS: float, deltaT: float
+) -> np.ndarray:
     """
     Update SGF (Short-range Growth Factor) concentrations using matrix operations.
 
-    Implements the diffusion equation for SGF: ds/dt = sigma - delta_s * s
-    where sigma is production rate and delta_s is decay rate.
-
-    Parameters:
-    -----------
-    s_matrix : numpy.ndarray
-        Current SGF concentration matrix
-    sigma_matrix : numpy.ndarray
-        SGF production matrix
-    deltaS : float
-        SGF decay rate
-    deltaT : float
-        Time step size
-
-    Returns:
-    --------
-    numpy.ndarray
-        Updated SGF concentration matrix
+    Implements the reaction equation for SGF: ds/dt = sigma - delta_s * s
+    where sigma is the production rate and delta_s is the decay rate.
     """
     return s_matrix + deltaT * (sigma_matrix - deltaS * s_matrix)
 
 
 @njit
-def LGFDiffEq(i_matrix, t_matrix, l_matrix, lambda_matrix, deltaL, deltaT, deltaR, D):
+def LGFDiffEq(
+    i_matrix: np.ndarray,
+    t_matrix: np.ndarray,
+    l_matrix: np.ndarray,
+    lambda_matrix: np.ndarray,
+    deltaL: float,
+    deltaT: float,
+    deltaR: float,
+    D: float,
+) -> np.ndarray:
     """
-    Update LGF (Long-range Growth Factor) concentrations using matrix operations.
+    Update LGF (Long-range Growth Factor) concentrations using a Crank-Nicolson scheme.
 
-    Implements the diffusion equation for LGF with spatial diffusion:
+    Implements the reaction-diffusion PDE:
     dl/dt = D * nabla^2(l) + lambda - delta_l * l
-    where D is diffusion constant, lambda is production rate, and delta_l is decay rate.
-
-    Uses a semi-implicit Crank-Nicolson scheme for numerical stability.
-
-    Parameters:
-    -----------
-    i_matrix : numpy.ndarray
-        Identity matrix
-    t_matrix : numpy.ndarray
-        T-matrix for spatial discretization
-    l_matrix : numpy.ndarray
-        Current LGF concentration matrix
-    lambda_matrix : numpy.ndarray
-        LGF production matrix
-    deltaL : float
-        LGF decay rate
-    deltaT : float
-        Time step size
-    deltaR : float
-        Spatial step size
-    D : float
-        Diffusion constant
-
-    Returns:
-    --------
-    numpy.ndarray
-        Updated LGF concentration matrix
     """
     alpha = D * deltaT / (deltaR**2)
     f = (deltaT / 2.0) * (lambda_matrix - deltaL * l_matrix)
     g = np.linalg.inv(i_matrix - (alpha / 2.0) * t_matrix)
     h = i_matrix + (alpha / 2.0) * t_matrix
-    l_halftStep = g @ (l_matrix @ h + f)
-    f = (deltaT / 2.0) * (lambda_matrix - deltaL * l_halftStep)
-    l_tStep = ((h @ l_halftStep) + f) @ g
-    return l_tStep
+    l_half_step = g @ (l_matrix @ h + f)
+    f = (deltaT / 2.0) * (lambda_matrix - deltaL * l_half_step)
+    l_t_step = ((h @ l_half_step) + f) @ g
+    return l_t_step
 
 
-def GenerateTMatrix(size):
-    """
-    Generate the T-matrix for spatial discretization in LGF diffusion.
-
-    The T-matrix represents the discrete Laplacian operator for finite differences.
-
-    Parameters:
-    -----------
-    size : int
-        Size of the square matrix to generate
-
-    Returns:
-    --------
-    numpy.ndarray
-        T-matrix for LGF diffusion calculations
-    """
+def GenerateTMatrix(size: int) -> np.ndarray:
+    """Generate the discrete 1D Laplacian T-matrix for LGF spatial discretization."""
     t_matrix = np.zeros((size, size), dtype=np.float64)
     for ix in range(size - 1):
         t_matrix[ix, ix] = -2.0
@@ -163,44 +116,31 @@ def GenerateTMatrix(size):
     return t_matrix
 
 
-def GenerateIMatrix(size):
-    """
-    Generate an identity matrix of specified size.
-
-    Parameters:
-    -----------
-    size : int
-        Size of the square matrix to generate
-
-    Returns:
-    --------
-    numpy.ndarray
-        Identity matrix of size x size
-    """
+def GenerateIMatrix(size: int) -> np.ndarray:
+    """Generate an identity matrix of size x size."""
     return np.eye(size, dtype=np.float64)
 
 
 @njit
-def RecurrentNeuralNetwork(inputs, wMatrix, V):
-    """Update Recurrent Neural Network activation values."""
+def RecurrentNeuralNetwork(
+    inputs: np.ndarray, wMatrix: np.ndarray, V: np.ndarray
+) -> np.ndarray:
+    """Update Recurrent Neural Network activation values using a sigmoid transfer function."""
     bj = np.dot(wMatrix, V) - inputs
     for ix in range(len(bj)):
         V[ix] = 1.0 / (1.0 + np.exp(-2.0 * bj[ix]))
     return V
 
 
-def GetStructure(cell_array, nLattice):
+def GetStructure(cell_array, nLattice: int) -> np.ndarray:
     """Return a binary occupancy matrix (1 where cell_array != 0, else 0)."""
     return (np.asarray(cell_array) != 0).astype(np.float64)
 
 
-def GetrNN(csvFile, ind):
+def GetrNN(csvFile: str, ind: int) -> np.ndarray:
     """Load an individual's recurrent neural network weight matrix from a CSV file."""
     with open(csvFile, "r", encoding="utf-8") as csvfile:
-        bestIndividuals = np.loadtxt(csvfile, delimiter=",")
-    if bestIndividuals.ndim == 1:
-        row = bestIndividuals
-    else:
-        row = bestIndividuals[ind, :]
-    nNodes = int(np.sqrt(len(row)))
-    return np.array(row.reshape(nNodes, nNodes), dtype=np.float64)
+        best_individuals = np.loadtxt(csvfile, delimiter=",")
+    row = best_individuals if best_individuals.ndim == 1 else best_individuals[ind, :]
+    n_nodes = int(np.sqrt(len(row)))
+    return np.array(row.reshape(n_nodes, n_nodes), dtype=np.float64)
