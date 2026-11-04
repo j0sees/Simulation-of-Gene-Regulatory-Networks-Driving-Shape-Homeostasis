@@ -1,6 +1,23 @@
+<div align="center">
+
 # Simulation of Gene Regulatory Networks Driving Shape Homeostasis
 
-Computational platform for simulating and classifying **Gene Regulatory Networks (GRNs)** that drive **shape homeostasis** in multicellular systems.
+**Computational platform for simulating, evolving, and classifying Gene Regulatory Networks (GRNs)**
+**that drive self-organizing morphogenesis and shape homeostasis in multicellular systems.**
+
+[![Version](https://img.shields.io/badge/version-0.3.0-blue.svg)](./CHANGELOG.md)
+[![License: MIT](https://img.shields.io/badge/License-MIT-teal.svg)](./LICENSE)
+[![CI](https://github.com/userravs/simulation-of-gene-regulatory-networks-driving-shape-homeostasis/actions/workflows/ci.yml/badge.svg)](https://github.com/userravs/simulation-of-gene-regulatory-networks-driving-shape-homeostasis/actions/workflows/ci.yml)
+![Python](https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white)
+![uv](https://img.shields.io/badge/uv-managed-DE5FE9?logo=uv&logoColor=white)
+![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey)
+![Containers](https://img.shields.io/badge/containers-Podman%20%7C%20Docker-892CA0?logo=podman&logoColor=white)
+
+<img src="./docs/images/cell_system_example.png" alt="2D Cellular Automaton and SGF/LGF Chemical Signaling Fields" width="860" />
+
+</div>
+
+---
 
 - **Original Research & Mathematical Model (`v0.1.0`)**: **M.Sc. J. Esteban Pérez-Hidalgo** ([@j0sees](https://github.com/j0sees), School of Physics, Costa Rica Institute of Technology), supervised by **Ph.D. Philip Gerlee** (Department of Mathematical Sciences, University of Gothenburg & Chalmers University of Technology, Sweden) — [Original Baseline (`6c3fae7`)](https://github.com/j0sees/Simulation-of-Gene-Regulatory-Networks-Driving-Shape-Homeostasis/tree/6c3fae7834a2ca502b1a439d7535c4adab1673f3)
 - **Software Architecture & Lead Maintainer (`v0.2.0`–`v0.3.0`)**: **Reymer Vargas** ([@userravs](https://github.com/userravs), Independent Research Software Engineer)
@@ -18,7 +35,35 @@ Key scientific objectives include:
 - Classifying evolved GRNs into **three major behavioral classes** that achieve shape homeostasis through a dynamic equilibrium of proliferation (`Split`), migration (`Move`), quiescence (`Quiet`), and apoptosis (`Die`).
 - Exploring network topology effects across **Erdős-Rényi**, **Watts-Strogatz**, and **Barabási-Albert** graph architectures.
 
-![Cell System Example](./docs/images/cell_system_example.png)
+```mermaid
+flowchart LR
+    subgraph Topologies["Graph Topologies (analysis/)"]
+        ER["Erdos-Renyi"]
+        WS["Watts-Strogatz"]
+        BA["Barabasi-Albert"]
+    end
+
+    subgraph Engine["Core Simulation Engine (core/)"]
+        RNN["Intracellular RNN\n(RecurrentNeuralNetwork)"]
+        CA["2D Cellular Automaton\n(Quiet, Move, Split, Die)"]
+        PDE["Reaction-Diffusion PDEs\n(SGF Euler & LGF Crank-Nicolson)"]
+        RNN --> CA --> PDE --> RNN
+    end
+
+    subgraph Evolution["Evolutionary Optimization (evolution/)"]
+        GA["Parallel Genetic Algorithm\n(main_ga.py)"]
+        NEAT["NEAT Neuroevolution\n(neat_parallel.py)"]
+    end
+
+    subgraph UI["Visualization & Analysis (visualization/)"]
+        Web["Streamlit & Plotly Web App\n(web_app.py)"]
+        Plot["Matplotlib & Phase-Space Maps\n(plot.py)"]
+    end
+
+    Topologies --> Engine
+    Evolution <-->|"Fitness F in [0, 1]"| Engine
+    Engine --> UI
+```
 
 ---
 

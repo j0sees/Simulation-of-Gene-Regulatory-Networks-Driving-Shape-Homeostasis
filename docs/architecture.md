@@ -75,6 +75,31 @@ At each time step:
 - **Polarization Compass (`V[7]`)**:
   - Partitioned into four equal sub-intervals of $[0, 1]$ to set the cell's preferred Von Neumann neighbor: $[0, 0.25)$ North, $[0.25, 0.50)$ South, $[0.50, 0.75)$ East, and $[0.75, 1.0]$ West.
 
+```mermaid
+flowchart LR
+    subgraph Inputs["Local Chemical Field (y, x)"]
+        SGF_in["Node 0: SGF s(y, x)"]
+        LGF_in["Node 1: LGF l(y, x)"]
+    end
+
+    subgraph GRN["Intracellular RNN (n x n Weight Matrix W)"]
+        State["V(t+1) = sigmoid(2 * (W * V(t) - I(t)))"]
+    end
+
+    subgraph Outputs["Decoded Cellular Phenotype"]
+        Act["V[2:5] -> Action Selection\nSplit (V[2]) | Move (V[3]) | Die (V[4])\nor Quiet if all < 0.5"]
+        Sec["V[5:7] -> Chemical Secretion\nsigma_SGF (V[5]) | lambda_LGF (V[6])"]
+        Comp["V[7] -> Polarization Compass\n[0, 0.25) N | [0.25, 0.5) S\n[0.5, 0.75) E | [0.75, 1.0] W"]
+    end
+
+    SGF_in --> State
+    LGF_in --> State
+    State -->|"Recurrent Memory V(t)"| State
+    State --> Act
+    State --> Sec
+    State --> Comp
+```
+
 ![Gene Regulatory Network](./images/network_example.png)
 
 *Directed graph representation of a gene regulatory network with regulatory feedback loops.*
@@ -87,6 +112,20 @@ To evolve networks that achieve **shape homeostasis** (a multicellular structure
 $$F = 1 - \frac{1}{N^2} \sum_{i,j} \left|S_{T/2}(i, j) - S_T(i, j)\right|$$
 
 Trivial or degenerate configurations—complete extinction, fewer than $1\%$ occupied lattice sites at $T/2$, or $100\%$ lattice saturation at $T$—are assigned $F = 0$.
+
+```mermaid
+flowchart LR
+    Init["Initialize Population\n(P Weight Matrices W)"] --> Eval["Parallel Simulation\n(multiprocessing.Pool over T steps)"]
+    Eval --> Fit["Compute Homeostasis Fitness\nF = 1 - (1/N^2) sum |S_{T/2} - S_T|"]
+    Fit --> Check{"Generation\nLimit Reached?"}
+    Check -->|"No"| Elite["Preserve Elite\n(Best Individual)"]
+    Check -->|"No"| Tourn["Tournament Selection\n(p_tournament = 0.75)"]
+    Tourn --> Recomb["Genetic Operators\nCrossover & Mutation / NEAT Speciation"]
+    Elite --> NextGen["Next Generation Population"]
+    Recomb --> NextGen
+    NextGen --> Eval
+    Check -->|"Yes"| Output["Export Best GRNs & Fitness History"]
+```
 
 ![Evolutionary Progress](./images/evolution_example.png)
 
@@ -116,3 +155,44 @@ The codebase is organized into modular Python 3.11+ namespace packages:
 | `visualization/web_app.py` | Interactive Streamlit and Plotly web interface for real-time browser simulation. |
 | `examples/` | Self-contained scripts (`run_simulation.py`, `run_evolution.py`, `generate_documentation_images.py`). |
 | `tests/` | `pytest` unit test suite covering PDE solvers, cell transitions, genetic operators, and network topologies. |
+
+### Simulation Execution Flow
+
+The diagram below illustrates the discrete time-step loop coupling asynchronous cellular updates with continuous SGF/LGF reaction-diffusion integration:
+
+```mermaid
+flowchart TD
+    Start["Initialize N x N Lattice\ncellgrid (flatList), SGF=0, LGF=0, Neumann Matrix T"] --> Seed["Seed Initial Cell at Lattice Center (N/2, N/2)"]
+    Seed --> StepLoop["Time Step t = 0 .. T - 1"]
+    StepLoop --> Shuffle["Collect Living Cells & Shuffle Order\n(Asynchronous Update)"]
+    Shuffle --> CellLoop["For Each Living Cell at (y, x):\n1. Sense(SGF[y,x], LGF[y,x])\n2. Update RNN State V(t+1)\n3. Decode Action & Compass"]
+    CellLoop --> Action{"Selected Action"}
+    Action -->|"1: Quiet"| Quiet["Remain at (y, x)"]
+    Action -->|"2: Move"| Move["Migrate to Compass / Free Neighbor\n(flatList Rejects Out-of-Bounds)"]
+    Action -->|"3: Split"| Split["Place Daughter Cell in Neighbor\n(flatList Rejects Out-of-Bounds)"]
+    Action -->|"0: Die"| Die["Vacate Site (y, x)"]
+    Quiet --> Secrete["Add Local Secretions\ndSGF[y,x] += V[5], dLGF[y,x] += V[6]"]
+    Move --> Secrete
+    Split --> Secrete
+    Die --> PDE
+    Secrete --> PDE["Integrate Chemical Fields over Lattice:\nSGF = SGFDiffEq(SGF, dSGF)\nLGF = LGFDiffEq(LGF, dLGF, T, I)"]
+    PDE --> MidCheck{"t == T / 2 ?"}
+    MidCheck -->|"Yes"| SaveMid["Record Midpoint Occupancy Matrix S_{T/2}"]
+    MidCheck -->|"No"| EndCheck{"t == T - 1 ?"}
+    SaveMid --> EndCheck
+    EndCheck -->|"No"| StepLoop
+    EndCheck -->|"Yes"| Score["Record Final Occupancy Matrix S_T\n& Compute Homeostasis Fitness F"]
+```
+
+---
+
+## 4. References and Further Reading
+
+1. **Pérez-Hidalgo, J. E.** (2017). *Classification of Gene Regulatory Networks Driving Shape Homeostasis*. Master's Thesis, Department of Mathematical Sciences, University of Gothenburg & Chalmers University of Technology (supervised by Ph.D. Philip Gerlee).
+2. **Gerlee, P., Basanta, D., & Anderson, A. R. A.** (2015). *The influence of cellular characteristics on the evolution of shape homeostasis*. Journal of the Royal Society Interface, 12(103), 20141222.
+3. **Gerlee, P., Kim, E., & Anderson, A. R. A.** (2015). *Bridging scales in cancer progression: mapping genotype to phenotype using neural networks*. Seminars in Cancer Biology, 30, 30–41.
+4. **Stanley, K. O., & Miikkulainen, R.** (2002). *Evolving Neural Networks through Augmenting Topologies*. Evolutionary Computation, 10(2), 99–127.
+5. **Alon, U.** (2019). *An Introduction to Systems Biology: Design Principles of Biological Circuits* (2nd ed.). CRC Press.
+6. **Murray, J. D.** (2003). *Mathematical Biology II: Spatial Models and Biomedical Applications* (3rd ed.). Springer.
+7. **Deutsch, A., & Dormann, S.** (2017). *Cellular Automaton Modeling of Biological Pattern Formation* (2nd ed.). Birkhäuser.
+8. **Eiben, A. E., & Smith, J. E.** (2015). *Introduction to Evolutionary Computing* (2nd ed.). Springer.

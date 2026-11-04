@@ -26,6 +26,21 @@ CONTAINER_ENGINE=docker ./scripts/run_container.sh
 
 Open `http://localhost:8501` in your browser.
 
+```mermaid
+flowchart TD
+    Start["./scripts/run_container.sh"] --> OSCheck{"Check Host OS\n(uname -s)"}
+    OSCheck -->|"Darwin (macOS) or Linux"| EngineCheck{"Resolve Container Engine\n(CONTAINER_ENGINE or Auto-Detect)"}
+    OSCheck -->|"Other"| FailOS["Exit with Platform Error"]
+    EngineCheck -->|"podman info succeeds"| Podman["Use Podman\n(Set PODMAN_USERNS=keep-id)"]
+    EngineCheck -->|"docker info succeeds"| Docker["Use Docker"]
+    Podman --> ComposeCheck{"Compose Available?\n(podman-compose / podman compose\ndocker compose / docker-compose)"}
+    Docker --> ComposeCheck
+    ComposeCheck -->|"Yes"| RunCompose["Build & Start via Compose\n(docker-compose.yml)"]
+    ComposeCheck -->|"No"| RunCLI["Fallback to Direct CLI\n(<engine> build & <engine> run)"]
+    RunCompose --> App["Streamlit Web Interface\nhttp://localhost:8501"]
+    RunCLI --> App
+```
+
 ## Container Components
 
 ### `Dockerfile`
