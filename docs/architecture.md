@@ -2,7 +2,7 @@
 
 ## 1. Scientific Background
 
-This project implements the computational framework developed in the master's thesis **"Classification of Gene Regulatory Networks Driving Shape Homeostasis"** by **M.Sc. J. Esteban Pérez-Hidalgo** (supervised by **Ph.D. Philip Gerlee**), building upon:
+This project implements the computational framework developed in the master's thesis **"Classification of Gene Regulatory Networks Driving Shape Homeostasis"** by **M.Sc. J. Esteban Pérez-Hidalgo** ([@j0sees](https://github.com/j0sees), supervised by **Ph.D. Philip Gerlee**; [original baseline `6c3fae7`](https://github.com/j0sees/Simulation-of-Gene-Regulatory-Networks-Driving-Shape-Homeostasis/tree/6c3fae7834a2ca502b1a439d7535c4adab1673f3)), with software architecture, Python 3 refactoring, web interface, and containerization engineered and maintained by **Reymer Vargas** ([@userravs](https://github.com/userravs), Independent Research Software Engineer, `v0.2.0`–`v0.3.0`). The model builds upon:
 
 > Gerlee, P., Basanta, D., & Anderson, A. R. A. (2015). *The influence of cellular characteristics on the evolution of shape homeostasis*. Journal of the Royal Society Interface, 12(103), 20141222.
 

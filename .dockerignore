@@ -23,6 +23,7 @@ ENV/
 
 # Documentation (keep README.md and LICENSE for package metadata)
 docs/
+CITATION.cff
 
 # IDEs and editors
 .vscode/
