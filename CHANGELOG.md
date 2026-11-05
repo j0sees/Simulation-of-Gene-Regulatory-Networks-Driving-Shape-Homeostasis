@@ -7,6 +7,7 @@ All notable changes to this project are documented in this file. The format is b
 ## [0.3.0] - 2026-11-04
 
 ### Added
+- **Safe Container Teardown Script**: Added `scripts/teardown_container.sh` with interactive confirmation prompt, `-y`/`--force` option, engine auto-detection (Podman/Docker), and container/image/cache cleanup (`2026-11-04`).
 - **Hero Header, Mermaid Diagrams & Scientific References**: Added centered hero header and shields.io badges in `README.md`, Mermaid architectural and execution flowcharts across `README.md`, `docs/architecture.md`, `docs/docker.md`, and `docs/web-interface.md`, and a foundational references section (`abaa83e`, `2026-11-04T12:03:07-06:00`).
 - **Release Baseline & Community Standards**: Added `VERSION` (`0.3.0`), `CHANGELOG.md`, `CONTRIBUTING.md` (Trunk-Based Development, Conventional Commits, issue guidelines), and `CODE_OF_CONDUCT.md` (`5e8f88e`, `2026-11-04T11:55:56-06:00`).
 - **Podman & Docker Container Launcher**: Replaced the Docker-only launcher with `scripts/run_container.sh` supporting both Podman (Podman Desktop / rootless Podman) and Docker on macOS and Linux (`adc3acd`, `2026-11-04T08:27:38-06:00`).

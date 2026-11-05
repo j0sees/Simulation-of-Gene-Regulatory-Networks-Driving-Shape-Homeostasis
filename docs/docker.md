@@ -64,8 +64,14 @@ docker-compose up -d --build
 # Follow container logs
 docker-compose logs -f
 
-# Stop and remove containers
-docker-compose down
+# Safe teardown of containers, images, and caches (with confirmation)
+./scripts/teardown_container.sh
+
+# Non-interactive teardown (skip prompt)
+./scripts/teardown_container.sh --yes
+
+# Complete teardown including generated data files
+./scripts/teardown_container.sh --yes --clean-data
 
 # Run CLI scripts interactively inside the container
 docker-compose run --rm grn-simulation bash
