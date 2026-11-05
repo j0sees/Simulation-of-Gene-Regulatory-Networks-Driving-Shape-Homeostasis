@@ -117,7 +117,7 @@ uv run pytest -v
 ├── docs/                 # Project documentation and example figures
 ├── evolution/            # Genetic Algorithm (main_ga.py) and NEAT neuroevolution
 ├── examples/             # Runnable simulation, evolution, and figure generation scripts
-├── scripts/              # Helper scripts (run_container.sh, run_web_app.sh)
+├── scripts/              # Helper scripts (run_container.sh, run_web_app.sh, teardown_container.sh)
 ├── tests/                # Pytest unit test suite
 ├── visualization/        # Matplotlib plotting utilities, Gnuplot script, and Streamlit app
 ├── CHANGELOG.md          # Release changelog with commit references and timestamps

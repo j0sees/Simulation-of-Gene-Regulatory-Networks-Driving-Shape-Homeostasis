@@ -121,7 +121,7 @@ Before opening a Pull Request, run the full local verification suite (matching `
 
 ```bash
 # 1. Validate shell scripts
-bash -n scripts/run_container.sh scripts/run_web_app.sh
+bash -n scripts/run_container.sh scripts/run_web_app.sh scripts/teardown_container.sh
 
 # 2. Run Ruff linter
 uv run ruff check .
