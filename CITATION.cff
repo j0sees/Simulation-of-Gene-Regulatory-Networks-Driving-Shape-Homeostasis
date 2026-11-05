@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+title: "Simulation of Gene Regulatory Networks Driving Shape Homeostasis"
+message: "If you use this software in your research, please cite it using the metadata below."
+type: software
+version: "0.3.0"
+date-released: "2026-11-04"
+license: MIT
+repository-code: "https://github.com/j0sees/Simulation-of-Gene-Regulatory-Networks-Driving-Shape-Homeostasis"
+authors:
+  - family-names: "Pérez-Hidalgo"
+    given-names: "J. Esteban"
+    affiliation: "School of Physics, Costa Rica Institute of Technology"
+  - family-names: "Vargas"
+    given-names: "Reymer"
+    affiliation: "Independent Research Software Engineer"
+keywords:
+  - gene-regulatory-networks
+  - cellular-automata
+  - shape-homeostasis
+  - evolutionary-computation
+  - artificial-life
+  - computational-biology
+

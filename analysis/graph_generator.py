@@ -1,89 +1,118 @@
-# -*- coding: latin_1 -*-
-#import matplotlib.pyplot as plt
-import numpy as np
-import networkx as nx
-from datetime import datetime as dt
+"""Generate Erdős-Rényi, Watts-Strogatz, and Barabási-Albert graph topologies for GRN studies."""
+
+from __future__ import annotations
+
 import csv
+from datetime import datetime as dt
+import os
 import sys
+import networkx as nx
+import numpy as np
+
+SUPPORTED_TOPOLOGIES = ("erdos-renyi", "watts-strogatz", "barabasi-albert")
 
 
-if __name__ == '__main__':
-    # Parameters
-    nNodes = 25#[8, 10, 15, 20, 25]
-    nodeProb = np.linspace(0.1,1,10)
-    #nNeighb = [5, 10, 15, 20]
-    #nEdges = [5,10,15]
-    nRuns = int(sys.argv[2])
-    nLattice = 50
-    tSteps = 100
-    arrayContainer = np.zeros([len(nodeProb)*nRuns,nNodes**2])
-    infofFileID = '{0:%Y%m%d_%H%M%S_%f}'.format(dt.now())
-    runsMainFile = 'runs/run_ graphs_{0}.log'.format(infofFileID)
-    commentString = sys.argv[1]
-    timeSteps = 200
-    nLattice = 50
+def generate_graph_matrix(
+    n_nodes: int,
+    topology: str = "erdos-renyi",
+    param: float = 0.3,
+) -> np.ndarray:
+    """
+    Generate a single weighted adjacency matrix for the requested graph topology.
 
-    # Graph types/ network architectures
-    #Graph = nx.erdos_renyi_graph(nNodes, nodeProb, directed = True)        # More appropiate for the kind of network we're using
-    #Graph = nx.watts_strogatz_graph(nNodes, nNeighb, nodeProb)
-    #Graph = nx.barabasi_albert_graph(nNodes, nEdges)
-    #graphlist = [Graph0, Graph1, Graph2]
+    Parameters
+    ----------
+    n_nodes : int
+        Number of nodes in the network.
+    topology : str
+        One of 'erdos-renyi', 'watts-strogatz', or 'barabasi-albert'.
+    param : float
+        Connection/rewiring probability in (0, 1] for Erdős-Rényi and Watts-Strogatz,
+        or edge density scaling factor for Barabási-Albert.
 
-    # Transform graph as a matrix (numpy array)
-    #wMatrix = nx.to_numpy_matrix(Graph)
+    Returns
+    -------
+    numpy.ndarray
+        Weighted n_nodes x n_nodes adjacency matrix with non-zero weights in [-1, 1].
+    """
+    topo = topology.lower().strip()
+    if topo == "erdos-renyi":
+        graph = nx.erdos_renyi_graph(n_nodes, float(param), directed=True)
+    elif topo == "watts-strogatz":
+        k_neighbours = max(2, min(n_nodes - 1, 4))
+        graph = nx.watts_strogatz_graph(n_nodes, k_neighbours, float(param))
+    elif topo == "barabasi-albert":
+        m_edges = max(1, min(n_nodes - 1, int(round(param * (n_nodes - 1)))))
+        graph = nx.barabasi_albert_graph(n_nodes, m_edges)
+    else:
+        raise ValueError(
+            f"Unsupported topology '{topology}'. Choose from {SUPPORTED_TOPOLOGIES}."
+        )
 
-    # randomise non-zero entries:
-    #for ix in range(nNodes):                               
-        #for iy in range(nNodes):
-            #if wMatrix[ix,iy] == 1:
-                #wMatrix[ix,iy] = -1 + 2*np.random.random()
-                
-    with open(runsMainFile,'a') as csvfile:
-        csvfile.write('##################\nRandom graph generator run\nErdṍs-Rényi Graphs\n# {}\n\n'.format(commentString))
+    w_matrix = nx.to_numpy_array(graph, dtype=np.float64)
+    non_zero = w_matrix == 1
+    w_matrix[non_zero] = np.random.uniform(-1.0, 1.0, size=int(np.sum(non_zero)))
+    return w_matrix
 
-    #---------------------------#
-    #       Graph generator     #
-    #---------------------------#
-    # generate graphs for different number of nodes
-    #for nN in nNodes:
-    # also for different node prob of rewiring
-    graphCounter = 0
-    for nP in nodeProb:
-        # some repetitions of the same settings
-        for rep in range(nRuns):
-            Graph = nx.erdos_renyi_graph(nNodes, nP, directed = True)
-            wMatrix = nx.to_numpy_matrix(Graph)
-            for ix in range(nNodes):                               
-                for iy in range(nNodes):
-                    if wMatrix[ix,iy] == 1:
-                        wMatrix[ix,iy] = -1 + 2*np.random.random()
-                        #print('wMatrix shape: {}'.format(wMatrix.shape))
-            # Run simulation with the selected network architecture     
-            #print('Running [{2} of {3}] Barabasi-Albert graph with: {1} nodes and {0} nEdges'.format(nE, nN, x + 1, nRuns))
-            #main.sim(wMatrix, tSteps, nN, nLattice, False)
-            
-            # save network information and location for future use
-            indInfo = 'n{0:02d}P{1:.2f}r{2:02d}'.format(nNodes, nP, rep)
-            with open(runsMainFile,'a') as csvfile:
-                csvfile.write('{}: Info {}\n'.format(graphCounter, indInfo))
-                #print('container shape: {}, flattened matrix shape: {}'.format(arrayContainer.shape, wMatrix.ravel().shape))
-                arrayContainer[graphCounter,:] = wMatrix.ravel()
-                
-            graphCounter += 1
-                
-    #---------------------------#
-    #       Graph storing       #
-    #---------------------------#
-    # Create filename: unique, related to current time
-    popFileID = '{0:%Y%m%d_%H%M%S_%f}'.format(dt.now())
-    networkFileName = 'populations/{0}.csv'.format(popFileID)
 
-    # save network name
-    with open(runsMainFile,'a') as csvfile:
-        #csvfile.write('{}'.format(fitnessArray))
-        csvfile.write('network file\n{}\n'.format(popFileID))
+def generate_graph_ensemble(
+    comment_string: str,
+    n_runs: int,
+    topology: str = "erdos-renyi",
+    n_nodes: int = 25,
+    output_dir: str = ".",
+) -> tuple[str, str]:
+    """
+    Generate and save an ensemble of random graphs across 10 parameter values.
 
-    # Save generated network, unique for each run
-    with open(networkFileName, 'w') as csvfile:
+    Returns
+    -------
+    tuple[str, str]
+        Paths to (runs_log_file, population_csv_file).
+    """
+    node_prob = np.linspace(0.1, 1.0, 10)
+    array_container = np.zeros((len(node_prob) * n_runs, n_nodes**2))
+
+    info_file_id = f"{dt.now():%Y%m%d_%H%M%S_%f}"
+    runs_dir = os.path.join(output_dir, "runs")
+    pops_dir = os.path.join(output_dir, "populations")
+    os.makedirs(runs_dir, exist_ok=True)
+    os.makedirs(pops_dir, exist_ok=True)
+
+    runs_main_file = os.path.join(runs_dir, f"run_graphs_{info_file_id}.log")
+
+    with open(runs_main_file, "a", encoding="utf-8") as logfile:
+        logfile.write(
+            f"##################\nRandom graph generator run\n"
+            f"Topology: {topology}\n# {comment_string}\n\n"
+        )
+
+    graph_counter = 0
+    for prob in node_prob:
+        for rep in range(n_runs):
+            w_matrix = generate_graph_matrix(n_nodes, topology=topology, param=float(prob))
+            ind_info = f"n{n_nodes:02d}P{prob:.2f}r{rep:02d}"
+            with open(runs_main_file, "a", encoding="utf-8") as logfile:
+                logfile.write(f"{graph_counter}: Info {ind_info}\n")
+                array_container[graph_counter, :] = w_matrix.ravel()
+
+            graph_counter += 1
+
+    pop_file_id = f"{dt.now():%Y%m%d_%H%M%S_%f}"
+    network_file_name = os.path.join(pops_dir, f"{pop_file_id}.csv")
+
+    with open(runs_main_file, "a", encoding="utf-8") as logfile:
+        logfile.write(f"network file\n{pop_file_id}\n")
+
+    with open(network_file_name, "w", encoding="utf-8", newline="") as csvfile:
         writer = csv.writer(csvfile)
-        [writer.writerow(r) for r in arrayContainer]
+        writer.writerows(array_container)
+
+    return runs_main_file, network_file_name
+
+
+if __name__ == "__main__":
+    comment_arg = sys.argv[1]
+    runs_arg = int(sys.argv[2])
+    topology_arg = sys.argv[3] if len(sys.argv) > 3 else "erdos-renyi"
+    generate_graph_ensemble(comment_arg, runs_arg, topology=topology_arg)

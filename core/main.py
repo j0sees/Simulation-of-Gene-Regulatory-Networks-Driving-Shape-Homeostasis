@@ -1,307 +1,156 @@
+"""Main cellular automata simulation engine."""
+
+from __future__ import annotations
+
 import sys
 import time
-#import random
+import matplotlib.pyplot as plt
 import numpy as np
-#import matplotlib.pyplot as plt
-# self made classes
-from core.cell_agent import *                    # it is allowed to call from this class because there's an __init__.py file in this directory
-from core.tools import *
-from visualization.plot import *
-#import csv
-import cProfile
-# from numba import jit
 
-#@jit
-def sim(wMatrix, timeSteps, nNodes, nLattice, mode):
+from core.cell_agent import cell
+from core.tools import (
+    GenerateIMatrix,
+    GenerateTMatrix,
+    GetrNN,
+    LGFDiffEq,
+    SGFDiffEq,
+    flatList,
+)
+from visualization.plot import Environment
+
+
+def sim(wMatrix: np.ndarray, timeSteps: int, nNodes: int, nLattice: int, mode: bool) -> None:
     """
     Run a cellular automata simulation with gene regulatory networks.
-    
-    This function simulates a multicellular system where each cell contains a neural network
-    that acts as a gene regulatory network. The simulation tracks cell states, chemical
-    diffusion (SGF and LGF), and emergent behavior over time.
-    
-    Parameters:
-    -----------
+
+    Parameters
+    ----------
     wMatrix : numpy.ndarray
-        Weight matrix for the neural network representing the gene regulatory network
+        Weight matrix for the neural network representing the GRN.
     timeSteps : int
-        Number of simulation time steps to run
+        Number of simulation time steps to run.
     nNodes : int
-        Number of nodes in the neural network
+        Number of nodes in the neural network.
     nLattice : int
-        Size of the square lattice grid (nLattice x nLattice)
+        Size of the square lattice grid (nLattice x nLattice).
     mode : bool
-        True: cell_system as fitness function (no visualization)
-        False: cell_system as display system (with visualization)
-    
-    Returns:
-    --------
-    tuple
-        Various simulation metrics and timing information
+        True: run in headless fitness mode (no live display).
+        False: run with interactive visualization.
     """
-    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-    #       PARAMETERS                 #
-    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-    # TODO: organize in different categories...
-    #nLattice = 5                              # TODO: change name
-    #timeSteps = 40                              # Number of simulation time steps
-    npCellGrid = np.zeros([nLattice,nLattice])    # Initialize empty grid
-    semiFlatGrid = [flatList(npCellGrid[r,:]) for r in range(nLattice)]
-    cellGrid = flatList(semiFlatGrid)
-    chemGrid = np.zeros([nLattice,nLattice,2])
-    SGF_read = 0.                                # in the future values will be read from the grid
-    LGF_read = 0.
-    ix = int(nLattice/2)                        # Initial position for the mother cell
-    iy = int(nLattice/2)                        # Initial position for the mother cell
-    iTime = 0                                   # time counter
+    np_cell_grid = np.zeros((nLattice, nLattice))
+    semi_flat_grid = [flatList(np_cell_grid[r, :]) for r in range(nLattice)]
+    cell_grid = flatList(semi_flat_grid)
+    chem_grid = np.zeros((nLattice, nLattice, 2))
 
-    cellList = []                               # List for cell agents
+    ix = nLattice // 2
+    iy = nLattice // 2
+    i_time = 0
 
-    # SGF/LGF dynamics parameters
-    deltaT = 1.                                  # time step for discretisation [T]
-    deltaR = 1.                                  # space step for discretisation [L]
-    deltaS = 0.5                                # decay rate for SGF
-    deltaL = 0.1                                 # decay rate for LGF
-    diffConst = 1.#0.05                              # diffusion constant D [dimensionless]
-    t_matrix = GenerateTMatrix(nLattice)        # T matrix for LGF operations
-    i_matrix = GenerateIMatrix(nLattice)        # I matrix for LGF operations
-    
-    # timing variables!
-    tmpListLoopAvg = 0
-    chemicalsUpdateAvg = 0
-    plotUpdateAvg = 0
-    
-    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-    #       INITIALIZATION             #
-    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-    # create mother cell and update the grid with its initial location
-    cellList.append(cell(ix,iy,wMatrix, nNodes))
-    cellGrid[ix][iy] = 1
-    #print('Initial grid:\n' + str(cellGrid[:,:,0]))
-    #cellGrid[ix][iy][2] = 400.
+    cell_list = [cell(ix, iy, wMatrix, nNodes)]
+    cell_grid[ix][iy] = 1
 
-    ##### Timing!
-    #start_time_figurecall = time.time()
-    ## Plot figure and subplots
-    cellsFigure, cellsSubplot, sgfSubplot, lgfSubplot, cellPlot, sgfPlot, lgfPlot = Environment.CellsGridFigure(nLattice, mode)
-    #end_time_figurecall = time.time()
-    #secs = end_time_figurecall - start_time_figurecall
+    # SGF/LGF reaction-diffusion parameters
+    delta_t = 1.0
+    delta_r = 1.0
+    delta_s = 0.5
+    delta_l = 0.1
+    diff_const = 1.0
+    t_matrix = GenerateTMatrix(nLattice)
+    i_matrix = GenerateIMatrix(nLattice)
 
-    #print('time taken to call figures, subplots, plots: {:.5f} s'.format(secs))
+    tmp_list_loop_avg = 0.0
 
-    # DEBUG
-    print('Time running...')
-    #### Timing!
-    start_time_mainLoop = time.time()
-    while iTime < timeSteps:
-        # DEBUG
-        #print('\n######### time step #{}'.format(iTime))
+    (
+        cells_figure,
+        cells_subplot,
+        sgf_subplot,
+        lgf_subplot,
+        cell_plot,
+        sgf_plot,
+        lgf_plot,
+    ) = Environment.CellsGridFigure(nLattice, mode)
 
-        ## decay chemicals in spots where there is some but no cell
+    print("Time running...")
+    start_time_main_loop = time.time()
 
-        # these matrices must be updated every time so that if there's no production in one spot that spot contains a zero
-        # but must not lose contained information, i.e. must use it before setting it to zero
-        sigma_m = np.zeros([nLattice,nLattice])     # matrix representation of SGF production
-        lambda_m = np.zeros([nLattice,nLattice])    # matrix representation of LGF production
+    while i_time < timeSteps:
+        sigma_m = np.zeros((nLattice, nLattice))
+        lambda_m = np.zeros((nLattice, nLattice))
 
-        tmpCellList = list(cellList)                                # a copy of the list of current cells is used to iterate over all the cells
+        tmp_cell_list = list(cell_list)
+        start_time_tmp_loop = time.time()
 
-        # Timing!
-        start_time_tmpListLoop = time.time()
-        tmpCellListLength = len(tmpCellList)
-        while len(tmpCellList) > 0:                                 # while the tmp list of cells is longer than 1
-            # 1st step => choose a random cell from the list of existing cells
-            rndCell = np.random.randint(len(tmpCellList))
-            # store lattice size
-            #tmpCellList[rndCell].border = nLattice                  # TODO: rethink this
-            #tmpCellList[rndCell].nNodes = nNodes                   # WARNING: hardcoded
+        while len(tmp_cell_list) > 0:
+            rnd_cell = np.random.randint(len(tmp_cell_list))
+            current_cell = tmp_cell_list[rnd_cell]
 
-            # 2nd step => read chemicals
-            SGF_reading, LGF_reading = tmpCellList[rndCell].Sense(chemGrid)
+            sgf_reading, lgf_reading = current_cell.Sense(chem_grid)
+            current_cell.GenerateStatus(sgf_reading, lgf_reading)
 
-            # 3rd step => random cell should decide and action
-            tmpCellList[rndCell].GenerateStatus(SGF_reading, LGF_reading)     # get status of this cell
+            sigma_m[current_cell.yPos, current_cell.xPos] = current_cell.sgfAmount
+            lambda_m[current_cell.yPos, current_cell.xPos] = current_cell.lgfAmount
 
-            # 4th step => update SGF and LGF amounts on the 'production' matrices sigma & lambda
-            # production matrices get updated values
-            sigma_m[tmpCellList[rndCell].yPos,tmpCellList[rndCell].xPos] = tmpCellList[rndCell].sgfAmount
-            lambda_m[tmpCellList[rndCell].yPos,tmpCellList[rndCell].xPos] = tmpCellList[rndCell].lgfAmount
+            if current_cell.state == "Quiet":
+                current_cell.Quiet(cell_grid)
+            elif current_cell.state == "Split":
+                current_cell.Split(cell_grid, cell_list)
+            elif current_cell.state == "Move":
+                current_cell.Move(cell_grid)
+            else:
+                current_cell.Die(cell_grid)
 
-            # DEBUG
-            #print('\ncell number: ' + str(len(cellList)) + '\nCell status: ' + str(tmpCellList[rndCell].state))# + '\n')
-            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-            #        Cell Action            #
-            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-            # according to cell status perform action: split or stay quiet
-            if tmpCellList[rndCell].state == 'Quiet':               # Check the state
-                tmpCellList[rndCell].Quiet(cellGrid)                # call method that performs selected action
-                del tmpCellList[rndCell]                            # delete cell from temporal list
+            del tmp_cell_list[rnd_cell]
 
-            elif tmpCellList[rndCell].state == 'Split':
-                tmpCellList[rndCell].Split(cellGrid,cellList)
-                del tmpCellList[rndCell]
+        tmp_list_loop_avg += time.time() - start_time_tmp_loop
 
-            elif tmpCellList[rndCell].state == 'Move':
-                tmpCellList[rndCell].Move(cellGrid)
-                del tmpCellList[rndCell]
+        for j_cell in range(len(cell_list) - 1, -1, -1):
+            if cell_list[j_cell].amidead:
+                del cell_list[j_cell]
 
-            else: # Die
-                tmpCellList[rndCell].Die(cellGrid)                  # Off the grid, method also changes the "amidead" switch to True
-                del tmpCellList[rndCell]
-        # while
-        #### Timing!
-        end_time_tmpListLoop = time.time()
-        secs = end_time_tmpListLoop - start_time_tmpListLoop
-        #print('time taken to loop through all living cells: {:.5f}, number of cells: {}'.format(secs, tmpCellListLength))
-        tmpListLoopAvg += secs
+        chem_grid[:, :, 0] = SGFDiffEq(chem_grid[:, :, 0], sigma_m, delta_s, delta_t)
+        chem_grid[:, :, 1] = LGFDiffEq(
+            i_matrix,
+            t_matrix,
+            chem_grid[:, :, 1],
+            lambda_m,
+            delta_l,
+            delta_t,
+            delta_r,
+            diff_const,
+        )
 
-        # A list of cells that "died" is stored to later actually kill the cells...
-        listLength = len(cellList) - 1
-        for jCell in range(listLength,-1,-1):                       # checks every cell and if it was set to die then do, in reverse order
-            #print('len(cellList): ' + str(len(cellList)) + '. Current element: ' + str(jCell))
-            if cellList[jCell].amidead:
-                del cellList[jCell]
+        Environment.AntGridPlot(
+            cell_grid,
+            chem_grid,
+            nLattice,
+            cells_figure,
+            cells_subplot,
+            sgf_subplot,
+            lgf_subplot,
+            cell_plot,
+            sgf_plot,
+            lgf_plot,
+            i_time,
+            mode,
+        )
+        i_time += 1
 
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-        #    SGF/LGF diffusion and/or decay     #
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-        #### Timing!
-        #start_time_chemicalsUpdate = time.time()
-        chemGrid[:,:,0] = SGFDiffEq(chemGrid[:,:,0], sigma_m, deltaS, deltaT)
-        chemGrid[:,:,1] = LGFDiffEq(i_matrix, t_matrix, chemGrid[:,:,1], lambda_m, deltaL, deltaT, deltaR, diffConst)
-        #### Timing!
-        #end_time_chemicalsUpdate = time.time()
-        #secs = end_time_chemicalsUpdate - start_time_chemicalsUpdate
-        #print('time taken to update chemicals: {:.5f}'.format(secs))
-        #chemicalsUpdateAvg += secs
+    tmp_list_loop_avg += time.time() - start_time_main_loop
+    print(
+        f"Avg time looping through cells: {tmp_list_loop_avg / timeSteps:.3f} s, "
+        f"total: {tmp_list_loop_avg:.3f} s"
+    )
 
-        #chemsum = 0
-        #for iPos in range(nLattice):
-            #for jPos in range(nLattice):
-                #chemsum += cellGrid[iPos,jPos,2]
-                #if cellGrid[iPos,jPos,2] < 0.01:
-                    #cellGrid[iPos,jPos,2] = 0
-        #print('grid after update...\n' + str(cellGrid[:,:,2]))
-        #print('################################LGF total = ' + str(chemsum))
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-        #         Plot               #
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-        #print('updated grid:\n' + str(cellGrid[:,:,0]))
 
-        #if mode == True:
-            #if iTime == int(timeSteps/2) - 1:
-                #halfwayStruct = np.array(cellGrid[:,:,0])
-                #print('\nHalfway structure:\n {}'.format(halfwayStruct))
-                #Environment.AntGridPlot(cellGrid,
-                                        #nLattice,
-                                        #cellsFigure,
-                                        #cellsSubplot,
-                                        #sgfSubplot,
-                                        #lgfSubplot,
-                                        #cellPlot,
-                                        #sgfPlot,
-                                        #lgfPlot,
-                                        #iTime,
-                                        #iGen,
-                                        #individual,
-                                        #mode)
+if __name__ == "__main__":
+    print("System visualization")
+    file_name = sys.argv[1]
+    n_nodes = int(sys.argv[2])
+    individual = int(sys.argv[3])
+    time_steps = 200
+    n_lattice = 50
+    display_mode = False
 
-            #elif iTime == timeSteps - 1:
-                #finalStruct = np.array(cellGrid[:,:,0])
-                #print('\nFinal structure:\n {}'.format(finalStruct))
-                #Environment.AntGridPlot(cellGrid,
-                                        #nLattice,
-                                        #cellsFigure,
-                                        #cellsSubplot,
-                                        #sgfSubplot,
-                                        #lgfSubplot,
-                                        #cellPlot,
-                                        #sgfPlot,
-                                        #lgfPlot,
-                                        #iTime,
-                                        #iGen,
-                                        #individual,
-                                        #mode)
-        #else:
-            ## Timing!
-            #start_time_plotUpdate = time.time()
-        Environment.AntGridPlot(    cellGrid,
-                                    chemGrid,
-                                    nLattice,
-                                    cellsFigure,
-                                    cellsSubplot,
-                                    sgfSubplot,
-                                    lgfSubplot,
-                                    cellPlot,
-                                    sgfPlot,
-                                    lgfPlot,
-                                    iTime,
-                                    mode)
-            ## Timing!
-            #end_time_plotUpdate = time.time()
-            #secs = end_time_plotUpdate - start_time_plotUpdate
-            ##print('time taken to update plots: {:.5f}'.format(secs))
-            #plotUpdateAvg += secs
-            ##time.sleep(0.1)
-        iTime += 1
-        # this script is used to see what comes up from the main_GA, doesn't have to check for any conditions on the system, just let it run
-        #if len(cellList) == 0:
-            ##halfwayStruct = np.zeros([nLattice,nLattice])
-            ##finalStruct = np.zeros([nLattice,nLattice])
-            #break
-    # while
-    # Timing!
-    end_time_mainLoop = time.time()
-    secs = end_time_mainLoop - start_time_mainLoop
-    tmpListLoopAvg += secs
-    #print('\ntime taken in main loop: {:.5f}'.format(secs))
-    #print('Avg time updating chemicals: {:.5f}'.format(chemicalsUpdateAvg/timeSteps))
-    print('Avg time looping through cells: {:.3f}, total: {:.3f}'.format(tmpListLoopAvg/timeSteps, tmpListLoopAvg))
-    #print('Avg time taken to update plots: {:.5f}'.format(plotUpdateAvg/timeSteps))
-    # DEBUG
-    # print(str(timeSteps)+' time steps complete')
-
-    # Timing!
-    #start_time_finalFunctions = time.time()
-
-    # halfwayStruct = GetStructure(halfwayStruct, nLattice)
-    # finalStruct = GetStructure(finalStruct, nLattice)
-    #
-    # deltaMatrix = np.zeros([nLattice,nLattice])
-    # for ik in range(nLattice):
-    #     for jk in range(nLattice):
-    #         if halfwayStruct[ik,jk] != finalStruct[ik,jk]:
-    #             deltaMatrix[ik,jk] = 1
-    # # Timing!
-    # end_time_finalFunctions = time.time()
-    # secs = end_time_finalFunctions - start_time_finalFunctions
-    # #print('\ntime taken to get delta matrix:' + str(secs))
-
-    # DEBUG
-    #print('half way structure:\n' + str(halfwayStruct))
-    #print('final structure:\n' + str(finalStruct))
-    #print('delta matrix:\n' + str(deltaMatrix))
-
-    #return deltaMatrix
-    #return
-
-if __name__ == '__main__':
-    # if executed as main module!
-    print('System visualization')
-    individual = int(sys.argv[3]) #1
-    nNodes = int(sys.argv[2]) #25
-    timeSteps = 200
-    nLattice = 50
-    mode = False
-    # mode = True: cell_system as fitness function
-    # mode = False: cell_system as display system
-    fileName = sys.argv[1]
-    
-    wMatrix = GetrNN(fileName,individual)
-    #wMatrix = wMatrix.reshape(nNodes,nNodes)
-    #cProfile.run('sim(wMatrix,    timeSteps,  iGen, nNodes, individual, nLattice, mode)')
-    # parameters
-    sim(wMatrix,    timeSteps, nNodes, nLattice, mode)
+    w_matrix = GetrNN(file_name, individual)
+    sim(w_matrix, time_steps, n_nodes, n_lattice, display_mode)
     plt.close()
-#else:
-    # if called from another script

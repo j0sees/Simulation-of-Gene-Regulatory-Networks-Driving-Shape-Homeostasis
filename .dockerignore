@@ -1,47 +1,52 @@
-# Git
+# Version control and CI workflows
 .git
 .gitignore
+.github/
 
-# Python
+# Unit tests and host launcher scripts
+tests/
+scripts/
+
+# Python caches and virtual environments
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
-.Python
-env/
-venv/
 .venv/
+venv/
+env/
 ENV/
+.uv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
 
-# Documentation
-*.md
+# Documentation (keep README.md and LICENSE for package metadata)
 docs/
+CITATION.cff
 
-# Development
+# IDEs and editors
 .vscode/
 .idea/
 *.swp
 *.swo
 
-# Data and outputs
-*.png
-*.avi
-*.csv
+# Simulation outputs and generated artifacts
+data/
 runs/
 populations/
 results/
-
-# Experimental files
-neat_*.py
-plots_gp
-
-# History and logs
-docs/history-log.md
+stats/
+benchmarks/
+maps/
+plots/
+*.png
+*.avi
+*.mp4
+*.eps
+*.csv
 *.log
 
-# OS
+# OS metadata
 .DS_Store
 Thumbs.db
-
-# Local web app script (not needed in container)
-run_web_app.sh

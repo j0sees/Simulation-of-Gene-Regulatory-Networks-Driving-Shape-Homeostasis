@@ -1,330 +1,80 @@
-# Docker Documentation
+# Container Documentation (Podman & Docker)
 
 ## Overview
 
-This project includes Docker support for easy deployment and reproducible environments. Docker ensures that the simulation runs consistently across different systems and eliminates dependency issues.
+This repository includes container configurations (`Dockerfile`, `docker-compose.yml`, and `scripts/run_container.sh`) to run the simulation and web interface in a reproducible container environment on **macOS** and **Linux** using either **Podman** (including **Podman Desktop**) or **Docker**.
 
 ## Quick Start
 
 ### Prerequisites
-- **Docker Desktop** installed and running
-- **Docker Compose** (usually included with Docker Desktop)
+- **Operating System**: macOS (`Darwin`) or Linux (`Linux`)
+- **Container Engine**:
+  - **Podman** (Podman Desktop on macOS or rootless Podman on Linux), **or**
+  - **Docker** (Docker Desktop or Docker Engine)
+- **Compose (Optional)**: `podman compose` / `podman-compose` or `docker compose` / `docker-compose` (if no Compose plugin is installed, `scripts/run_container.sh` automatically falls back to direct `podman` or `docker` CLI build/run commands).
 
-### Running with Docker
+### Running the Web Interface
 
 ```bash
-# Start the web interface
-./run_docker.sh
+# Auto-detects Podman or Docker, builds the image, and starts the web app
+./scripts/run_container.sh
 
-# Or manually with docker-compose
-docker-compose up --build
+# Explicitly select Podman or Docker when both are installed
+CONTAINER_ENGINE=podman ./scripts/run_container.sh
+CONTAINER_ENGINE=docker ./scripts/run_container.sh
 ```
 
-The web interface will be available at: **http://localhost:8501**
+Open `http://localhost:8501` in your browser.
 
-## Docker Components
-
-### Dockerfile
-The main container configuration file that:
-- Uses Python 3.9 slim image for smaller size
-- Installs system dependencies (gcc, g++)
-- Installs Python packages from requirements.txt
-- Creates a non-root user for security
-- Exposes port 8501 for the web interface
-- Sets the default command to run the Streamlit app
-
-### docker-compose.yml
-Orchestrates the container setup:
-- Builds the image from Dockerfile
-- Maps port 8501 to host
-- Mounts volumes for development and data
-- Sets environment variables
-- Configures container behavior
-
-### .dockerignore
-Specifies files to exclude from the Docker build context:
-- Git files (.git, .gitignore)
-- Python cache files (__pycache__, *.pyc)
-- Documentation files (*.md)
-- Development files (.vscode, .idea)
-- Data and output files (*.png, *.avi, *.csv)
-- Experimental files (neat-*.py)
-
-### run_docker.sh
-A convenient script that:
-- Checks if Docker is running
-- Creates necessary directories
-- Builds the Docker image
-- Starts the container
-- Provides helpful information
-
-## Container Architecture
-
-### Base Image
-- **python:3.9-slim**: Lightweight Python image
-- **System Dependencies**: gcc, g++ for compiled extensions
-- **Security**: Non-root user (appuser)
-
-### Application Structure
-```
-/app/
-├── core/           # Core simulation modules
-├── evolution/      # Genetic algorithm
-├── visualization/ # Plotting tools
-├── analysis/       # Research tools
-├── examples/       # Usage examples
-├── web_app.py      # Streamlit application
-├── requirements.txt # Python dependencies
-└── Dockerfile     # Container configuration
+```mermaid
+flowchart TD
+    Start["./scripts/run_container.sh"] --> OSCheck{"Check Host OS\n(uname -s)"}
+    OSCheck -->|"Darwin (macOS) or Linux"| EngineCheck{"Resolve Container Engine\n(CONTAINER_ENGINE or Auto-Detect)"}
+    OSCheck -->|"Other"| FailOS["Exit with Platform Error"]
+    EngineCheck -->|"podman info succeeds"| Podman["Use Podman\n(Set PODMAN_USERNS=keep-id)"]
+    EngineCheck -->|"docker info succeeds"| Docker["Use Docker"]
+    Podman --> ComposeCheck{"Compose Available?\n(podman-compose / podman compose\ndocker compose / docker-compose)"}
+    Docker --> ComposeCheck
+    ComposeCheck -->|"Yes"| RunCompose["Build & Start via Compose\n(docker-compose.yml)"]
+    ComposeCheck -->|"No"| RunCLI["Fallback to Direct CLI\n(<engine> build & <engine> run)"]
+    RunCompose --> App["Streamlit Web Interface\nhttp://localhost:8501"]
+    RunCLI --> App
 ```
 
-### Port Mapping
-- **Host Port**: 8501
-- **Container Port**: 8501
-- **Protocol**: HTTP
+## Container Components
 
-### Volume Mounts
-- **Current Directory**: `.:/app` (for development)
-- **Data Directory**: `./data:/app/data` (for data persistence)
+### `Dockerfile`
+- Uses `python:3.12-slim` as the base image and copies the `uv` binary from `ghcr.io/astral-sh/uv:latest`.
+- Installs `gcc` and `g++` for compiled scientific extensions.
+- Installs project dependencies directly from `pyproject.toml` via `uv pip install --system --no-cache -r pyproject.toml`.
+- Runs as a non-root user (`appuser`, UID `1000`).
+- Exposes port `8501` and launches `streamlit run visualization/web_app.py`.
 
-## Usage Examples
+### `docker-compose.yml`
+- Builds the image from the local `Dockerfile`.
+- Maps host port `8501` to container port `8501`.
+- Mounts the workspace directory (`.:/app`) and persistent data directory (`./data:/app/data`).
 
-### Basic Usage
+## Common Commands
+
 ```bash
-# Start the web interface
-./run_docker.sh
-
-# Access at http://localhost:8501
-```
-
-### Development Mode
-```bash
-# Run with volume mounting for live code changes
-docker-compose up --build
-
-# Make changes to code and see them reflected immediately
-```
-
-### Custom Port
-```bash
-# Run on a different port
-docker-compose up --build -p 8080:8501
-
-# Access at http://localhost:8080
-```
-
-### Background Mode
-```bash
-# Run in background
+# Run in detached (background) mode
 docker-compose up -d --build
 
-# Check logs
+# Follow container logs
 docker-compose logs -f
 
-# Stop container
-docker-compose down
-```
+# Safe teardown of containers, images, and caches (with confirmation)
+./scripts/teardown_container.sh
 
-### Interactive Shell
-```bash
-# Run container with interactive shell
+# Non-interactive teardown (skip prompt)
+./scripts/teardown_container.sh --yes
+
+# Complete teardown including generated data files
+./scripts/teardown_container.sh --yes --clean-data
+
+# Run CLI scripts interactively inside the container
 docker-compose run --rm grn-simulation bash
-
-# Inside container, run commands like:
 python examples/run_simulation.py
-python evolution/main_ga.py
+python examples/run_evolution.py
 ```
-
-## Troubleshooting
-
-### Common Issues
-
-#### Container Won't Start
-```bash
-# Check Docker status
-docker info
-
-# Check available ports
-netstat -an | grep 8501
-
-# Check container logs
-docker-compose logs
-```
-
-#### Import Errors
-```bash
-# Rebuild container
-docker-compose down
-docker-compose up --build
-
-# Check if all files are copied
-docker-compose run --rm grn-simulation ls -la
-```
-
-#### Performance Issues
-```bash
-# Check resource usage
-docker stats
-
-# Increase memory/CPU limits in docker-compose.yml
-```
-
-#### Permission Issues
-```bash
-# Fix file permissions
-chmod +x run_docker.sh
-
-# Check user permissions in container
-docker-compose run --rm grn-simulation whoami
-```
-
-### Debugging
-
-#### Container Inspection
-```bash
-# Enter running container
-docker exec -it grn-simulation bash
-
-# Check Python environment
-python -c "import sys; print(sys.path)"
-
-# Check installed packages
-pip list
-```
-
-#### Build Debugging
-```bash
-# Build with verbose output
-docker-compose build --progress=plain
-
-# Check build context
-docker-compose build --no-cache
-```
-
-#### Network Debugging
-```bash
-# Check port binding
-docker port grn-simulation
-
-# Test connectivity
-curl http://localhost:8501
-```
-
-## Advanced Configuration
-
-### Custom Environment Variables
-```yaml
-# In docker-compose.yml
-environment:
-  - PYTHONPATH=/app
-  - PYTHONUNBUFFERED=1
-  - STREAMLIT_SERVER_PORT=8501
-  - STREAMLIT_SERVER_ADDRESS=0.0.0.0
-```
-
-### Resource Limits
-```yaml
-# In docker-compose.yml
-deploy:
-  resources:
-    limits:
-      memory: 2G
-      cpus: '1.0'
-```
-
-### Health Checks
-```yaml
-# In docker-compose.yml
-healthcheck:
-  test: ["CMD", "curl", "-f", "http://localhost:8501"]
-  interval: 30s
-  timeout: 10s
-  retries: 3
-```
-
-### Multi-stage Builds
-```dockerfile
-# For production optimization
-FROM python:3.9-slim as builder
-# Build stage...
-
-FROM python:3.9-slim as runtime
-# Runtime stage...
-```
-
-## Production Deployment
-
-### Docker Registry
-```bash
-# Tag image for registry
-docker tag grn-simulation:latest your-registry/grn-simulation:latest
-
-# Push to registry
-docker push your-registry/grn-simulation:latest
-```
-
-### Docker Swarm
-```bash
-# Initialize swarm
-docker swarm init
-
-# Deploy stack
-docker stack deploy -c docker-compose.yml grn-simulation
-```
-
-### Kubernetes
-```yaml
-# Create deployment
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: grn-simulation
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: grn-simulation
-  template:
-    metadata:
-      labels:
-        app: grn-simulation
-    spec:
-      containers:
-      - name: grn-simulation
-        image: grn-simulation:latest
-        ports:
-        - containerPort: 8501
-```
-
-## Best Practices
-
-### Security
-- Use non-root user in container
-- Keep base image updated
-- Scan for vulnerabilities
-- Limit container capabilities
-
-### Performance
-- Use multi-stage builds
-- Optimize layer caching
-- Minimize image size
-- Use appropriate base images
-
-### Development
-- Use volume mounts for live development
-- Keep Dockerfile simple
-- Document build process
-- Use .dockerignore effectively
-
-### Maintenance
-- Regular base image updates
-- Security patches
-- Dependency updates
-- Performance monitoring
-
-## References
-
-- **Docker Documentation**: https://docs.docker.com/
-- **Docker Compose**: https://docs.docker.com/compose/
-- **Docker Best Practices**: https://docs.docker.com/develop/dev-best-practices/
-- **Streamlit Docker**: https://docs.streamlit.io/knowledge-base/deploy/deploy-streamlit-using-docker

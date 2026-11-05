@@ -1,525 +1,311 @@
-import sys                                  # to get command line args
-import os                                   # to handle paths
-import time                                 # to get system time
-from datetime import datetime as dt
-#import random                   
-import numpy as np  
-from evolution.tools_ga import *
-############
-# self made classes
-from core.cell_agent import *                    # it is allowed to call from this class because there's an __init__.py file in this directory
-from core.tools import *
-from visualization.plot import *
+"""Parallel Genetic Algorithm for evolving Gene Regulatory Networks driving shape homeostasis."""
+
+from __future__ import annotations
+
 import csv
-############
-import multiprocessing as mp
 import ctypes
-#from numba import jit
-from contextlib import contextmanager
-from functools import partial
+import multiprocessing as mp
+import os
+import sys
+import time
+import numpy as np
 
-#============================================================#
-#                                                            #
-#                   CELLULAR AUTOMATA                        #
-#                                                            #
-#============================================================#
-#@jit
-def sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice, mode):
+from core.cell_agent import cell
+from core.tools import (
+    GenerateIMatrix,
+    GenerateTMatrix,
+    GetStructure,
+    LGFDiffEq,
+    SGFDiffEq,
+    flatList,
+)
+from evolution.tools_ga import Crossover, Mutate
+from visualization.plot import Environment
+
+
+def sim(
+    wMatrix: np.ndarray,
+    timeSteps: int,
+    iGen: int,
+    nNodes: int,
+    individual: int,
+    nLattice: int,
+    mode: bool,
+) -> np.ndarray | None:
     """
-    Parameters: sim(wMatrix, numberOfTimeSteps, NumberOfGeneration, nNodes, individual, nLattice, mode)
-    # mode = True: cell_system as fitness function
-    # mode = False: cell_system as display system
+    Run a cellular automata simulation for fitness evaluation or visualization.
+
+    Parameters
+    ----------
+    wMatrix : numpy.ndarray
+        Recurrent neural network weight matrix.
+    timeSteps : int
+        Number of simulation time steps.
+    iGen : int
+        Current generation index.
+    nNodes : int
+        Number of nodes in the neural network.
+    individual : int
+        Individual index within the population.
+    nLattice : int
+        Dimension of the square lattice grid.
+    mode : bool
+        True: evaluate fitness and return the binary structural difference matrix.
+        False: display simulation visually.
     """
-    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-    #           PARAMETERS              #
-    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-    # TODO: organize in different categories...
-    #nLattice = 5                               # TODO change name
-    #timeSteps = 40                             # Number of simulation time steps
-    cellGrid = np.zeros([nLattice,nLattice,3])  # Initialize empty grid
-    SGF_read = 0.                               # in the future values will be read from the grid
-    LGF_read = 0.
-    ix = int(nLattice/2)                        # Initial position for the mother cell
-    iy = int(nLattice/2)                        # Initial position for the mother cell
-    iTime = 0                                   # time counter
+    np_cell_grid = np.zeros((nLattice, nLattice))
+    semi_flat_grid = [flatList(np_cell_grid[r, :]) for r in range(nLattice)]
+    cell_grid = flatList(semi_flat_grid)
+    chem_grid = np.zeros((nLattice, nLattice, 2))
+    halfway_struct = np.zeros((nLattice, nLattice))
+    final_struct = np.ones((nLattice, nLattice))
 
-    cellList = []                               # List for cell agents
+    ix = nLattice // 2
+    iy = nLattice // 2
+    i_time = 0
 
-    # SGF/LGF dynamics parameters
-    deltaT = 1.                                 # time step for discretisation [T]
-    deltaR = 1.                                 # space step for discretisation [L]
-    deltaS = 0.5                                # decay rate for SGF
-    deltaL = 0.1                                # decay rate for LGF
-    diffConst = 1.#0.05                         # diffusion constant D [dimentionless]
-    t_matrix = GenerateTMatrix(nLattice)        # T matrix for LGF operations
-    i_matrix = GenerateIMatrix(nLattice)        # I matrix for LGF operations
+    cell_list = [cell(ix, iy, wMatrix, nNodes)]
+    cell_grid[ix][iy] = 1
 
-    # timing variables!
-    tmpListLoopAvg = 0
-    chemicalsUpdateAvg = 0
+    # SGF/LGF reaction-diffusion parameters
+    delta_t = 1.0
+    delta_r = 1.0
+    delta_s = 0.5
+    delta_l = 0.1
+    diff_const = 1.0
+    t_matrix = GenerateTMatrix(nLattice)
+    i_matrix = GenerateIMatrix(nLattice)
 
-    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-    #       INITIALIZATION             #
-    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-    # create mother cell and update the grid with its initial location
-    cellList.append(cell(ix,iy,wMatrix,nNodes))
-    cellGrid[ix][iy][0] = 1
-    #print('Initial grid:\n' + str(cellGrid[:,:,0]))
-    #cellGrid[ix][iy][2] = 400.
+    if not mode:
+        (
+            cells_figure,
+            cells_subplot,
+            sgf_subplot,
+            lgf_subplot,
+            cell_plot,
+            sgf_plot,
+            lgf_plot,
+        ) = Environment.CellsGridFigure(nLattice, mode)
 
-    # Timing!
-    #start_time_figurecall = time.time()
-    # Plot figure and subplots
-    #cellsFigure, cellsSubplot, sgfSubplot, lgfSubplot, cellPlot, sgfPlot, lgfPlot = Environment.CellsGridFigure(nLattice, mode)
-    #end_time_figurecall = time.time()
-    #secs = end_time_figurecall - start_time_figurecall
+    start_time_main_loop = time.time()
 
-    #print('time to call figures, subplots, plots:' + str(secs))
-    # DEBUG
-    #print('Time running...')
-    # Timing!
-    start_time_mainLoop = time.time()
-    while iTime < timeSteps:
-        # DEBUG
-        #print('\n######### time step #' + str(iTime))
+    while i_time < timeSteps:
+        sigma_m = np.zeros((nLattice, nLattice))
+        lambda_m = np.zeros((nLattice, nLattice))
 
-        ## decay chemicals in spots where there is some but no cell
+        tmp_cell_list = list(cell_list)
+        while len(tmp_cell_list) > 0:
+            rnd_cell = np.random.randint(len(tmp_cell_list))
+            current_cell = tmp_cell_list[rnd_cell]
+            current_cell.border = nLattice
 
-        # this matrixes must be updated everytime so that if there's no production in one spot that spot contains a zero
-        # but must not lose contained information, i.e. must use it before setting it to zero
-        sigma_m = np.zeros([nLattice,nLattice])     # matrix representation of SGF production
-        lambda_m = np.zeros([nLattice,nLattice])    # matrix representation of LGF production
+            sgf_reading, lgf_reading = current_cell.Sense(chem_grid)
+            current_cell.GenerateStatus(sgf_reading, lgf_reading)
 
-        tmpCellList = list(cellList)                                  # a copy of the list of current cells is used to iterate over all the cells
+            sigma_m[current_cell.yPos, current_cell.xPos] = current_cell.sgfAmount
+            lambda_m[current_cell.yPos, current_cell.xPos] = current_cell.lgfAmount
 
-        # Timing!
-        start_time_tmpListLoop = time.time()
-        tmpCellListLength = len(tmpCellList)
-        while len(tmpCellList) > 0:                                     # while  the tmp list of cells is longer than 1
-            # 1st step => choose a random cell from the list of existing cells
-            rndCell = np.random.randint(len(tmpCellList))
-            # store lattice size
-            tmpCellList[rndCell].border = nLattice                      # TODO rethink this
-            #tmpCellList[rndCell].nNodes = nNodes                       # WARNING hardcoded
+            if current_cell.state == "Quiet":
+                current_cell.Quiet(cell_grid)
+            elif current_cell.state == "Split":
+                current_cell.Split(cell_grid, cell_list)
+            elif current_cell.state == "Move":
+                current_cell.Move(cell_grid)
+            else:
+                current_cell.Die(cell_grid)
 
-            # 2nd step => read chemicals
-            SGF_reading, LGF_reading = tmpCellList[rndCell].Sense(cellGrid)
+            del tmp_cell_list[rnd_cell]
 
-            # 3rd step => random cell should decide and action
-            tmpCellList[rndCell].GenerateStatus(SGF_reading, LGF_reading)     # get status of this cell
+        for j_cell in range(len(cell_list) - 1, -1, -1):
+            if cell_list[j_cell].amidead:
+                del cell_list[j_cell]
 
-            # 4th step => update SGF and LGF amounts on the 'production' matrices sigma & lambda
-            # production matrices get updated values
-            sigma_m[tmpCellList[rndCell].yPos,tmpCellList[rndCell].xPos] = tmpCellList[rndCell].sgfAmount
-            lambda_m[tmpCellList[rndCell].yPos,tmpCellList[rndCell].xPos] = tmpCellList[rndCell].lgfAmount
+        chem_grid[:, :, 0] = SGFDiffEq(chem_grid[:, :, 0], sigma_m, delta_s, delta_t)
+        chem_grid[:, :, 1] = LGFDiffEq(
+            i_matrix,
+            t_matrix,
+            chem_grid[:, :, 1],
+            lambda_m,
+            delta_l,
+            delta_t,
+            delta_r,
+            diff_const,
+        )
 
-            # DEBUG
-            #print('\ncell number: ' + str(len(cellList)) + '\nCell status: ' + str(tmpCellList[rndCell].state))# + '\n')
-            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-            #        Cell Action            #
-            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-            # according to cell status perform action: split or stay quiet
-            if tmpCellList[rndCell].state == 'Quiet':                   # Check the state
-                tmpCellList[rndCell].Quiet(cellGrid)                    # call method that performs selected action
-                del tmpCellList[rndCell]                                # delete cell from temporal list
-
-            elif tmpCellList[rndCell].state == 'Split':
-                tmpCellList[rndCell].Split(cellGrid,cellList)
-                del tmpCellList[rndCell]
-
-            elif tmpCellList[rndCell].state == 'Move':
-                tmpCellList[rndCell].Move(cellGrid)
-                del tmpCellList[rndCell]
-
-            else: # Die
-                tmpCellList[rndCell].Die(cellGrid)                  # Off the grid, method also changes the "amidead" switch to True
-                del tmpCellList[rndCell]
-        # while
-        # Timing!
-        end_time_tmpListLoop = time.time()
-        secs = end_time_tmpListLoop - start_time_tmpListLoop
-        #print('time taken through cells: {:.3f}, number of cells: {:.3f}'.format(secs, tmpCellListLength))
-
-        # A list of cells that "died" is stored to later actually kill the cells...
-        listLength = len(cellList) - 1
-        for jCell in range(listLength,-1,-1):                     # checks every cell and if it was set to die then do, in reverse order
-            #print('len(cellList): ' + str(len(cellList)) + '. Current element: ' + str(jCell))
-            if cellList[jCell].amidead:
-                del cellList[jCell]
-
-        ### TEST! equivalent to: cellList[cell].'status'(param_x,param_y)
-        #    state = getattr(tmpCellList[rndCell], status)
-        #    action = getattr(tmpCellList[rndCell], state)
-        #    action(cellGrid, cellList)
-
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-        #    SGF/LGF diffusion and/or decay     #
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-        # Timing!
-        #start_time_chemicalsUpdate = time.time()
-        cellGrid[:,:,1] = SGFDiffEq(cellGrid[:,:,1], sigma_m, deltaS, deltaT)
-        cellGrid[:,:,2] = LGFDiffEq(i_matrix, t_matrix, cellGrid[:,:,2], lambda_m, deltaL, deltaT, deltaR, diffConst)
-        # Timing!
-        #end_time_chemicalsUpdate = time.time()
-        #secs = end_time_chemicalsUpdate - start_time_chemicalsUpdate
-        #print('time taken to update chemicals:' + str(secs))
-        #chemicalsUpdateAvg += secs
-
-        #chemsum = 0
-        #for iPos in range(nLattice):
-            #for jPos in range(nLattice):
-                #chemsum += cellGrid[iPos,jPos,2]
-                #if cellGrid[iPos,jPos,2] < 0.01:
-                    #cellGrid[iPos,jPos,2] = 0
-        #print('grid after update...\n' + str(cellGrid[:,:,2]))
-    #    print('################################LGF total = ' + str(chemsum))
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-        #         Plot               #
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-        #print('updated grid:\n' + str(cellGrid[:,:,0]))
-
-        if mode == True:
-            if len(cellList) == 0:                                      # if cells die during the simulation resturn two different structs
-                halfwayStruct = np.zeros([nLattice,nLattice])
-                finalStruct = np.ones([nLattice,nLattice])
+        if mode:
+            if len(cell_list) == 0:
+                halfway_struct = np.zeros((nLattice, nLattice))
+                final_struct = np.ones((nLattice, nLattice))
                 break
-            elif iTime == int(timeSteps/2) - 1:                             # special cases get tested halfway through the simulation
-                if len(cellList) <= int((nLattice**2)*0.01):                                  # If there are no cells 
-                    halfwayStruct = np.zeros([nLattice,nLattice])       # return two completely different structure matrices to get 0 fitness
-                    finalStruct = np.ones([nLattice,nLattice])
+            if i_time == int(timeSteps / 2) - 1:
+                if len(cell_list) <= int((nLattice**2) * 0.01):
+                    halfway_struct = np.zeros((nLattice, nLattice))
+                    final_struct = np.ones((nLattice, nLattice))
                     break
+                halfway_struct = np.array(cell_grid)
+            elif i_time == timeSteps - 1:
+                if len(cell_list) == nLattice**2:
+                    halfway_struct = np.zeros((nLattice, nLattice))
+                    final_struct = np.ones((nLattice, nLattice))
                 else:
-                    halfwayStruct = np.array(cellGrid[:,:,0])
-        #         Environment.AntGridPlot(cellGrid,
-        #                                 nLattice,
-        #                                 cellsFigure,
-        #                                 cellsSubplot,
-        #                                 sgfSubplot,
-        #                                 lgfSubplot,
-        #                                 cellPlot,
-        #                                 sgfPlot,
-        #                                 lgfPlot,
-        #                                 iTime,
-        #                                 iGen,
-        #                                 individual,
-        #                                 mode)
-        #
-            elif iTime == timeSteps - 1:
-                if len(cellList) == nLattice**2:                      # If cells fill space 
-                    halfwayStruct = np.zeros([nLattice,nLattice])       # return two completely different structure matrices to get 0 fitness
-                    finalStruct = np.ones([nLattice,nLattice])
-                    # break
-                else:
-                    finalStruct = np.array(cellGrid[:,:,0])
-        #         Environment.AntGridPlot(cellGrid,
-        #                                 nLattice,
-        #                                 cellsFigure,
-        #                                 cellsSubplot,
-        #                                 sgfSubplot,
-        #                                 lgfSubplot,
-        #                                 cellPlot,
-        #                                 sgfPlot,
-        #                                 lgfPlot,
-        #                                 iTime,
-        #                                 iGen,
-        #                                 individual,
-        #                                 mode)
+                    final_struct = np.array(cell_grid)
         else:
-            # Timing!
-            #start_time_plotUpdate = time.time()
-            Environment.AntGridPlot(    cellGrid,
-                                        nLattice,
-                                        cellsFigure,
-                                        cellsSubplot,
-                                        sgfSubplot,
-                                        lgfSubplot,
-                                        cellPlot,
-                                        sgfPlot,
-                                        lgfPlot,
-                                        iTime,
-                                        iGen,
-                                        individual,
-                                        mode)
-            # Timing!
-        #     end_time_plotUpdate = time.time()
-        #     secs = end_time_plotUpdate - start_time_plotUpdate
-        #     #print('time taken to update plots:' + str(secs))
-        #     time.sleep(0.1)
-        iTime += 1
+            Environment.AntGridPlot(
+                cell_grid,
+                chem_grid,
+                nLattice,
+                cells_figure,
+                cells_subplot,
+                sgf_subplot,
+                lgf_subplot,
+                cell_plot,
+                sgf_plot,
+                lgf_plot,
+                i_time,
+                mode,
+            )
 
-    # while
-    # Timing!
-    end_time_mainLoop = time.time()
-    secs = end_time_mainLoop - start_time_mainLoop
-    tmpListLoopAvg += secs
-    
-    #print('\ntime taken in main loop:' + str(secs))
+        i_time += 1
 
-    #print('\ntime taken in timeSteps: {:.5f} s'.format(secs))
-    #print('Avg time updating chemicals: {:.5f} ms'.format(chemicalsUpdateAvg*1000/timeSteps))
-    print('Avg time looping through cells: {:.3f} s, total: {:.3f} s'.format(tmpListLoopAvg/timeSteps, tmpListLoopAvg))
+    elapsed = time.time() - start_time_main_loop
+    print(f"Avg time looping through cells: {elapsed / timeSteps:.3f} s, total: {elapsed:.3f} s")
 
-    # DEBUG
-    # print(str(timeSteps)+' time steps complete')
+    halfway_struct = GetStructure(halfway_struct, nLattice)
+    final_struct = GetStructure(final_struct, nLattice)
+    delta_matrix = (halfway_struct != final_struct).astype(np.float64)
 
-    # Timing!
-    #start_time_finalFunctions = time.time()
-
-    halfwayStruct = GetStructure(halfwayStruct, nLattice)
-    finalStruct = GetStructure(finalStruct, nLattice)
-
-    deltaMatrix = np.zeros([nLattice,nLattice])
-    for ik in range(nLattice):
-        for jk in range(nLattice):
-            if halfwayStruct[ik,jk] != finalStruct[ik,jk]:
-                deltaMatrix[ik,jk] = 1
-    # Timing!
-    #end_time_finalFunctions = time.time()
-    #secs = end_time_finalFunctions - start_time_finalFunctions
-    #print('\ntime taken to get delta matrix:' + str(secs))
-
-
-    # DEBUG
-    #print('half way structure:\n' + str(halfwayStruct))
-    #print('final structure:\n' + str(finalStruct))
-    #print('delta matrix:\n' + str(deltaMatrix))
-    
     if mode:
-        return deltaMatrix
+        return delta_matrix
+    return None
 
-#@jit
-def EvaluateIndividual(individual, timeSteps, iGen, nNodes, nLattice, mode):
-    totSum = 0.
-    #print('generating wMatrix...')
-    wMatrix = population[individual,:].reshape(nNodes,nNodes)
-    #print('process: {} is running sim  with individual: {}!'.format(os.getpid(), individual))
-    # Timing!
-    start_time_chemicalsUpdate = time.time()
-    deltaM = sim(wMatrix, timeSteps, iGen, nNodes, individual, nLattice, mode)    # Timing!
-    end_time_chemicalsUpdate = time.time()
-    secs = end_time_chemicalsUpdate - start_time_chemicalsUpdate
-    print('Proc {}: Time taken to run sim: {:.3f}'.format(os.getpid(), secs))
-    #print('process: {} done with individual: {}!'.format(os.getpid(), individual))
-    deltaMatrix = np.array(deltaM)
-    #m, n = deltaMatrix.shape()
-    #m = 50
-    for ix in range(nLattice):
-        for jx in range(nLattice):
-            totSum += deltaMatrix[ix,jx]
-    #print('max score: {}, totsum = {}'.format(nLattice**2, totSum))
-    # DEBUG
-    #print('total sum on delta matrix: ' + str(totSum))
-    #if totSum <= int((nLattice**2)*0.1) or totSum == int(nLattice**2):
-        #fitness[individual] = 0.
-    #else:
-        #fitness[individual] = 1. - (1./(nLattice**2))*totSum
-    fitness[individual] = 1. - (1./(nLattice**2))*totSum
-    #print('fitness = {:.3f}'.format(fitness[individual]))
+
+def EvaluateIndividual(
+    individual: int,
+    timeSteps: int,
+    iGen: int,
+    nNodes: int,
+    nLattice: int,
+    mode: bool,
+) -> np.ndarray:
+    """Evaluate a single individual's fitness in the shared population array."""
+    w_matrix = population[individual, :].reshape(nNodes, nNodes)
+    start_time = time.time()
+    delta_m = sim(w_matrix, timeSteps, iGen, nNodes, individual, nLattice, mode)
+    secs = time.time() - start_time
+    print(f"Proc {os.getpid()}: Time taken to run sim: {secs:.3f} s")
+
+    tot_sum = float(np.sum(delta_m))
+    fitness[individual] = 1.0 - (tot_sum / (nLattice**2))
     return fitness
-# EvaluateIndividual
 
-#============================================================#
-#                                                            #
-#                   GENETIC ALGORITHM                        #
-#                                                            #
-#============================================================#
-if __name__ == '__main__':
-    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-    #       PARAMETERS                 #
-    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-    # nProcs*cycles = 4*int + 2
-    # popSize = nProcs*cycles
-    nProcs = 2   #11                             # multiprocessing will use as many cores as it can see
-    DEFAULT_VALUE = -1                                          # WARNING
-    popSize = 6                           # Population size
+
+if __name__ == "__main__":
+    nProcs = 2
+    DEFAULT_VALUE = -1
+    popSize = 6
     nNodes = 25
-    nGenes = nNodes**2                                          # Number of genes
-    crossoverProb = 1. #0.8                                     # Crossover probability
-    mutationProb = 1. #0.5                                      # Mutation probability
-    crossMutProb = 0.5                                          # probability of doing mutation or crossover
-    #tournamentSelParam = 0.75                                  # Tournament selection parameter
-    tournamentSize = 4                                          # Tournament size. EVEN
-    eliteNum = 2                                                # number of elite solutions to carry to next generation
+    nGenes = nNodes**2
+    crossoverProb = 1.0
+    mutationProb = 1.0
+    crossMutProb = 0.5
+    tournamentSize = 4
+    eliteNum = 2
     nOfGenerations = 15
     timeSteps = 200
     nLattice = 50
     mode = True
-    fileName = sys.argv[1] #'benchmark_test_ozzy_20171015_crossP1a'
-    chunkSize = 1                                              # TEST 
-    
-    # timing variables!
-    generationAvg = 0
+    fileName = sys.argv[1]
+    chunkSize = 1
 
-    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-    #       INITIALISATION             #
-    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-    #population = InitializePopulation(popSize, numberOfGenes)  # call initialization function, a random set of chromosomes is generated
-    #population = np.random.random(size = (popSize, nGenes))
-    contestants = np.zeros([tournamentSize, nGenes])
-    fitnessInfo = np.zeros([nOfGenerations, 2])
+    generationAvg = 0.0
+    contestants = np.zeros((tournamentSize, nGenes))
+    fitnessInfo = np.zeros((nOfGenerations, 2))
 
+    print(
+        f"Parameters:\nFile name: {fileName}\n"
+        f"nProcs = {nProcs}, Population size = {popSize}, nNodes = {nNodes}, "
+        f"nLattice = {nLattice}, nGen = {nOfGenerations}, "
+        f"Crossover Prob = {crossoverProb}, Mutation prob = {mutationProb}"
+    )
 
-    print('Parameters: \nFile name: {}\nnProcs = {}, Population size = {}, nNodes = {}, nLattice = {}, nGen = {}, Crossover Prob = {}, Mutation prob = {}'.format(fileName, nProcs, popSize, nNodes, nLattice, nOfGenerations, crossoverProb, mutationProb))
+    population_base = mp.Array(ctypes.c_float, popSize * nGenes, lock=False)
+    population = np.frombuffer(population_base, dtype=ctypes.c_float).reshape(popSize, nGenes)
+    np.copyto(population, np.random.rand(popSize, nGenes))
 
-    # multiprocessing implementation
-    population_base = mp.Array(ctypes.c_float, popSize*nGenes, lock = False)    # create mp shared array
-    #print('population_base length: {}'.format(len(population_base)))
-    population = np.frombuffer(population_base, dtype = ctypes.c_float)         # convert mp array to np.array
-    population = population.reshape(popSize, nGenes)
-    #print('population length: {}'.format(len(population)))
-    
-    randPop = np.random.rand(popSize, nGenes)
-    np.copyto(population, randPop)
-    
-    #for ix in range(popSize*nGenes):
-        #population[ix] = -1. + 2.*np.random.random()                            # Generate population
-    #print('population shared array created successfully!')
-
-    fitness_base = mp.Array(ctypes.c_float, popSize, lock = False)              # create mp shared array
-    fitness = np.frombuffer(fitness_base, dtype = ctypes.c_float)               # convert mp array to np.array
-    #print('fitness shared array created successfully!')
+    fitness_base = mp.Array(ctypes.c_float, popSize, lock=False)
+    fitness = np.frombuffer(fitness_base, dtype=ctypes.c_float)
 
     for iGen in range(nOfGenerations):
-        # Timing!
         start_time_generation = time.time()
-        # DEBUG
-        print('\nGeneration #' + str(iGen + 1))
-
-        # 1st step: Fitness function => Rank idividuals by their fitness
-        # chromosomes get decoded and evaluated
-        #for ix in range(popSize):
-            #chromosome = np.array(population[ix,:])             # loop through all chromosomes
-            ## DEBUG
-            #print('=> running system... ' + str(ix) + ' time')
-            #wMatrix = -1 + 2*chromosome.reshape(nNodes,nNodes)  # decode chromosome, i.e., transform into matrix
-
-            ##fitness[ix][0] = EvaluateIndividual(wMatrix, timeSteps, iGen, nNodes, individual, nLattice, mode)        # get chromosome fitness
-            #fitness = EvaluateIndividual(ix, timeSteps, iGen, nNodes, nLattice, mode)
-
-            ## DEBUG
-            #print('fitness: ' + str(fitness[ix][0]))
-            ##fitness[ix][1] = ix                                 # store position in population matrix
-        ## loop over chromosomes
-
-        # multiprocess implementation!
+        print(f"\nGeneration #{iGen + 1}")
 
         fitness.fill(DEFAULT_VALUE)
-        timeSteps_list = [timeSteps for x in range(popSize)]
-        iGen_list = [iGen for x in range(popSize)]
-        nNodes_list = [nNodes for x in range(popSize)]
-        nLattice_list = [nLattice for x in range(popSize)]
-        mode_list = [mode for x in range(popSize)]
-        index_list = [x for x in range(popSize)]
-        args = zip(index_list, timeSteps_list, iGen_list, nNodes_list, nLattice_list, mode_list)
+        args = [
+            (idx, timeSteps, iGen, nNodes, nLattice, mode) for idx in range(popSize)
+        ]
 
-        # Timing!
-        start_time_fitness = time.time()
-        with mp.Pool(processes = nProcs) as pool:
-            pool.starmap(EvaluateIndividual, args, chunkSize)              # Evaluation of individuals, this runs in parallel!
-        
-        end_time_fitness = time.time()
-        secs = end_time_fitness - start_time_fitness
-        
-        #pool = multiprocessing.Pool(processes=NBR_OF_PROCESSES)
-        #print('creating pool...')
-        #pool = mp.Pool(processes = nProcs)
-        #print('evaluating pool...')
-        # Timing!
-        #start_time_fitness = time.time()
-        #pool.starmap(EvaluateIndividual, args, chunkSize)
-        # Timing!
-        #end_time_fitness = time.time()
-        #secs = end_time_fitness - start_time_fitness
-        ####
+        with mp.Pool(processes=nProcs) as pool:
+            pool.starmap(EvaluateIndividual, args, chunkSize)
 
-        # 1.1: sort fitness array
-        #fitness.sort(order = 'fitnessValue')                    # sort array according to fitness value. Less fit to most fit
         sorted_fitness = np.argsort(fitness)
-        tempPopulation = np.zeros([popSize, nGenes])            #np.array(population)
-        
-                # 1.2: get fittest infividual and mean fitness
-        fitnessInfo[iGen, 0] = np.amax(fitness) #sorted_fitness[popSize - 1]                   # np.amax(fitness)
+        tempPopulation = np.zeros((popSize, nGenes))
+
+        fitnessInfo[iGen, 0] = np.amax(fitness)
         fitnessInfo[iGen, 1] = np.average(fitness)
-        print('Gen: {1}, max fit: {2:.3f}, avg fit: {0:.3f}'.format(np.average(fitness), iGen + 1, fitness[sorted_fitness[popSize - 1]]))
+        print(
+            f"Gen: {iGen + 1}, max fit: {fitness[sorted_fitness[popSize - 1]]:.3f}, "
+            f"avg fit: {np.average(fitness):.3f}"
+        )
 
-        # DEBUG
-        #print('sorted fitness array, before deleting:\n' + str(fitness))
+        # Elitism: preserve the top eliteNum individuals
+        for i_elit in range(1, eliteNum + 1):
+            index = sorted_fitness[popSize - i_elit]
+            tempPopulation[i_elit - 1, :] = np.array(population[index, :])
 
-        # 2nd step: Elitism => Save the best individuals for next generation
-        iElit = 1                                               # Elite counter: individuals with the best fitness are kept untouched
-        while iElit <= eliteNum:
-            #index = fitness[popSize - iElit][1]                 # get the index of the last members of the list, i.e., most fit
-            index = sorted_fitness[popSize - iElit]
-            # DEBUG
-            #print('=> best fitness: ' + str(fitness[popSize - iElit][0]))
-            tempPopulation[iElit - 1,:] = np.array(population[index,:])   # store as part of the new generation of individuals
-            #del fitness[popSize - iElit]                       # delete last tuple on the list
-            np.delete(sorted_fitness,popSize - iElit)
-            iElit += 1
-        # while
-
-        # 3rd step: Tousnament selection => Loop over the rest of the population to engage them into a tournament
+        # Tournament selection over the remaining population
         loopCounter = 0
-        while len(sorted_fitness) >= tournamentSize:                   # iterate through all individuals
-            #print('fitness array length: ' + str(len(fitness)))
-            selectedInd = np.random.choice(range(len(sorted_fitness)), tournamentSize, replace = False)
-            selectedInd.sort()                                  # select random contestants and sort them by index (i.e. by fitness))
-            # DEBUG
-            #print('selected contestants for tournament:\n' + str(selectedInd))
+        while len(sorted_fitness) >= tournamentSize:
+            selectedInd = np.random.choice(
+                range(len(sorted_fitness)), tournamentSize, replace=False
+            )
+            selectedInd.sort()
 
-            # General implementation
-            #winIndex = np.zeros([int(tournamentSize/2)])
-            #for ik in range(int(tournamentSize/2)):
-                #winIndex[ik] = fitness[selectedInd[tournamentSize - 1 - ik]][1]   # the fittest ind are retrieved from the sorted fitness array
-                #contestants[ik,:] = np.array(population[winIndex[ik],:])
+            win_index1 = sorted_fitness[selectedInd[tournamentSize - 1]]
+            contestants[0, :] = np.array(population[win_index1, :])
+            win_index2 = sorted_fitness[selectedInd[tournamentSize - 2]]
+            contestants[1, :] = np.array(population[win_index2, :])
 
-            # hardcoded for performance gain
-            winIndex1 = sorted_fitness[selectedInd[tournamentSize - 1]] # the fittest ind is retrieved from the sorted fitness array
-            contestants[0,:] = np.array(population[winIndex1,:])
-            winIndex2 = sorted_fitness[selectedInd[tournamentSize - 2]] # the second fittest ind is retrieved from the sorted fitness array
-            contestants[1,:] = np.array(population[winIndex2,:])
-
-            # 3.1 step => Generate new offsprig by Crossover or mutation
-            r = np.random.random()
-            if r >= crossMutProb:
-                contestants[2,:],contestants[3,:] = Crossover(contestants[0,:], contestants[1,:], crossoverProb)
+            if np.random.random() >= crossMutProb:
+                contestants[2, :], contestants[3, :] = Crossover(
+                    contestants[0, :], contestants[1, :], crossoverProb
+                )
             else:
-                contestants[2,:],contestants[3,:] = Mutate(np.array(contestants[0,:]), np.array(contestants[1,:]), mutationProb)
+                contestants[2, :], contestants[3, :] = Mutate(
+                    np.array(contestants[0, :]),
+                    np.array(contestants[1, :]),
+                    mutationProb,
+                )
 
-            # 3.2 => Delete contestants from fitness array
-            iCounter = 0
-            for ix in selectedInd:
-                index = ix - iCounter
-                # DEBUG
-                #print('deleting ' + str(index) + ' entry:' + str(fitness[index]))
-                sorted_fitness = np.delete(sorted_fitness, index)      # WARNING does this really work?
-                iCounter += 1
-            # DEBUG
-            #print('sorted fitness array, after deleting:\n' + str(fitness))
+            for offset, ix in enumerate(selectedInd):
+                sorted_fitness = np.delete(sorted_fitness, ix - offset)
 
-            # 3.3 => Save best individuals and offspring for new generation
             for jk in range(tournamentSize):
-                index = eliteNum + (loopCounter*tournamentSize) + jk
-                #print('=> elitNum: ' + str(eliteNum) + ', loopCounter: ' + str(loopCounter) + ', jk: ' + str(jk))
-                tempPopulation[index] = contestants[jk,:]
+                index = eliteNum + (loopCounter * tournamentSize) + jk
+                tempPopulation[index] = contestants[jk, :]
             loopCounter += 1
-        # loop over population
 
         population = np.array(tempPopulation)
 
-        # Timing!
-        end_time_generation = time.time()
-        secs = end_time_generation - start_time_generation
+        secs = time.time() - start_time_generation
         generationAvg += secs
-        #print('time: {} m, {:.3f} s'.format(int(secs/60), 60*((secs/60)-int(secs/60))))
-        print('Time to complete generation: {} m {:.3f} s'.format(int(secs/60), 60*((secs/60)-int(secs/60))))
-    # Loop over generations
+        minutes = int(secs / 60)
+        rem_secs = 60.0 * ((secs / 60.0) - minutes)
+        print(f"Time to complete generation: {minutes} m {rem_secs:.3f} s")
 
-    print('avg time per generation: {} m {:.3f} s'.format(int(generationAvg/nOfGenerations/60), 60*((generationAvg/nOfGenerations/60)-int(generationAvg/nOfGenerations/60))))
-    #print('avg time for generation: {:.3f} s'.format(generationAvg/nOfGenerations))
+    avg_gen_min = int(generationAvg / nOfGenerations / 60)
+    avg_gen_sec = 60.0 * ((generationAvg / nOfGenerations / 60.0) - avg_gen_min)
+    print(f"Avg time per generation: {avg_gen_min} m {avg_gen_sec:.3f} s")
 
-    # write solution
-    with open(fileName + '.csv', 'w') as csvfile:
+    with open(f"{fileName}.csv", "w", encoding="utf-8", newline="") as csvfile:
         writer = csv.writer(csvfile)
-        [writer.writerow(r) for r in population]
-    #with open(fileName + '_metadata' + '.csv', 'w') as csvfile:
+        writer.writerows(population)

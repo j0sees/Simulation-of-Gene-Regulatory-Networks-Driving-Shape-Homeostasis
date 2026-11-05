@@ -1,244 +1,154 @@
-# 🧬 Simulation of Gene Regulatory Networks Driving Shape Homeostasis
+<div align="center">
 
-This repository contains the software developed as part of the master’s thesis
+# Simulation of Gene Regulatory Networks Driving Shape Homeostasis
 
-**“Classification of Gene Regulatory Networks Driving Shape Homeostasis”**  
+**Computational platform for simulating, evolving, and classifying Gene Regulatory Networks (GRNs)**
+**that drive self-organizing morphogenesis and shape homeostasis in multicellular systems.**
 
-by **M.Sc. J. Esteban Pérez-Hidalgo** (School of Physics, Costa Rica Institute of Technology), under the supervision of **PhD. Philip Gerlee** (Department of Mathematical Sciences, University of Gothenburg & Chalmers University of Technology, Sweden).
+[![Version](https://img.shields.io/badge/version-0.3.0-blue.svg)](./CHANGELOG.md)
+[![License: MIT](https://img.shields.io/badge/License-MIT-teal.svg)](./LICENSE)
+[![CI](https://github.com/userravs/simulation-of-gene-regulatory-networks-driving-shape-homeostasis/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/userravs/simulation-of-gene-regulatory-networks-driving-shape-homeostasis/actions/workflows/ci.yml)
+![Python](https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white)
+![uv](https://img.shields.io/badge/uv-managed-DE5FE9?logo=uv&logoColor=white)
+![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey)
+![Containers](https://img.shields.io/badge/containers-Podman%20%7C%20Docker-892CA0?logo=podman&logoColor=white)
 
----
+<img src="./docs/images/cell_system_example.png" alt="2D Cellular Automaton and SGF/LGF Chemical Signaling Fields" width="860" />
 
-## 📌 Overview
-
-This software allows the **simulation and classification of Gene Regulatory Networks (GRNs)** that drive **shape homeostasis** in multicellular systems — a key emergent phenomenon in developmental biology and artificial life.
-
-The simulation is entirely written in **Python** and is based on the framework proposed by **Gerlee et al.** in the study _“The influence of cellular characteristics on the evolution of shape homeostasis”_, supported by several foundational models in the field of artificial life cited in the thesis.
-
----
-
-## 🔗 Original Repository
-
-This is a **fork** of the original research project by **M.Sc. J. Esteban Pérez-Hidalgo**:
-
-**Original Repository**: [https://github.com/j0sees/Simulation-of-Gene-Regulatory-Networks-Driving-Shape-Homeostasis](https://github.com/j0sees/Simulation-of-Gene-Regulatory-Networks-Driving-Shape-Homeostasis)
-
-This fork includes modernization improvements including containerization, web interface, and enhanced documentation while preserving the original scientific research and implementation.
+</div>
 
 ---
 
-## 🎯 Purpose
-
-- To simulate multicellular collectives and observe adaptive behavior under dynamic environments.
-- To classify GRNs that can maintain **shape homeostasis** in different environmental conditions.
-- To explore the role of **growth factors**, **cell–cell interactions**, and **internal cellular actions** in emergent behavior.
-- To demonstrate that **three major behavioral classes** lead to shape homeostasis.
-- To showcase cellular responses as a function of different environmental types.
+- **Original Research & Mathematical Model (`v0.1.0`)**: **M.Sc. J. Esteban Pérez-Hidalgo** ([@j0sees](https://github.com/j0sees), School of Physics, Costa Rica Institute of Technology), supervised by **Ph.D. Philip Gerlee** (Department of Mathematical Sciences, University of Gothenburg & Chalmers University of Technology, Sweden) — [Original Baseline (`6c3fae7`)](https://github.com/j0sees/Simulation-of-Gene-Regulatory-Networks-Driving-Shape-Homeostasis/tree/6c3fae7834a2ca502b1a439d7535c4adab1673f3)
+- **Software Architecture & Lead Maintainer (`v0.2.0`–`v0.3.0`)**: **Reymer Vargas** ([@userravs](https://github.com/userravs), Independent Research Software Engineer)
 
 ---
 
-## 🧪 Methods and Technologies
+## Overview
 
-This software combines a range of well-established computational techniques:
+This software simulates multicellular collectives where shape homeostasis emerges from local cellular interactions. It integrates a 2D discrete **cellular automaton**, reaction-diffusion solvers for **Short-range (SGF)** and **Long-range (LGF)** growth factors, intracellular **recurrent neural networks**, and **evolutionary optimization** (Genetic Algorithms and NEAT), based on the framework of *Gerlee et al. (2015)*.
 
-- 🔲 **Cellular Automata** — for modeling spatial environments and local cell dynamics.
-- 🧠 **Artificial Neural Networks** — to implement gene regulatory networks within each cell.
-- 🔍 **Optimization Algorithms** — to evolve adaptive networks and collective behavior.
+Key scientific objectives include:
 
-These components interact to simulate the dynamics of cellular collectives, where behavior arises from:
+- Simulating multicellular collectives and observing adaptive morphogenesis under dynamic chemical environments.
+- Generalizing the intracellular signaling network into a fully connected **Recurrent Neural Network (RNN)** to expand the evolutionary search space.
+- Classifying evolved GRNs into **three major behavioral classes** that achieve shape homeostasis through a dynamic equilibrium of proliferation (`Split`), migration (`Move`), quiescence (`Quiet`), and apoptosis (`Die`).
+- Exploring network topology effects across **Erdős-Rényi**, **Watts-Strogatz**, and **Barabási-Albert** graph architectures.
 
-- A dynamic equilibrium of cellular actions,
-- The interaction between two growth factors enabling communication,
-- And a signaling network acting as a **gene regulatory network**.
+```mermaid
+flowchart LR
+    subgraph Topologies["Graph Topologies (analysis/)"]
+        ER["Erdos-Renyi"]
+        WS["Watts-Strogatz"]
+        BA["Barabasi-Albert"]
+    end
+
+    subgraph Engine["Core Simulation Engine (core/)"]
+        RNN["Intracellular RNN\n(RecurrentNeuralNetwork)"]
+        CA["2D Cellular Automaton\n(Quiet, Move, Split, Die)"]
+        PDE["Reaction-Diffusion PDEs\n(SGF Euler & LGF Crank-Nicolson)"]
+        RNN --> CA --> PDE --> RNN
+    end
+
+    subgraph Evolution["Evolutionary Optimization (evolution/)"]
+        GA["Parallel Genetic Algorithm\n(main_ga.py)"]
+        NEAT["NEAT Neuroevolution\n(neat_parallel.py)"]
+    end
+
+    subgraph UI["Visualization & Analysis (visualization/)"]
+        Web["Streamlit & Plotly Web App\n(web_app.py)"]
+        Plot["Matplotlib & Phase-Space Maps\n(plot.py)"]
+    end
+
+    Topologies --> Engine
+    Evolution <-->|"Fitness F in [0, 1]"| Engine
+    Engine --> UI
+```
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
-### Prerequisites
-
-- **Docker** (recommended) - No local Python installation needed
-- **Python 3.7+** (for local development)
-
-### Installation
-
-#### Option 1: Docker (Recommended)
+### Option 1: Container — Podman or Docker (Recommended on macOS & Linux)
 
 ```bash
-# Clone the repository
 git clone https://github.com/j0sees/Simulation-of-Gene-Regulatory-Networks-Driving-Shape-Homeostasis.git
-cd simulation-of-gene-regulatory-networks-driving-shape-homeostasis
+cd Simulation-of-Gene-Regulatory-Networks-Driving-Shape-Homeostasis
 
-# Start the web interface (no local Python installation needed)
-./run_docker.sh
+# Auto-detects Podman or Docker, builds the image, and starts the web app at http://localhost:8501
+./scripts/run_container.sh
 ```
 
-#### Option 2: Local Installation
+### Option 2: Local Setup with `uv`
+
+Requires **Python 3.11+** and **[uv](https://docs.astral.sh/uv/)**:
 
 ```bash
-# Clone the repository
-git clone https://github.com/j0sees/Simulation-of-Gene-Regulatory-Networks-Driving-Shape-Homeostasis.git
-cd simulation-of-gene-regulatory-networks-driving-shape-homeostasis
+# Install dependencies (including dev tools)
+uv sync --dev
 
-# Install dependencies
-pip install -r requirements.txt
+# Launch the interactive web interface at http://localhost:8501
+./scripts/run_web_app.sh
 ```
 
-### Basic Usage
-
-#### 🌐 Web Interface (Recommended)
+### Command-Line Execution & Testing
 
 ```bash
-# Start the containerized web application
-./run_docker.sh
+# Run a standalone simulation or genetic algorithm example
+uv run python examples/run_simulation.py
+uv run python examples/run_evolution.py
 
-# Open your browser and go to: http://localhost:8501
-# Interactive interface with real-time visualization
-```
+# Regenerate documentation figures
+uv run python examples/generate_documentation_images.py
 
-The web interface provides:
-- **Interactive simulation controls** with real-time parameter adjustment
-- **Live visualization** of cell states, SGF, and LGF concentrations
-- **Fitness analysis** tools and evolutionary progress tracking
-- **Parameter exploration** for different network architectures
-
-#### 💻 Command Line
-
-```bash
-# Run a simple simulation example
-python examples/run_simulation.py
-
-# Run genetic algorithm example
-python examples/run_evolution.py
-
-# Run main applications directly
-python core/main.py [filename] [nNodes] [individual]
-python evolution/main_ga.py [filename] [parameters]
+# Run linter and unit test suite
+uv run ruff check .
+uv run pytest -v
 ```
 
 ---
 
-## 📁 Project Structure
+## Repository Structure
 
+```text
+├── analysis/             # Network topology generation and evaluation (Erdős-Rényi, etc.)
+├── config/               # NEAT configuration parameters (config-ca)
+├── core/                 # Core cellular automata engine, cell agent, and PDE solvers
+├── docs/                 # Project documentation and example figures
+├── evolution/            # Genetic Algorithm (main_ga.py) and NEAT neuroevolution
+├── examples/             # Runnable simulation, evolution, and figure generation scripts
+├── scripts/              # Helper scripts (run_container.sh, run_web_app.sh, teardown_container.sh)
+├── tests/                # Pytest unit test suite
+├── visualization/        # Matplotlib plotting utilities, Gnuplot script, and Streamlit app
+├── CHANGELOG.md          # Release changelog with commit references and timestamps
+├── CITATION.cff          # Citation metadata for GitHub and academic references
+├── CODE_OF_CONDUCT.md    # Contributor Covenant Code of Conduct
+├── CONTRIBUTING.md       # Contribution workflow, coding standards, and pre-PR checks
+├── Dockerfile            # Container image definition (Python 3.12 + uv)
+├── docker-compose.yml    # Docker Compose service configuration
+├── pyproject.toml        # Project metadata, dependencies, and tool configuration
+└── VERSION               # Canonical semantic version file
 ```
-├── core/                    # Core simulation components
-│   ├── cell_agent.py        # Cell class and neural network
-│   ├── main.py              # Basic simulation engine
-│   └── tools.py             # Utility functions
-├── evolution/               # Genetic algorithm
-│   ├── main_ga.py           # Main GA application
-│   └── tools_ga.py          # GA utilities
-├── visualization/           # Plotting and visualization
-│   └── plot.py              # Plotting functions
-├── config/                  # Configuration files
-│   └── config-ca            # NEAT configuration
-├── analysis/                # Research tools
-│   ├── graph_generator.py   # Network generation
-│   └── graph_evaluation.py  # Network evaluation
-├── examples/                # Usage examples
-│   ├── run_simulation.py    # Basic simulation example
-│   └── run_evolution.py     # GA example
-├── web_app.py               # Streamlit web application
-├── neat_cell_agent.py       # NEAT-based cell agent implementation
-├── neat_parallel.py         # Parallel NEAT implementation
-├── plots_gp                 # Gnuplot configuration
-├── run_web_app.sh           # Local web app launcher script
-├── Dockerfile               # Container configuration
-├── docker-compose.yml       # Container orchestration
-├── run_docker.sh            # Container launcher script
-├── .dockerignore            # Docker build exclusions
-├── requirements.txt         # Dependencies
-├── README.md                # Main project documentation
-├── docs/                    # Documentation
-│   ├── web-interface.md     # Web interface documentation
-│   ├── docker.md            # Docker usage guide
-│   ├── thesis-summary.md    # Research overview
-│   └── history-log.md       # Development history
-```
-
-### 🏗️ Architecture Overview
-
-- **`core/`**: Core simulation engine with cellular automata and neural networks
-- **`evolution/`**: Genetic algorithm implementation for network optimization
-- **`visualization/`**: Plotting and visualization tools
-- **`analysis/`**: Research and evaluation tools
-- **`examples/`**: Ready-to-run examples for different use cases
-- **`web_app.py`**: Interactive web interface using Streamlit
-- **`Dockerfile`**: Container configuration for reproducible environments
 
 ---
 
-## 🧬 Scientific Contribution
+## Documentation
 
-This software represents a **novel, multidisciplinary product**, combining:
+Detailed guides are located in the [`docs/`](./docs/README.md) directory:
 
-- **Computational Physics** - Cellular automata and spatial dynamics
-- **Numerical Methods in Mathematics** - Differential equations and optimization
-- **Computational Biology** - Gene regulatory networks and emergent behavior
-
-It provides a computational platform for studying **emergent homeostasis**, offering insights into how multicellular systems organize and regulate their shape.
-
-### 📊 Example Visualizations
-
-#### Cell System Simulation
-![Cell System Example](./docs/images/cell_system_example.png)
-
-*The simulation shows cells in different states (empty, quiet, moving, dividing) alongside SGF and LGF concentration patterns.*
-
-#### Gene Regulatory Network
-![Network Example](./docs/images/network_example.png)
-
-*Example of a gene regulatory network with feedback loops and regulatory interactions.*
-
-#### Evolutionary Progress
-![Evolution Example](./docs/images/evolution_example.png)
-
-*Typical fitness progression during genetic algorithm optimization.*
-
-### 🔬 Research Applications
-
-- **Developmental Biology**: Understanding shape formation and maintenance
-- **Artificial Life**: Exploring emergent behavior in cellular systems
-- **Systems Biology**: Modeling gene regulatory networks
-- **Evolutionary Computation**: Optimizing network architectures
-
-### 📊 Key Features
-
-- **Interactive Web Interface**: Real-time simulation control and visualization
-- **Containerized Deployment**: Reproducible environments with Docker
-- **Modular Architecture**: Clean separation of concerns
-- **Comprehensive Documentation**: Detailed explanations and examples
+- **[Documentation Index](./docs/README.md)** — Overview of all guides and testing instructions
+- **[Model & Architecture](./docs/architecture.md)** — Mathematical model, cellular automata rules, reaction-diffusion PDEs, and code architecture
+- **[Web Interface Guide](./docs/web-interface.md)** — Interactive Streamlit & Plotly simulation controls
+- **[Docker Guide](./docs/docker.md)** — Container setup, volume mounts, and troubleshooting
+- **[Development History](./docs/history-log.md)** — Chronological research and modernization log
+- **[Changelog](./CHANGELOG.md)** — Versioned release notes with commit references and timestamps
+- **[Contributing Guide](./CONTRIBUTING.md)** — Trunk-Based Development workflow, `uv` setup, and pre-PR verification
+- **[Code of Conduct](./CODE_OF_CONDUCT.md)** — Community standards for scientific and open-source collaboration
 
 ---
 
-## 👨‍🏫 Authors
+## Authors & License
 
-- **M.Sc. J. Esteban Pérez-Hidalgo** (School of Physics, Costa Rica Institute of Technology)
-  - Master's Thesis – University of Gothenburg & Chalmers University of Technology  
-  - Email: jose.perez at tec.ac.cr
-- **Reymer Vargas** - Project modernization and development
-  - Containerization, web interface, and documentation improvements
-
-## 👥 Contributors
-
-This project has benefited from contributions by:
-
-- **M.Sc. J. Esteban Pérez-Hidalgo** - Original research and initial implementation
-- **Reymer Vargas** - Technical Consultant & Platform Engineering Specialist
-  - Project modernization, containerization, documentation, and web interface development
-  - Infrastructure as Code, DevOps, and research software engineering
-
-## 🚀 Development History
-
-### Original Research (M.Sc. J. Esteban Pérez-Hidalgo)
-- Master's thesis on gene regulatory networks and shape homeostasis
-- Initial implementation of cellular automata and neural networks
-- Core simulation engine and genetic algorithm
-
-### Modernization (Reymer Vargas)
-- **Documentation**: Comprehensive documentation restructuring and improvements
-- **Containerization**: Docker setup for reproducible environments
-- **Web Interface**: Interactive Streamlit application for real-time simulation
-- **Code Quality**: PEP8 compliance and project structure improvements
-- **Deployment**: Production-ready containerized deployment
-
-
+- **J. Esteban Pérez-Hidalgo** ([@j0sees](https://github.com/j0sees), School of Physics, Costa Rica Institute of Technology) — Original research, mathematical model, and initial simulation engine (`v0.1.0`, master's thesis *"Classification of Gene Regulatory Networks Driving Shape Homeostasis"*, `jose.perez at tec.ac.cr`)
+- **Reymer Vargas** ([@userravs](https://github.com/userravs), Independent Research Software Engineer) — Software architecture, Python 3 refactoring, interactive web platform, containerization, CI/test suite, and lead maintainer (`v0.2.0`–`v0.3.0`)
+- **License**: Released under the [MIT License](LICENSE).

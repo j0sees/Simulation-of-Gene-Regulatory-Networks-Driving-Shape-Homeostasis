@@ -1,81 +1,60 @@
-import sys
-import core.main as main
-import evolution.main_ga as main_GA
-import numpy as np
-from datetime import datetime as dt
+"""Evaluate fitness across a population of saved Gene Regulatory Network topologies."""
+
+from __future__ import annotations
+
 from contextlib import contextmanager
-#from functools import partial
-import matplotlib
-# Valid strings are ['GTK', 'GTKAgg', 'GTKCairo', 'MacOSX', 'Qt4Agg', 'Qt5Agg', 'TkAgg', 'WX', 'WXAgg', 'GTK3Cairo', 'GTK3Agg', 'WebAgg', 'nbAgg', 'agg', 'cairo', 'gdk', 'pdf', 'pgf', 'ps', 'svg', 'template']
-matplotlib.use('Qt5Agg')
 import multiprocessing as mp
+import sys
 import matplotlib.pyplot as plt
+import numpy as np
 
-def partialEval(ind):
-    # call the target function
-    #print('ts {}, nN {}, nL {}, ind {}'.format(timeSteps, nNodes, nLattice, ind))
-    timeSteps = 200
-    nNodes = 25
-    #wMatrix = population[individual,:]
-    nLattice = 50
-    return EvaluateIndividual(timeSteps, nNodes, nLattice, ind)
+import evolution.main_ga as main_ga
 
-def EvaluateIndividual(timeSteps, nNodes, nLattice, ind):
-    totSum = 0.
-    
-    wMatrix = networkArrays[ind]
-    #print('process: {} is running sim with individual: {}!'.format(os.getpid(), individual))
-    deltaM = main_GA.sim(wMatrix, timeSteps, nNodes, nLattice)
-    
-    deltaMatrix = np.array(deltaM)
 
-    for ix in range(nLattice):
-        for jx in range(nLattice):
-            totSum += deltaMatrix[ix,jx]
-    
-    fit = 1. - (1./(nLattice**2))*totSum
-    return fit
-# EvaluateIndividual
+def partialEval(ind: int) -> float:
+    """Evaluate a single network index using default simulation parameters."""
+    time_steps = 200
+    n_nodes = 25
+    n_lattice = 50
+    return EvaluateIndividual(time_steps, n_nodes, n_lattice, ind)
+
+
+def EvaluateIndividual(timeSteps: int, nNodes: int, nLattice: int, ind: int) -> float:
+    """Run the cellular automata simulation and compute the shape homeostasis fitness."""
+    w_matrix = networkArrays[ind]
+    delta_m = main_ga.sim(w_matrix, timeSteps, 0, nNodes, ind, nLattice, True)
+    tot_sum = float(np.sum(delta_m))
+    return 1.0 - (tot_sum / (nLattice**2))
+
 
 @contextmanager
 def poolcontext(*args, **kwargs):
+    """Context manager that terminates a multiprocessing pool on exit."""
     pool = mp.Pool(*args, **kwargs)
-    yield pool
-    pool.terminate()
+    try:
+        yield pool
+    finally:
+        pool.terminate()
 
-if __name__ == '__main__':
-    
-    fileName = sys.argv[1]
-    csvFile = 'populations/{}.csv'.format(fileName)
-    nProcs = 20
-    #chunkSize = 10
-    #--------------------------#
-    #       Fitness            #
-    #--------------------------#
-    
-    with open(csvFile, 'r') as csvfile:
-        #reader = csv.reader(csvfile)
-        networkContainer = np.loadtxt(csvfile,delimiter=',')
-    nNets, nNodes = networkContainer.shape
-    
-    networkArrays = networkContainer.reshape(nNets, int(np.sqrt(nNodes)), int(np.sqrt(nNodes)))
 
-    index_list = [ x for x in range(nNets)]
-    fitnessArray = np.zeros(nNets)
-    with poolcontext(processes = nProcs) as pool:
-        fitnessArray = pool.map(partialEval, index_list)
-        
-    #-------------------------------#
-    #       Generate histogram      #
-    #-------------------------------#
+if __name__ == "__main__":
+    file_name = sys.argv[1]
+    csv_file = f"populations/{file_name}.csv"
+    n_procs = 20
+
+    with open(csv_file, "r", encoding="utf-8") as csvfile:
+        network_container = np.loadtxt(csvfile, delimiter=",")
+    n_nets, n_genes = network_container.shape
+    side = int(np.sqrt(n_genes))
+    networkArrays = network_container.reshape(n_nets, side, side)
+
+    index_list = list(range(n_nets))
+    with poolcontext(processes=n_procs) as pool:
+        fitness_array = pool.map(partialEval, index_list)
+
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    #fig.suptitle('')
-    #ax.set_xlabel('number of generations')
-    ax.set_ylabel('fitness')
-    #ax.set_xticks(genList)
-    ax.set_title('histogram')   
-    ax.hist(fitnessArray)
-    #ax.legend(loc = 'best')
-    plt.savefig('test.png')
-    #print('{}'.format(fitnessArray))
+    ax.set_ylabel("fitness")
+    ax.set_title("histogram")
+    ax.hist(fitness_array)
+    plt.savefig("test.png")
