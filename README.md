@@ -72,8 +72,8 @@ flowchart LR
 ### Option 1: Container — Podman or Docker (Recommended on macOS & Linux)
 
 ```bash
-git clone https://github.com/userravs/simulation-of-gene-regulatory-networks-driving-shape-homeostasis.git
-cd simulation-of-gene-regulatory-networks-driving-shape-homeostasis
+git clone https://github.com/j0sees/Simulation-of-Gene-Regulatory-Networks-Driving-Shape-Homeostasis.git
+cd Simulation-of-Gene-Regulatory-Networks-Driving-Shape-Homeostasis
 
 # Auto-detects Podman or Docker, builds the image, and starts the web app at http://localhost:8501
 ./scripts/run_container.sh

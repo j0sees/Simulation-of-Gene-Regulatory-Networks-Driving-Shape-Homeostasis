@@ -39,8 +39,8 @@ Before submitting a Pull Request for a new feature or non-trivial fix, create a 
 Clone the repository and synchronize the development environment using [`uv`](https://docs.astral.sh/uv/):
 
 ```bash
-git clone https://github.com/userravs/simulation-of-gene-regulatory-networks-driving-shape-homeostasis.git
-cd simulation-of-gene-regulatory-networks-driving-shape-homeostasis
+git clone https://github.com/j0sees/Simulation-of-Gene-Regulatory-Networks-Driving-Shape-Homeostasis.git
+cd Simulation-of-Gene-Regulatory-Networks-Driving-Shape-Homeostasis
 
 # Install runtime and development dependencies (ruff, pytest)
 uv sync --dev

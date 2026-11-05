@@ -16,6 +16,7 @@ All notable changes to this project are documented in this file. The format is b
 - **GitHub Actions CI & Unit Test Suite**: Added `.github/workflows/ci.yml` (`ruff`, `compileall`, `pytest`, container smoke build) and `pytest` unit tests under `tests/` (`5a59441`, `2026-11-03T23:12:03-06:00`).
 
 ### Changed
+- **Canonical Repository URLs & Citation Alignment**: Updated `CITATION.cff`, `README.md`, and `CONTRIBUTING.md` clone instructions to point to the canonical upstream repository (`j0sees/Simulation-of-Gene-Regulatory-Networks-Driving-Shape-Homeostasis`) (`2026-11-04`).
 - **License Copyright & Upstream CI Compatibility**: Updated `LICENSE` copyright range to `2017-2026` and added `master` branch trigger support to `.github/workflows/ci.yml` (`f054b90`, `2026-11-04T12:28:44-06:00`).
 - **Roadmap Tracking**: Converted raw 2017 scratch notes in `docs/history-log.md` into a milestone history and issue tracker (`8d68da2`, `2026-11-04T08:03:03-06:00`).
 - **Root Directory Organization & Namespace Packages**: Moved `neat_cell_agent.py` and `neat_parallel.py` to `evolution/`, `web_app.py` and `plots.gp` to `visualization/`, and shell launchers to `scripts/`; removed empty `__init__.py` files in favor of PEP 420 namespace packages and bumped version to `0.3.0` (`dd99a8d`, `2026-11-04T07:11:15-06:00`).
